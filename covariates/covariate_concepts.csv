@@ -1,0 +1,77 @@
+# Iannuzzi 2020 NHD Risk Score — OMOP concept ID mappings
+# Source: Iannuzzi JC et al. J Vasc Surg 2020;71:889-95.
+#
+# All concept IDs below are verified [vocab query] entries sourced from
+# phenotype_library/catalog.yaml. Each row cites its catalog entry id so that
+# changes upstream (vocabulary rebuilds, new descendants, role refinements)
+# can be propagated here without re-running the lookup.
+#
+# COMPONENTS WITH NO CONCEPT IDs (no rows needed):
+#   age_60_69, age_70_79, age_ge80 — age is computed from person.year_of_birth
+#     by query_age_covariate_counts(); no concept ID is used.
+#
+# FEMALE:
+#   catalog entry: female_sex
+#   Queried as: person.gender_concept_id = 8532 (exact match, no descendants).
+#
+# NONWHITE:
+#   catalog entry: nonwhite_race
+#   The pipeline flags patients whose race_concept_id is NOT IN this set
+#   (also NOT NULL and <> 0). concept_role = "white_race" signals the pipeline
+#   that 8527 is the concept to EXCLUDE, not include.
+#
+# AMBU_DEFICIT:
+#   catalog entry: ambulatory_deficit
+#   Seven concepts across four OMOP domains, used as OR logic. domain = "auto"
+#   in covariates.csv (CHANGED 2026-07-26 from "observation" — see that file's
+#   header note): query_auto_domain_covariate_counts() unions across every
+#   domain table rather than trusting a single hardcoded column, because three
+#   of these seven concepts do NOT resolve to the observation domain in this
+#   vocabulary build. The original four (SNOMED Observation/Clinical Finding):
+#   4012645 Walking aid use (the Synthea module's most specific concept),
+#   437643 Abnormal gait, 439405 Walking disability, 36714126 Difficulty
+#   walking. Added 2026-07-26 after this component activated in 0/225 patients:
+#   4085915 Provision of long cane (Procedure domain), 4044714 Using
+#   wheelchair (Observation domain), 4240470 Wheelchair (Device domain —
+#   queried via device_exposure, unreachable by any of the other six
+#   concepts' domain tables).
+#
+# TISSUE_LOSS:
+#   catalog entry: pad_indication_tissue_loss
+#   Iannuzzi 2020 definition: wound, ulcer, OR gangrene. Both SNOMED ancestor
+#   concepts are listed (include_descendants = TRUE) — the Synthea module
+#   generates each with a 70/30 split.
+#
+# ANEMIA:
+#   catalog entry: hemoglobin_measurement
+#   LOINC 718-7 hemoglobin measurement (direct leaf concept). The <10 g/dL
+#   threshold and g/L → g/dL unit conversion are applied in
+#   query_anemia_covariate_counts(), not via concept set.
+#
+# INSULIN_DEP:
+#   catalog entry: insulin_dependent_diabetes_drug
+#   ATC 21600713 'INSULINS AND ANALOGUES' ancestor (10,053 standard
+#   descendants). include_descendants = TRUE captures all insulin
+#   formulations (glargine, aspart, NPH, etc.) regardless of which
+#   RxNorm ingredient the EHR records.
+#
+# COLUMN DEFINITIONS:
+#   covariate_id         matches covariate_id in covariates.csv
+#   concept_id           OMOP standard concept_id (verified [vocab query])
+#   include_descendants  TRUE = expand via concept_ancestor rollup
+#   concept_role         blank for standard use; "white_race" for nonwhite
+#   value_concept_ids    for value-coded observations (leave blank if unused)
+covariate_id,concept_id,include_descendants,concept_role,value_concept_ids
+female,8532,FALSE,,
+nonwhite,8527,FALSE,white_race,
+ambu_deficit,4012645,TRUE,,
+ambu_deficit,437643,TRUE,,
+ambu_deficit,439405,TRUE,,
+ambu_deficit,36714126,TRUE,,
+ambu_deficit,4085915,FALSE,,
+ambu_deficit,4044714,FALSE,,
+ambu_deficit,4240470,FALSE,,
+tissue_loss,4029926,TRUE,,
+tissue_loss,4291464,TRUE,,
+anemia,3000963,FALSE,,
+insulin_dep,21600713,TRUE,,

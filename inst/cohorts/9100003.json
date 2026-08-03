@@ -1,0 +1,80 @@
+{
+  "cdmVersionRange": ">=5.0.0",
+  "_README": [
+    "Peripheral arterial occlusive disease, as the Kraiss sVQI-FS pvd item",
+    "defines it: SNOMED 399957001 -> OMOP 317309 plus descendants.",
+    "",
+    "DELIBERATELY NOT the [DVI] VA-FI Peripheral vascular disease cohort",
+    "(1797955). That cohort is a faithful VA-FI deficit and spans OMOP 321052",
+    "peripheral vascular disease, 40479625 atherosclerosis of artery, 317585",
+    "aortic aneurysm and 444247 venous thrombosis. Aneurysmal and venous disease",
+    "are not peripheral ARTERIAL occlusive disease; a patient scoring the sVQI-FS",
+    "pvd item on a DVT is not what the instrument measures.",
+    "",
+    "Note 321052 is an ANCESTOR of 317309, so the VA-FI cohort is a strict",
+    "superset here rather than a disjoint set.",
+    "PrimaryCriteriaLimit / QualifiedLimit / ExpressionLimit are all \"All\" and EndStrategy is StartDate+0, unlike the [DVI] VA-FI cohorts (1797948-1797977) which are \"First\". A first-ever-only cohort cannot answer a lookback-window question."
+  ],
+  "ConceptSets": [
+    {
+      "id": 0,
+      "name": "[DVI] Peripheral Arterial Occlusive Disease (risk score item)",
+      "expression": {
+        "items": [
+          {
+            "concept": {
+              "CONCEPT_ID": 317309,
+              "CONCEPT_NAME": "Peripheral arterial occlusive disease",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "399957001",
+              "DOMAIN_ID": "Condition",
+              "VOCABULARY_ID": "SNOMED",
+              "CONCEPT_CLASS_ID": "Disorder"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          }
+        ]
+      }
+    }
+  ],
+  "PrimaryCriteria": {
+    "CriteriaList": [
+      {
+        "ConditionOccurrence": {
+          "CodesetId": 0
+        }
+      }
+    ],
+    "ObservationWindow": {
+      "PriorDays": 0,
+      "PostDays": 0
+    },
+    "PrimaryCriteriaLimit": {
+      "Type": "All"
+    }
+  },
+  "QualifiedLimit": {
+    "Type": "All"
+  },
+  "ExpressionLimit": {
+    "Type": "All"
+  },
+  "InclusionRules": [],
+  "CensoringCriteria": [],
+  "CollapseSettings": {
+    "CollapseType": "ERA",
+    "EraPad": 0
+  },
+  "CensorWindow": {},
+  "EndStrategy": {
+    "DateOffset": {
+      "DateField": "StartDate",
+      "Offset": 0
+    }
+  }
+}

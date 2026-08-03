@@ -1,0 +1,214 @@
+{
+  "cdmVersionRange": ">=5.0.0",
+  "_README": [
+    "Ambulatory deficit / impaired ambulation. Serves BOTH the Iannuzzi",
+    "ambu_deficit item (3 points) and the Kraiss sVQI-FS nonambulatory item",
+    "(1 point) - identical 7-concept sets under two score-specific names, so one",
+    "cohort backs both. covariates/cohort_map.csv maps both items here.",
+    "",
+    "THREE primary criteria, one per OMOP domain. This is the declarative",
+    "replacement for the pipeline's domain = \"auto\" cross-domain union:",
+    "  Observation      4012645 walking aid use, 437643 abnormal gait,",
+    "                   439405 walking disability, 36714126 difficulty walking,",
+    "                   4044714 using wheelchair",
+    "  Procedure        4085915 provision of long cane",
+    "  Device           4240470 wheelchair",
+    "This is the highest-risk translation in the repo: querying a single domain",
+    "returned 0 of 225 patients in pad-amp-nhd-val. Validate against",
+    "query_auto_domain_covariate_counts() before trusting any score using it.",
+    "",
+    "includeDescendants mirrors the CSV exactly - TRUE for the four rollup",
+    "concepts, FALSE for the three leaf concepts.",
+    "PrimaryCriteriaLimit / QualifiedLimit / ExpressionLimit are all \"All\" and EndStrategy is StartDate+0, unlike the [DVI] VA-FI cohorts (1797948-1797977) which are \"First\". A first-ever-only cohort cannot answer a lookback-window question."
+  ],
+  "ConceptSets": [
+    {
+      "id": 0,
+      "name": "[DVI] Ambulatory Deficit - Observation domain",
+      "expression": {
+        "items": [
+          {
+            "concept": {
+              "CONCEPT_ID": 4012645,
+              "CONCEPT_NAME": "Walking aid use",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "165251008",
+              "DOMAIN_ID": "Observation",
+              "VOCABULARY_ID": "SNOMED",
+              "CONCEPT_CLASS_ID": "Observable Entity"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 437643,
+              "CONCEPT_NAME": "Abnormal gait",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "22325002",
+              "DOMAIN_ID": "Observation",
+              "VOCABULARY_ID": "SNOMED",
+              "CONCEPT_CLASS_ID": "Clinical Finding"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 439405,
+              "CONCEPT_NAME": "Walking disability",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "228158008",
+              "DOMAIN_ID": "Observation",
+              "VOCABULARY_ID": "SNOMED",
+              "CONCEPT_CLASS_ID": "Clinical Finding"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 36714126,
+              "CONCEPT_NAME": "Difficulty walking",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "719232003",
+              "DOMAIN_ID": "Observation",
+              "VOCABULARY_ID": "SNOMED",
+              "CONCEPT_CLASS_ID": "Clinical Finding"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 4044714,
+              "CONCEPT_NAME": "Using wheelchair",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "129015001",
+              "DOMAIN_ID": "Observation",
+              "VOCABULARY_ID": "SNOMED",
+              "CONCEPT_CLASS_ID": "Observable Entity"
+            },
+            "isExcluded": false,
+            "includeDescendants": false,
+            "includeMapped": false
+          }
+        ]
+      }
+    },
+    {
+      "id": 1,
+      "name": "[DVI] Ambulatory Deficit - Procedure domain",
+      "expression": {
+        "items": [
+          {
+            "concept": {
+              "CONCEPT_ID": 4085915,
+              "CONCEPT_NAME": "Provision of long cane",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "243752009",
+              "DOMAIN_ID": "Procedure",
+              "VOCABULARY_ID": "SNOMED",
+              "CONCEPT_CLASS_ID": "Procedure"
+            },
+            "isExcluded": false,
+            "includeDescendants": false,
+            "includeMapped": false
+          }
+        ]
+      }
+    },
+    {
+      "id": 2,
+      "name": "[DVI] Ambulatory Deficit - Device domain",
+      "expression": {
+        "items": [
+          {
+            "concept": {
+              "CONCEPT_ID": 4240470,
+              "CONCEPT_NAME": "Wheelchair",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "58938008",
+              "DOMAIN_ID": "Device",
+              "VOCABULARY_ID": "SNOMED",
+              "CONCEPT_CLASS_ID": "Physical Object"
+            },
+            "isExcluded": false,
+            "includeDescendants": false,
+            "includeMapped": false
+          }
+        ]
+      }
+    }
+  ],
+  "PrimaryCriteria": {
+    "CriteriaList": [
+      {
+        "Observation": {
+          "CodesetId": 0
+        }
+      },
+      {
+        "ProcedureOccurrence": {
+          "CodesetId": 1
+        }
+      },
+      {
+        "DeviceExposure": {
+          "CodesetId": 2
+        }
+      }
+    ],
+    "ObservationWindow": {
+      "PriorDays": 0,
+      "PostDays": 0
+    },
+    "PrimaryCriteriaLimit": {
+      "Type": "All"
+    }
+  },
+  "QualifiedLimit": {
+    "Type": "All"
+  },
+  "ExpressionLimit": {
+    "Type": "All"
+  },
+  "InclusionRules": [],
+  "CensoringCriteria": [],
+  "CollapseSettings": {
+    "CollapseType": "ERA",
+    "EraPad": 0
+  },
+  "CensorWindow": {},
+  "EndStrategy": {
+    "DateOffset": {
+      "DateField": "StartDate",
+      "Offset": 0
+    }
+  }
+}

@@ -1,0 +1,135 @@
+# Kraiss 2022 simple VQI Frailty Score (sVQI-FS) — component definitions.
+# Source: Kraiss LW, Al-Dulaimi R, Allen CM, Mell MW, Arya S, Presson AP,
+#         Brooke BS. A Vascular Quality Initiative frailty assessment predicts
+#         postdischarge mortality in patients undergoing arterial
+#         reconstruction. J Vasc Surg 2022;76:1325-34.
+#         https://doi.org/10.1016/j.jvs.2022.05.017
+#
+# WHAT THIS SCORES (and how it differs from the source paper)
+#   The published sVQI-FS is the EQUALLY-weighted form: score = (number of
+#   positive frailty items) / (number of items evaluated), 11 items, developed
+#   to predict 9-MONTH MORTALITY after non-emergent arterial reconstruction
+#   (paper AUC 0.724). The differentially-weighted 7-item "VQI-FS" + procedure
+#   nomogram (AUC 0.758) is a separate model not implemented here.
+#
+#   THE AUTHORS DISAVOW THE EQUALLY-WEIGHTED FORM FOR THEIR OWN OUTCOME:
+#   "The term VQI-FS refers to the differentially weighted model. We do not
+#   recommend the use of the equally weighted sVQI-FS to estimate 9-month
+#   mortality." (Kraiss 2022, p. 1328). We use the equally-weighted form anyway
+#   because the weighted model needs nomogram coefficients AND a
+#   procedure-specific risk term whose categories (CEA, CAS, EVAR, open AAA,
+#   PVI, SUPRA, INFRA) contain no amputation option. The disavowal is scoped to
+#   estimating 9-MONTH MORTALITY, which this study does not do — the raw score
+#   is locally recalibrated to NHD. This must be disclosed in the manuscript
+#   wherever the score is first named, not only here; the sVQI-FS paragraph in
+#   Methods 1.3 (R/report_prognostic.R) carries the clause.
+#
+#   The paper also does not compute the sVQI-FS when fewer than five frailty
+#   domains have data. No equivalent suppression is applied here (coded-record
+#   presence/absence has no explicit missing state), so every patient is scored.
+#
+#   This file repurposes the equally-weighted item set as an integer point sum
+#   (1 point per positive item) to validate it against NON-HOME DISCHARGE (NHD)
+#   after major lower-extremity amputation — the SAME cohort and outcome as the
+#   Iannuzzi 2020 and Subramaniam mFI-5 covariate sets in this repo, so the
+#   three scores are directly comparable. This mirrors how the mFI-5 (originally
+#   a mortality/morbidity index) was validated for NHD here.
+#
+# SCORE RANGE: 0–10 points (10 of the paper's 11 items; see DELIBERATE
+#   DEVIATIONS). lookup = NULL (no published score→NHD probability table exists;
+#   the paper's probabilities are for mortality), exactly as for mFI-5. The
+#   pipeline reports discrimination (AUROC/AUPRC) and a within-cohort
+#   recalibrated fit.
+#
+# OPERATIONAL APPROACH — LAB/MEASUREMENT THRESHOLDS where the paper defines
+#   them, DIAGNOSIS PRESENCE otherwise (UPDATED 2026-07-26 — see below)
+#   The paper's Table I defines three items by lab/anthropometric thresholds
+#   (renal: creatinine >1.8 mg/dL or dialysis; anemia: Hgb <13 g/dL [M] /
+#   <12 g/dL [F]; underweight: BMI <19) and two by ABI/registry fields
+#   (PVD: ABI <0.7 or arterial intervention/amputation; non-home residence).
+#
+#   RENAL_IMPAIRMENT and ANEMIA were CHANGED 2026-07-26 from diagnosis proxies
+#   to the paper's own lab-value definitions, after those proxies produced
+#   implausible activation rates in a pilot cohort — renal_impairment (CKD
+#   diagnosis 46271022 + 192359) at 99.6% (192359's descendants pull in
+#   acute/unspecified renal failure, far more common than true CKD) and anemia
+#   (diagnosis 439777) at 1.3% (diagnosis coding under-captures anemia
+#   relative to a lab threshold). New dedicated query functions —
+#   query_renal_impairment_covariate_counts() and
+#   query_anemia_covariate_counts(sex_specific = TRUE) in
+#   R/risk_score_pipeline.R — now apply the paper's exact thresholds; see
+#   covariate_concepts_vqifs.csv for the concept_role wiring
+#   ("creatinine"/"dialysis" for renal_impairment). anemia's covariate_id is
+#   shared with covariates.csv's single-threshold Iannuzzi definition, so
+#   sex-specific routing is resolved from config$covariate_definitions_file
+#   containing "vqifs", not from a column in either CSV.
+#
+#   PVD remains a diagnosis-presence proxy (peripheral_arterial_disease
+#   concept 317309) rather than the paper's ABI <0.7 / prior arterial
+#   intervention definition — this cohort's PAD indication is already the
+#   target-cohort eligibility criterion, so a diagnosis-based PVD item is
+#   expected to activate near-universally regardless of threshold choice;
+#   revisit only if a genuine ABI-based signal becomes clinically useful.
+#
+#   underweight is the one item where the pipeline's existing BMI machinery
+#   (query_bmi_covariate_counts() in R/risk_score_pipeline.R, already used by
+#   pad-oler-amp-desc for overweight/obese) already supported the needed
+#   value-threshold pattern, so it was extended with an underweight branch
+#   (BMI < 18.5, the paper's own cut-point, replacing the earlier <19 proxy)
+#   rather than left as a diagnosis proxy. domain = measurement (not
+#   observation) and missing_is_negative = FALSE (unmeasured BMI is unknown,
+#   not "not underweight") — see covariate_concepts_vqifs.csv concept_role
+#   rows (bmi_direct / weight / height), reusing the catalog body_mass_index
+#   concept set and pad-oler-amp-desc's fallback concept list verbatim.
+#
+#   nonambulatory: domain = "auto" (CHANGED 2026-07-26 from "observation" —
+#   see phenotype_library/catalog.yaml :: ambulatory_deficit). Shares its
+#   concept set with covariates.csv's Iannuzzi ambu_deficit component, which
+#   activated in 0/225 patients under a single hardcoded domain because three
+#   of its seven concepts resolve to Procedure/Device rather than Observation
+#   in this vocabulary build. query_auto_domain_covariate_counts() unions
+#   across every domain table instead of trusting this column.
+#
+# DELIBERATE DEVIATIONS FROM THE 11-ITEM PAPER SET
+#   - Non-home residence (preadmission living in a care facility) is OMITTED.
+#     Reasons: (1) near-circular with the NHD outcome — patients residing in a
+#     facility pre-op are almost tautologically discharged non-home;
+#     (2) no clean standard concept exists in this vocabulary build (only
+#     LOINC "Meas Value" residence-status answers, which the generic presence
+#     path cannot query); (3) not generated in Synthea synthetic data.
+#     => implemented score uses the remaining 10 items.
+#   - PVD uses a diagnosis proxy rather than the paper's ABI/intervention
+#     definition (see OPERATIONAL APPROACH above for why this is left as-is).
+#     Renal impairment and anemia now use the paper's own lab-value
+#     definitions (updated 2026-07-26); underweight uses a real BMI < 18.5
+#     measurement threshold (see above).
+#
+# LOOKBACK: -3650 to -1 days (chronic frailty markers, strictly pre-index),
+#   matching the dominant mFI-5 convention in this repo.
+#
+# COLUMN DEFINITIONS:
+#   covariate_id        unique identifier (matches covariate_concepts_vqifs.csv)
+#   covariate_name      human-readable label
+#   domain              OMOP CDM domain; "auto" (nonambulatory) unions every
+#                       domain table instead of a single hardcoded one — see
+#                       query_auto_domain_covariate_counts() in
+#                       R/risk_score_pipeline.R. renal_impairment and anemia
+#                       dispatch on covariate_id to their own dedicated query
+#                       functions regardless of this column's value (kept as
+#                       "condition" here for documentation continuity only).
+#   lookback_start_day  days before index (negative) for lookback window start
+#   lookback_end_day    days relative to index for lookback window end
+#   min_count           qualifying events needed to flag this covariate
+#   points              integer score points (1 per positive VQI-FS item)
+#   missing_is_negative TRUE = absent diagnosis → item not present (0 pts)
+covariate_id,covariate_name,domain,lookback_start_day,lookback_end_day,min_count,points,missing_is_negative
+htn,Hypertension,condition,-3650,-1,1,1,TRUE
+chf,Congestive heart failure,condition,-3650,-1,1,1,TRUE
+cad,Coronary artery disease,condition,-3650,-1,1,1,TRUE
+pvd,Peripheral vascular disease,condition,-3650,-1,1,1,TRUE
+dm,Diabetes mellitus (any type),condition,-3650,-1,1,1,TRUE
+copd,Chronic obstructive pulmonary disease,condition,-3650,-1,1,1,TRUE
+renal_impairment,Renal impairment (creatinine > 1.8 mg/dL or dialysis),condition,-3650,-1,1,1,TRUE
+anemia,Anemia (sex-specific Hgb threshold: <13 g/dL M / <12 g/dL F),condition,-3650,-1,1,1,FALSE
+underweight,Underweight (BMI < 18.5),measurement,-3650,-1,1,1,FALSE
+nonambulatory,Non-ambulatory / impaired ambulation status,auto,-3650,-1,1,1,TRUE

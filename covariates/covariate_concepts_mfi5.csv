@@ -1,0 +1,49 @@
+# Subramaniam 2018 mFI-5 — OMOP concept ID mappings.
+# Source: Subramaniam S et al. J Am Coll Surg 2018;226(2):173-181e8.
+#
+# All concept IDs below are [vocab query] entries sourced from
+# phenotype_library/catalog.yaml. Each row cites its catalog entry id so that
+# changes upstream (vocabulary rebuilds, new descendants) propagate here.
+#
+# FS_DEP — Dependent functional status:
+#   catalog entry: modified_frailty_index
+#   Two SNOMED ancestors used as OR logic (include_descendants = TRUE):
+#     4086506  Frailty                    (SNOMED 248279007; 5 descendants)
+#     4306934  Impaired mobility          (SNOMED 82971005;  9 descendants
+#                                          incl. Bed-ridden, Confined to chair,
+#                                          Mobility poor, Needs walking aid)
+#   The catalog's full mFI multi-concept OR composite (including Barthel
+#   index value-coded queries) is intentionally simplified here to two
+#   ancestors. Barthel queries require value_as_concept_id filtering which
+#   is not supported by the integer_risk_score pipeline's default condition
+#   / observation count path.
+#
+# DM — Diabetes mellitus (all types):
+#   catalog entry: diabetes_mellitus
+#     201820   Diabetes mellitus           (SNOMED 73211009 + descendants)
+#
+# COPD:
+#   catalog entry: copd
+#     255573   Chronic obstructive pulmonary disease (SNOMED 13645005 + descendants)
+#
+# CHF:
+#   catalog entry: heart_failure
+#     316139   Heart failure               (SNOMED 84114007 + descendants)
+#
+# HTN:
+#   catalog entry: hypertension
+#     316866   Hypertensive disorder       (SNOMED 38341003 + descendants)
+#
+# COLUMN DEFINITIONS:
+#   covariate_id         matches covariate_id in covariates_mfi5.csv
+#   concept_id           OMOP standard concept_id (verified [vocab query])
+#   include_descendants  TRUE = expand via concept_ancestor rollup
+#   concept_role         blank (no special role for mFI-5 components)
+#   value_concept_ids    blank (no value-coded observations in this minimal set)
+covariate_id,concept_id,include_descendants,concept_role,value_concept_ids
+fs_dep,4086506,TRUE,,
+fs_dep,4306934,TRUE,,
+dm,201820,TRUE,,
+copd,255573,TRUE,,
+chf,316139,TRUE,,
+htn,316866,TRUE,,

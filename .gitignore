@@ -1,0 +1,32 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+*.Rproj
+
+# renv library / cache — restored from renv.lock, never committed
+renv/library/
+renv/local/
+renv/cellar/
+renv/lock/
+renv/python/
+renv/sandbox/
+renv/staging/
+
+# Strategus results + analysis output
+results/
+output/
+dist/*.zip
+
+# Duke GitLab deployment bundle — has its own embedded .git
+portable/
+
+# secrets
+.env
+
+# JDBC drivers (downloaded, not vendored)
+drivers/*.jar
+drivers/*.zip
+
+.DS_Store
+errorReportSql.txt

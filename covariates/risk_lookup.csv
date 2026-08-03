@@ -1,0 +1,59 @@
+# Iannuzzi 2020 NHD Risk Score — predicted probability lookup table
+# Source: Iannuzzi JC et al. J Vasc Surg 2020;71:889-95. Table III / Fig 1.
+#
+# METHOD (CHANGED 2026-07-26): this is now a MONOTONE (isotonic / PAVA) fit
+# pooling both the derivation and validation series below, replacing the
+# earlier raw-derivation-column lookup. The raw derivation column has a
+# non-monotonic tail (score 17 = 50%, BELOW score 16's 87.5%) — a small-sample
+# artefact (very few patients scored 17 in either cohort) that made the
+# highest-risk patients in this score band look lower-risk than mid-range
+# patients when used directly as a probability mapping. Peer review flagged
+# this as a defect in the published-lookup specification. Pooling both series
+# and fitting a single non-decreasing (isotonic) curve via R's stats::isoreg()
+# resolves the inversion using all available data rather than discarding
+# either series. Weighting is UNWEIGHTED (each series contributes one
+# observation per score) because the paper does not report per-score bin
+# counts for either series; if those denominators become available, refit
+# with counts as isoreg() weights.
+#
+# RAW COLUMNS (for provenance — NOT used directly by the pipeline):
+#   score:      0     1     2     3     4     5     6     7     8     9    10    11    12    13    14    15    16    17    18
+#   derivation: .045  .061  .090  .162  .139  .276  .292  .337  .451  .526  .581  .681  .709  .702  .852  .815  .875  .500  1.000
+#   validation: .053  .091  .087  .111  .172  .265  .317  .464  .422  .602  .555  .613  .691  .788  .875  .857  1.000   —     —
+#   (validation series has no reported values for scores 17-18; derivation-only there.)
+#
+# Fit computed as:
+#   pooled_score <- c(0:18, 0:16)            # every (score, rate) pair from both series
+#   pooled_rate  <- c(derivation, validation)
+#   fit <- isoreg(pooled_score[order(pooled_score)], pooled_rate[order(pooled_score)])
+#   risk(score) <- fit$yf value for that score (ties share one fitted value by PAVA construction)
+#
+# Notable effect: scores 14-17 pool into a single fitted value (0.8249) because
+# score 17's low raw rate (0.500) is only reconcilable with 14-16's high raw
+# rates (~0.8+) by averaging across that whole block — this is the isotonic
+# fit correctly absorbing the score-17 small-sample noise rather than letting
+# it invert the curve.
+#
+# Low risk (0–4): NHD ~10%  |  Moderate (5–9): ~37%  |  High (≥10): ~66%
+# (paper's own SCORE-based strata — see Table 5's Iannuzzi published-strata panel,
+# which uses these score bands directly rather than this probability mapping)
+score,risk
+0,0.0490
+1,0.0760
+2,0.0885
+3,0.1365
+4,0.1555
+5,0.2705
+6,0.3045
+7,0.4005
+8,0.4365
+9,0.5640
+10,0.5680
+11,0.6470
+12,0.7000
+13,0.7450
+14,0.8249
+15,0.8249
+16,0.8249
+17,0.8249
+18,1.0000

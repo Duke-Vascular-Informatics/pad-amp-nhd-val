@@ -1,0 +1,71 @@
+{
+  "cdmVersionRange": ">=5.0.0",
+  "_README": [
+    "Insulin-treated diabetes - the Iannuzzi insulin_dep item (2 points).",
+    "ATC 21600713 INSULINS AND ANALOGUES plus descendants, exactly as",
+    "covariates/covariate_concepts.csv :: insulin_dep specifies.",
+    "PrimaryCriteriaLimit / QualifiedLimit / ExpressionLimit are all \"All\" and EndStrategy is StartDate+0, unlike the [DVI] VA-FI cohorts (1797948-1797977) which are \"First\". A first-ever-only cohort cannot answer a lookback-window question."
+  ],
+  "ConceptSets": [
+    {
+      "id": 0,
+      "name": "[DVI] Insulin-Treated Diabetes",
+      "expression": {
+        "items": [
+          {
+            "concept": {
+              "CONCEPT_ID": 21600713,
+              "CONCEPT_NAME": "INSULINS AND ANALOGUES",
+              "STANDARD_CONCEPT": "C",
+              "STANDARD_CONCEPT_CAPTION": "Classification",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "A10A",
+              "DOMAIN_ID": "Drug",
+              "VOCABULARY_ID": "ATC",
+              "CONCEPT_CLASS_ID": "ATC 3rd"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          }
+        ]
+      }
+    }
+  ],
+  "PrimaryCriteria": {
+    "CriteriaList": [
+      {
+        "DrugExposure": {
+          "CodesetId": 0
+        }
+      }
+    ],
+    "ObservationWindow": {
+      "PriorDays": 0,
+      "PostDays": 0
+    },
+    "PrimaryCriteriaLimit": {
+      "Type": "All"
+    }
+  },
+  "QualifiedLimit": {
+    "Type": "All"
+  },
+  "ExpressionLimit": {
+    "Type": "All"
+  },
+  "InclusionRules": [],
+  "CensoringCriteria": [],
+  "CollapseSettings": {
+    "CollapseType": "ERA",
+    "EraPad": 0
+  },
+  "CensorWindow": {},
+  "EndStrategy": {
+    "DateOffset": {
+      "DateField": "StartDate",
+      "Offset": 0
+    }
+  }
+}

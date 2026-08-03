@@ -1,0 +1,66 @@
+# Iannuzzi 2020 NHD Risk Score — covariate / component definitions
+# Source: Iannuzzi JC et al. Risk score for nonhome discharge after lower
+#         extremity bypass. J Vasc Surg 2020;71:889-95. Table II.
+#
+# SCORE RANGE: 0–18 points.
+#   Low risk    0–4  pts: NHD 10.1%
+#   Moderate    5–9  pts: NHD 36.7%
+#   High risk  ≥10  pts: NHD 66.1%
+#   C statistic 0.77 (derivation) / 0.78 (validation)
+#
+# SEX / RACE INTERACTION NOTE:
+#   The paper models sex × race as a 4-level variable
+#   (white male=0, white female=1, nonwhite male=2, nonwhite female=3).
+#   This decomposes cleanly as female=1pt + nonwhite=2pts (additive), so
+#   we use two independent binary components that the pipeline sums.
+#
+# AGE NOTE:
+#   Three age-decade components cover ages 60-69 / 70-79 / ≥80.
+#   Reference group <60 years = 0 points (no row needed).
+#   domain = "observation" is a valid placeholder; the pipeline routes
+#   these component IDs to query_age_covariate_counts() before the
+#   domain field is used. missing_is_negative = FALSE: a missing
+#   year_of_birth should exclude the patient, not score them as <60.
+#
+# ANEMIA NOTE:
+#   Hgb < 10 g/dL (paper prints "g/L" — confirmed typo; 10 g/dL is
+#   the standard surgical anemia threshold). Pipeline uses
+#   query_anemia_covariate_counts() with g/L → g/dL conversion.
+#   missing_is_negative = FALSE: absent Hgb ≠ non-anaemic.
+#
+# AMBULATORY DEFICIT NOTE (updated 2026-07-26):
+#   domain = "auto" — CHANGED from "observation". The original single-domain
+#   value activated in 0/225 patients despite qualifying Synthea events being
+#   present: not every concept in this covariate's set (see
+#   covariate_concepts.csv) resolves to the observation domain in this
+#   vocabulary build — one is Procedure, one is Device. "auto" routes each
+#   concept via query_auto_domain_covariate_counts(), which unions across
+#   every clinical-event domain table rather than trusting this column. See
+#   phenotype_library/catalog.yaml :: ambulatory_deficit for the full concept
+#   set and per-concept domain notes.
+#
+# COLUMN DEFINITIONS:
+#   covariate_id        unique identifier (matches covariate_concepts.csv)
+#   covariate_name      human-readable label
+#   domain              OMOP CDM domain; "observation" is a valid placeholder
+#                       for demographic components routed by covariate_id;
+#                       "auto" unions every domain table (see
+#                       query_auto_domain_covariate_counts() in
+#                       R/risk_score_pipeline.R) for a covariate whose concept
+#                       set legitimately spans more than one OMOP domain
+#   lookback_start_day  days before index (negative) for lookback window start
+#   lookback_end_day    days relative to index for lookback window end
+#   min_count           qualifying events needed to flag this covariate
+#   points              integer score points (optional; defaults to 1 if absent)
+#   missing_is_negative TRUE = absent record → component not present (0 pts)
+#                       FALSE = absent record → unknown (noted in output)
+covariate_id,covariate_name,domain,lookback_start_day,lookback_end_day,min_count,points,missing_is_negative
+age_60_69,Age 60-69 years at index,observation,0,0,1,2,FALSE
+age_70_79,Age 70-79 years at index,observation,0,0,1,4,FALSE
+age_ge80,Age 80 or more years at index,observation,0,0,1,6,FALSE
+female,Female sex,observation,-3650,0,1,1,TRUE
+nonwhite,Non-White race,observation,0,0,1,2,TRUE
+ambu_deficit,Ambulatory deficit (use of any ambulatory device),auto,-365,-1,1,3,TRUE
+tissue_loss,Tissue loss (CLI indication — wound ulcer or gangrene),condition,-365,0,1,3,TRUE
+anemia,Anemia (Hgb less than 10 g/dL),measurement,-365,-1,1,2,FALSE
+insulin_dep,Insulin-dependent diabetes mellitus,drug,-365,-1,1,2,TRUE

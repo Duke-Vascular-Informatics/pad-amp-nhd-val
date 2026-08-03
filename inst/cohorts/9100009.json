@@ -1,0 +1,204 @@
+{
+  "cdmVersionRange": ">=5.0.0",
+  "_README": [
+    "Anemia at the Kraiss sVQI-FS threshold: sex-specific, haemoglobin",
+    "< 13 g/dL in males or < 12 g/dL in females (1 point).",
+    "",
+    "Four criteria = {male, female} x {g/dL, g/L}, OR'd. Each pairs a",
+    "ValueAsNumber threshold with a Gender demographic criterion, which is how",
+    "circe expresses what query_anemia_covariate_counts(sex_specific = TRUE)",
+    "does with a CASE on person.gender_concept_id.",
+    "",
+    "See cohort 9100008's note on why this is a separate cohort.",
+    "PrimaryCriteriaLimit / QualifiedLimit / ExpressionLimit are all \"All\" and EndStrategy is StartDate+0, unlike the [DVI] VA-FI cohorts (1797948-1797977) which are \"First\". A first-ever-only cohort cannot answer a lookback-window question."
+  ],
+  "ConceptSets": [
+    {
+      "id": 0,
+      "name": "[DVI] Hemoglobin Measurement",
+      "expression": {
+        "items": [
+          {
+            "concept": {
+              "CONCEPT_ID": 3000963,
+              "CONCEPT_NAME": "Hemoglobin [Mass/volume] in Blood",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "718-7",
+              "DOMAIN_ID": "Measurement",
+              "VOCABULARY_ID": "LOINC",
+              "CONCEPT_CLASS_ID": "Lab Test"
+            },
+            "isExcluded": false,
+            "includeDescendants": false,
+            "includeMapped": false
+          }
+        ]
+      }
+    }
+  ],
+  "PrimaryCriteria": {
+    "CriteriaList": [
+      {
+        "Measurement": {
+          "CodesetId": 0,
+          "ValueAsNumber": {
+            "Value": 13,
+            "Op": "lt"
+          },
+          "Gender": [
+            {
+              "CONCEPT_ID": 8507,
+              "CONCEPT_NAME": "MALE",
+              "DOMAIN_ID": "Gender",
+              "VOCABULARY_ID": "Gender",
+              "CONCEPT_CLASS_ID": "Gender",
+              "STANDARD_CONCEPT": "S",
+              "INVALID_REASON": "V",
+              "CONCEPT_CODE": "M"
+            }
+          ],
+          "Unit": [
+            {
+              "CONCEPT_ID": 8713,
+              "CONCEPT_NAME": "gram per deciliter",
+              "CONCEPT_CODE": "g/dL",
+              "DOMAIN_ID": "Unit",
+              "VOCABULARY_ID": "UCUM",
+              "CONCEPT_CLASS_ID": "Unit",
+              "STANDARD_CONCEPT": "S",
+              "INVALID_REASON": "V"
+            }
+          ]
+        }
+      },
+      {
+        "Measurement": {
+          "CodesetId": 0,
+          "ValueAsNumber": {
+            "Value": 12,
+            "Op": "lt"
+          },
+          "Gender": [
+            {
+              "CONCEPT_ID": 8532,
+              "CONCEPT_NAME": "FEMALE",
+              "DOMAIN_ID": "Gender",
+              "VOCABULARY_ID": "Gender",
+              "CONCEPT_CLASS_ID": "Gender",
+              "STANDARD_CONCEPT": "S",
+              "INVALID_REASON": "V",
+              "CONCEPT_CODE": "F"
+            }
+          ],
+          "Unit": [
+            {
+              "CONCEPT_ID": 8713,
+              "CONCEPT_NAME": "gram per deciliter",
+              "CONCEPT_CODE": "g/dL",
+              "DOMAIN_ID": "Unit",
+              "VOCABULARY_ID": "UCUM",
+              "CONCEPT_CLASS_ID": "Unit",
+              "STANDARD_CONCEPT": "S",
+              "INVALID_REASON": "V"
+            }
+          ]
+        }
+      },
+      {
+        "Measurement": {
+          "CodesetId": 0,
+          "ValueAsNumber": {
+            "Value": 130,
+            "Op": "lt"
+          },
+          "Gender": [
+            {
+              "CONCEPT_ID": 8507,
+              "CONCEPT_NAME": "MALE",
+              "DOMAIN_ID": "Gender",
+              "VOCABULARY_ID": "Gender",
+              "CONCEPT_CLASS_ID": "Gender",
+              "STANDARD_CONCEPT": "S",
+              "INVALID_REASON": "V",
+              "CONCEPT_CODE": "M"
+            }
+          ],
+          "Unit": [
+            {
+              "CONCEPT_ID": 8636,
+              "CONCEPT_NAME": "gram per liter",
+              "CONCEPT_CODE": "g/L",
+              "DOMAIN_ID": "Unit",
+              "VOCABULARY_ID": "UCUM",
+              "CONCEPT_CLASS_ID": "Unit",
+              "STANDARD_CONCEPT": "S",
+              "INVALID_REASON": "V"
+            }
+          ]
+        }
+      },
+      {
+        "Measurement": {
+          "CodesetId": 0,
+          "ValueAsNumber": {
+            "Value": 120,
+            "Op": "lt"
+          },
+          "Gender": [
+            {
+              "CONCEPT_ID": 8532,
+              "CONCEPT_NAME": "FEMALE",
+              "DOMAIN_ID": "Gender",
+              "VOCABULARY_ID": "Gender",
+              "CONCEPT_CLASS_ID": "Gender",
+              "STANDARD_CONCEPT": "S",
+              "INVALID_REASON": "V",
+              "CONCEPT_CODE": "F"
+            }
+          ],
+          "Unit": [
+            {
+              "CONCEPT_ID": 8636,
+              "CONCEPT_NAME": "gram per liter",
+              "CONCEPT_CODE": "g/L",
+              "DOMAIN_ID": "Unit",
+              "VOCABULARY_ID": "UCUM",
+              "CONCEPT_CLASS_ID": "Unit",
+              "STANDARD_CONCEPT": "S",
+              "INVALID_REASON": "V"
+            }
+          ]
+        }
+      }
+    ],
+    "ObservationWindow": {
+      "PriorDays": 0,
+      "PostDays": 0
+    },
+    "PrimaryCriteriaLimit": {
+      "Type": "All"
+    }
+  },
+  "QualifiedLimit": {
+    "Type": "All"
+  },
+  "ExpressionLimit": {
+    "Type": "All"
+  },
+  "InclusionRules": [],
+  "CensoringCriteria": [],
+  "CollapseSettings": {
+    "CollapseType": "ERA",
+    "EraPad": 0
+  },
+  "CensorWindow": {},
+  "EndStrategy": {
+    "DateOffset": {
+      "DateField": "StartDate",
+      "Offset": 0
+    }
+  }
+}

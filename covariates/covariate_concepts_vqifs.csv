@@ -1,0 +1,114 @@
+# Kraiss 2022 sVQI-FS — OMOP concept ID mappings.
+# Source: Kraiss LW et al. J Vasc Surg 2022;76:1325-34.
+#
+# All concept IDs below are REUSED from an existing verified phenotype_library
+# entry or an existing verified covariate set in this repo — none are freshly
+# queried here. include_descendants = TRUE for every diagnosis-presence row so
+# each ancestor rolls up its full subtree via concept_ancestor (the generic
+# query path in query_covariate_counts()); underweight is the one exception
+# (a real BMI < 18.5 measurement covariate — see below and
+# query_bmi_covariate_counts() in R/risk_score_pipeline.R).
+#
+# REUSED (already [vocab query] verified in this repo or in catalog.yaml):
+#   htn   316866  Hypertensive disorder  (SNOMED 38341003)   — from covariates_mfi5
+#   chf   316139  Heart failure          (SNOMED 84114007)   — from covariates_mfi5
+#   dm    201820  Diabetes mellitus      (SNOMED 73211009)   — from covariates_mfi5
+#   copd  255573  COPD                   (SNOMED 13645005)   — from covariates_mfi5
+#   pvd   317309  Peripheral arterial occlusive disease (SNOMED 399957001)
+#                 — from phenotype_library/catalog.yaml :: peripheral_arterial_disease
+#                 (verified 2026-05-14; 190 descendants). Proxy for the paper's
+#                 "ABI <0.7 or arterial intervention/amputation" PVD item.
+#   nonambulatory  shares its full 7-concept set with covariates.csv's
+#                 Iannuzzi ambu_deficit component (see that file's
+#                 AMBU_DEFICIT note): 4012645/437643/439405/36714126
+#                 (Observation/Clinical Finding, original set) plus 4085915
+#                 Provision of long cane (Procedure), 4044714 Using
+#                 wheelchair (Observation), 4240470 Wheelchair (Device) —
+#                 added 2026-07-26 alongside covariates_vqifs.csv's
+#                 domain = "auto" change, after this component activated in
+#                 0/225 patients under domain = "observation" alone. Proxy
+#                 for the paper's impaired preadmission ambulation status
+#                 (ambulatory w/ assistance, wheelchair, bedridden).
+#   cad   4185932  Ischemic heart disease (SNOMED 414545008)
+#                 — from phenotype_library/catalog.yaml :: ischemic_heart_disease
+#                 (verified 2026-06-13; same concept used by pad-oler-amp-desc's
+#                 and pad-oler-macce-val's own `cad`/covariate rows). CORRECTED
+#                 2026-07-14: originally mapped to 317576 "Coronary arteriosclerosis",
+#                 a concept never added to catalog.yaml and never cross-checked
+#                 against the workspace's existing CAD phenotype — replaced with
+#                 the canonical, already-verified ischemic_heart_disease concept
+#                 for the paper's CAD item (history of angina/MI, prior CABG/PCI,
+#                 or positive stress test).
+#   renal_impairment  CORRECTED 2026-07-26: previously a CKD-diagnosis proxy
+#                 (46271022 + 192359), which activated in 224/225 (99.6%) of a
+#                 pilot cohort — 192359 "Renal failure syndrome" descends into
+#                 acute/unspecified renal failure codes far more common than
+#                 true CKD, making the component uninformative. Replaced with
+#                 the paper's own lab-value definition, evaluated by
+#                 query_renal_impairment_covariate_counts() in
+#                 R/risk_score_pipeline.R:
+#                   concept_role = "creatinine" — 3016723 Creatinine
+#                     [Mass/volume] in Serum or Plasma (LOINC), thresholded at
+#                     > 1.8 mg/dL — from phenotype_library/catalog.yaml ::
+#                     serum_creatinine (verified 2026-06-13).
+#                   concept_role = "dialysis" — 4146536 Renal dialysis (SNOMED)
+#                     + 4032243 Dialysis procedure (SNOMED) — from
+#                     phenotype_library/catalog.yaml :: chronic_kidney_disease's
+#                     Procedure-domain dialysis concepts (verified 2026-06-13).
+#                 A patient qualifies via EITHER role.
+#   anemia  CORRECTED 2026-07-26: previously an anemia-DIAGNOSIS proxy (439777),
+#                 which activated in only 3/225 (1.3%) — diagnosis coding
+#                 under-captures anemia relative to the paper's lab threshold.
+#                 Replaced with the same Hgb LOINC measurement Iannuzzi's
+#                 anemia component already uses (3000963, LOINC 718-7),
+#                 evaluated by query_anemia_covariate_counts(sex_specific = TRUE)
+#                 in R/risk_score_pipeline.R: Hgb < 13 g/dL (male) / < 12 g/dL
+#                 (female), per the paper's sex-specific threshold. sex_specific
+#                 routing is resolved from config$covariate_definitions_file
+#                 (contains "vqifs"), NOT from a column in this CSV, since the
+#                 covariate_id "anemia" is shared with covariates.csv's
+#                 single-threshold Iannuzzi definition.
+#
+# underweight — REPLACED 2026-07-14 (was diagnosis proxy 435372 "Underweight",
+#   [SNOMED 248342006]): now a real BMI < 18.5 measurement covariate reusing
+#   phenotype_library/catalog.yaml :: body_mass_index verbatim, the same
+#   three-tier bmi_direct > weight+height fallback concept set pad-oler-amp-desc
+#   already uses for its overweight/obese covariates. concept_role values below
+#   are read by query_bmi_covariate_counts() in R/risk_score_pipeline.R, which
+#   was extended with an `underweight = "b.bmi < 18.5"` branch (the paper's own
+#   cut-point) to support this covariate_id.
+#
+# COLUMN DEFINITIONS:
+#   covariate_id         matches covariate_id in covariates_vqifs.csv
+#   concept_id           OMOP standard concept_id (verified [vocab query])
+#   include_descendants  TRUE = expand via concept_ancestor rollup
+#   concept_role         blank for diagnosis-presence items; bmi_direct/weight/
+#                        height for the underweight BMI covariate
+#   value_concept_ids    blank (no value-coded observations in this set)
+covariate_id,concept_id,include_descendants,concept_role,value_concept_ids
+htn,316866,TRUE,,
+chf,316139,TRUE,,
+cad,4185932,TRUE,,
+pvd,317309,TRUE,,
+dm,201820,TRUE,,
+copd,255573,TRUE,,
+renal_impairment,3016723,FALSE,creatinine,
+renal_impairment,4146536,TRUE,dialysis,
+renal_impairment,4032243,TRUE,dialysis,
+anemia,3000963,FALSE,,
+underweight,3038553,FALSE,bmi_direct,
+underweight,36304833,FALSE,bmi_direct,
+underweight,3025315,FALSE,weight,
+underweight,3013762,FALSE,weight,
+underweight,3011054,FALSE,weight,
+underweight,3026600,FALSE,weight,
+underweight,3036277,FALSE,height,
+underweight,3023540,FALSE,height,
+underweight,3015514,FALSE,height,
+nonambulatory,4012645,TRUE,,
+nonambulatory,437643,TRUE,,
+nonambulatory,439405,TRUE,,
+nonambulatory,36714126,TRUE,,
+nonambulatory,4085915,FALSE,,
+nonambulatory,4044714,FALSE,,
+nonambulatory,4240470,FALSE,,

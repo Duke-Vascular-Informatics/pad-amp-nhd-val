@@ -1,0 +1,117 @@
+{
+  "cdmVersionRange": ">=5.0.0",
+  "_README": [
+    "Anemia at the Iannuzzi 2020 threshold: haemoglobin < 10 g/dL (2 points).",
+    "",
+    "TWO criteria, one per unit. query_anemia_covariate_counts() normalises g/L",
+    "to g/dL with `CASE WHEN value_as_number > 25 THEN value/10`; circe has no",
+    "arithmetic, so the equivalent is an explicit second criterion at < 100 g/L.",
+    "Omitting it would silently drop any site reporting haemoglobin in g/L.",
+    "",
+    "SEPARATE from cohort 9100009 (the sVQI-FS sex-specific threshold) on",
+    "purpose. In pad-amp-nhd-val both scores shared the covariate_id \"anemia\"",
+    "and the threshold was chosen by testing whether the covariate FILE PATH",
+    "contained the substring \"vqifs\" - a test that also matched an output",
+    "folder. Two distinctly-named cohorts make that class of bug impossible.",
+    "PrimaryCriteriaLimit / QualifiedLimit / ExpressionLimit are all \"All\" and EndStrategy is StartDate+0, unlike the [DVI] VA-FI cohorts (1797948-1797977) which are \"First\". A first-ever-only cohort cannot answer a lookback-window question."
+  ],
+  "ConceptSets": [
+    {
+      "id": 0,
+      "name": "[DVI] Hemoglobin Measurement",
+      "expression": {
+        "items": [
+          {
+            "concept": {
+              "CONCEPT_ID": 3000963,
+              "CONCEPT_NAME": "Hemoglobin [Mass/volume] in Blood",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "718-7",
+              "DOMAIN_ID": "Measurement",
+              "VOCABULARY_ID": "LOINC",
+              "CONCEPT_CLASS_ID": "Lab Test"
+            },
+            "isExcluded": false,
+            "includeDescendants": false,
+            "includeMapped": false
+          }
+        ]
+      }
+    }
+  ],
+  "PrimaryCriteria": {
+    "CriteriaList": [
+      {
+        "Measurement": {
+          "CodesetId": 0,
+          "ValueAsNumber": {
+            "Value": 10,
+            "Op": "lt"
+          },
+          "Unit": [
+            {
+              "CONCEPT_ID": 8713,
+              "CONCEPT_NAME": "gram per deciliter",
+              "CONCEPT_CODE": "g/dL",
+              "DOMAIN_ID": "Unit",
+              "VOCABULARY_ID": "UCUM",
+              "CONCEPT_CLASS_ID": "Unit",
+              "STANDARD_CONCEPT": "S",
+              "INVALID_REASON": "V"
+            }
+          ]
+        }
+      },
+      {
+        "Measurement": {
+          "CodesetId": 0,
+          "ValueAsNumber": {
+            "Value": 100,
+            "Op": "lt"
+          },
+          "Unit": [
+            {
+              "CONCEPT_ID": 8636,
+              "CONCEPT_NAME": "gram per liter",
+              "CONCEPT_CODE": "g/L",
+              "DOMAIN_ID": "Unit",
+              "VOCABULARY_ID": "UCUM",
+              "CONCEPT_CLASS_ID": "Unit",
+              "STANDARD_CONCEPT": "S",
+              "INVALID_REASON": "V"
+            }
+          ]
+        }
+      }
+    ],
+    "ObservationWindow": {
+      "PriorDays": 0,
+      "PostDays": 0
+    },
+    "PrimaryCriteriaLimit": {
+      "Type": "All"
+    }
+  },
+  "QualifiedLimit": {
+    "Type": "All"
+  },
+  "ExpressionLimit": {
+    "Type": "All"
+  },
+  "InclusionRules": [],
+  "CensoringCriteria": [],
+  "CollapseSettings": {
+    "CollapseType": "ERA",
+    "EraPad": 0
+  },
+  "CensorWindow": {},
+  "EndStrategy": {
+    "DateOffset": {
+      "DateField": "StartDate",
+      "Offset": 0
+    }
+  }
+}

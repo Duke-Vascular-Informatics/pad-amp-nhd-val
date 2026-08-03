@@ -1,0 +1,78 @@
+{
+  "cdmVersionRange": ">=5.0.0",
+  "ConceptSets": [
+    {
+      "id": 0,
+      "name": "[DVI] Diabetes mellitus (VA-FI)",
+      "expression": {
+        "items": [
+          {
+            "concept": {
+              "CONCEPT_ID": 201820,
+              "CONCEPT_NAME": "Diabetes mellitus",
+              "STANDARD_CONCEPT": "S",
+              "INVALID_REASON": "NA",
+              "CONCEPT_CODE": "73211009",
+              "DOMAIN_ID": "Condition",
+              "VOCABULARY_ID": "SNOMED",
+              "CONCEPT_CLASS_ID": "Disorder"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 4034964,
+              "CONCEPT_NAME": "Abnormal metabolic state due to diabetes mellitus",
+              "STANDARD_CONCEPT": "S",
+              "INVALID_REASON": "NA",
+              "CONCEPT_CODE": "237620003",
+              "DOMAIN_ID": "Condition",
+              "VOCABULARY_ID": "SNOMED",
+              "CONCEPT_CLASS_ID": "Disorder"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          }
+        ]
+      }
+    }
+  ],
+  "PrimaryCriteria": {
+    "CriteriaList": [
+      {
+        "ConditionOccurrence": {
+          "CodesetId": 0
+        }
+      }
+    ],
+    "ObservationWindow": {
+      "PriorDays": 0,
+      "PostDays": 0
+    },
+    "PrimaryCriteriaLimit": {
+      "Type": "First"
+    }
+  },
+  "QualifiedLimit": {
+    "Type": "First"
+  },
+  "ExpressionLimit": {
+    "Type": "First"
+  },
+  "InclusionRules": [],
+  "EndStrategy": {
+    "DateOffset": {
+      "DateField": "StartDate",
+      "Offset": 0
+    }
+  },
+  "CensoringCriteria": [],
+  "CollapseSettings": {
+    "CollapseType": "ERA",
+    "EraPad": 0
+  },
+  "CensorWindow": {}
+}

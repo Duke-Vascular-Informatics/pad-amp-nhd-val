@@ -1,0 +1,77 @@
+{
+  "cdmVersionRange": ">=5.0.0",
+  "_README": [
+    "Chronic obstructive pulmonary disease, as the mFI-5 and Kraiss sVQI-FS",
+    "score items define it: SNOMED 13645005 -> OMOP 255573 plus descendants.",
+    "",
+    "DELIBERATELY NOT the [DVI] VA-FI Chronic lung disease cohort (1797958).",
+    "That cohort is a faithful VA Frailty Index deficit (Cheng et al., J Gerontol",
+    "A 2021) and correctly spans asthma, interstitial lung disease, chronic",
+    "bronchitis and bronchiectasis as one organ-system category. Neither the",
+    "mFI-5 nor the sVQI-FS COPD item means that; scoring a patient positive for",
+    "asthma would not reproduce either published instrument.",
+    "PrimaryCriteriaLimit / QualifiedLimit / ExpressionLimit are all \"All\" and EndStrategy is StartDate+0, unlike the [DVI] VA-FI cohorts (1797948-1797977) which are \"First\". A first-ever-only cohort cannot answer a lookback-window question."
+  ],
+  "ConceptSets": [
+    {
+      "id": 0,
+      "name": "[DVI] COPD (risk score item)",
+      "expression": {
+        "items": [
+          {
+            "concept": {
+              "CONCEPT_ID": 255573,
+              "CONCEPT_NAME": "Chronic obstructive pulmonary disease",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "13645005",
+              "DOMAIN_ID": "Condition",
+              "VOCABULARY_ID": "SNOMED",
+              "CONCEPT_CLASS_ID": "Disorder"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          }
+        ]
+      }
+    }
+  ],
+  "PrimaryCriteria": {
+    "CriteriaList": [
+      {
+        "ConditionOccurrence": {
+          "CodesetId": 0
+        }
+      }
+    ],
+    "ObservationWindow": {
+      "PriorDays": 0,
+      "PostDays": 0
+    },
+    "PrimaryCriteriaLimit": {
+      "Type": "All"
+    }
+  },
+  "QualifiedLimit": {
+    "Type": "All"
+  },
+  "ExpressionLimit": {
+    "Type": "All"
+  },
+  "InclusionRules": [],
+  "CensoringCriteria": [],
+  "CollapseSettings": {
+    "CollapseType": "ERA",
+    "EraPad": 0
+  },
+  "CensorWindow": {},
+  "EndStrategy": {
+    "DateOffset": {
+      "DateField": "StartDate",
+      "Offset": 0
+    }
+  }
+}

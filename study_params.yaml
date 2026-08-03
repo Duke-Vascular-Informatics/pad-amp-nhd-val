@@ -1,0 +1,136 @@
+# =============================================================================
+# study_params.yaml — pad-amp-nhd-prog
+#
+# Prognostic study: external validation of three published integer risk scores
+# against NON-HOME DISCHARGE (NHD) after major lower extremity amputation, plus
+# a scaffold for de-novo model development.
+#
+#   1. Iannuzzi 2020 NHD score        (0-18 points, 9 components)
+#   2. Subramaniam 2018 mFI-5         (0-5 points, 5 components)
+#   3. Kraiss 2022 sVQI-FS            (0-10 points as implemented; 10 of 11 items)
+#
+# Read by config.R (get_validation_config()). Under Strategus, cohort
+# instantiation is owned by CohortGenerator (see inst/, and
+# CreateStrategusAnalysisSpecification.R) — the fields below only tell the
+# custom scoring step (scripts/analysis/integer_score_validation.R) and the
+# Word report which Strategus-generated cohort_definition_ids and schemas to
+# read.
+# =============================================================================
+
+study_name:   "pad_amp_nhd_prog"
+study_design: "prognostic_model"
+
+# =============================================================================
+# DATABASE SCHEMAS
+# =============================================================================
+# cdm_schema is the PHYSICAL clinical CDM schema, which the custom step's SQL
+# queries directly. It is populated by the pad-amp-dispo-synth repo and
+# registered in synthetic_data/registry.yaml as dataset id `pad_amp_dispo`.
+#
+# StrategusCodeToRun.R points Strategus ITSELF at a view-overlay schema
+# (clinical tables + omop_vocab unioned into one schema), because
+# Strategus::createCdmExecutionSettings has no separate vocabulary-schema
+# parameter. That overlay is built from this physical schema — see the runner.
+cdm_schema: "omop_synth_pad_amp_dispo"
+
+# results_schema defaults to <study_name>_results when omitted.
+# results_schema: ~
+
+# cohort_table is the Strategus CohortGenerator output table (cohortTableName in
+# StrategusCodeToRun.R) — NOT a <study_name>_cohort default. The custom step
+# reads the cohorts Strategus generates, keyed by the cohort ids below.
+cohort_table: "pad_amp_nhd_prog"
+
+# =============================================================================
+# COHORTS
+# Cohort logic lives in inst/cohorts/*.json (Circe) + inst/sql/sql_server/*.sql,
+# registered in inst/Cohorts.csv. These ids are cross-references only.
+# =============================================================================
+target:
+  # Reused VERBATIM from pad-amp-ed-desc — the same population this study needs.
+  cohort_id: 1797941   # [DVI] Major Lower Extremity Amputation
+
+  # Index event concept ids. Used by the custom step's cohort-restricted
+  # procedure crosswalk, not for cohort entry (inst/ owns that).
+  # Concept NAMES below re-verified against omop_vocab 2026-08-02 — the
+  # corresponding list in pad-amp-ed-desc/study_params.yaml carries incorrect
+  # labels (it calls 4195136 "foot" and 4143795 "above knee"); the ID set is
+  # the same and correct in both, only those comments are wrong.
+  index_event:
+    ancestor_concept_ids:
+      - 4195136   # [vocab query] Amputation above-knee
+      - 4338257   # [vocab query] Amputation of leg through tibia and fibula (BKA)
+      - 4143795   # [vocab query] Through knee amputation
+      - 4242396   # [vocab query] Disarticulation of hip
+      - 4264289   # [vocab query] Amputation of ankle
+      - 36675618  # [vocab query] Amputation of entire lower limb and ipsilateral hemipelvis
+
+outcome:
+  # Non-home discharge from the index admission. Hand-authored SQL, NOT Circe —
+  # circe 1.11.3's VisitOccurrence criteria has no discharged_to_concept_id
+  # attribute. See inst/sql/sql_server/9100001.sql and inst/Cohorts.csv.
+  cohort_id: 9100001   # [DVI] Non-Home Discharge
+
+# =============================================================================
+# ANALYSIS PARAMETERS
+# =============================================================================
+# NHD is determined at the index discharge itself, so the outcome is not a
+# post-discharge time-at-risk question the way an ED visit is. The window below
+# is what get_outcomes() uses to associate an outcome cohort row with an index
+# date; it is deliberately generous relative to the index stay length.
+prediction_window_days: 90
+
+# Amputation patients frequently have limited prior observation; a 365-day
+# requirement would drop a substantial share of a real cohort.
+min_prior_observation_days: 1
+
+covariate_lookback_days: 365
+
+# =============================================================================
+# SCORING
+# Set per-run by scripts/analysis/integer_score_validation.R. Listed here so the
+# three score definitions are discoverable from one place.
+# =============================================================================
+scores:
+  - id: iannuzzi
+    label: "Iannuzzi 2020 NHD score"
+    covariate_definitions_file: "covariates/covariates.csv"
+    covariate_concepts_file:    "covariates/covariate_concepts.csv"
+    lookup_file:                "covariates/risk_lookup.csv"
+  - id: mfi5
+    label: "Subramaniam 2018 mFI-5"
+    covariate_definitions_file: "covariates/covariates_mfi5.csv"
+    covariate_concepts_file:    "covariates/covariate_concepts_mfi5.csv"
+    lookup_file: ~     # no published score-to-risk table
+  - id: vqifs
+    label: "Kraiss 2022 sVQI-FS"
+    covariate_definitions_file: "covariates/covariates_vqifs.csv"
+    covariate_concepts_file:    "covariates/covariate_concepts_vqifs.csv"
+    lookup_file: ~     # no published score-to-risk table
+
+# Cohort-based covariate resolution. When true, covariate presence is read from
+# the Strategus-generated cohort table via covariates/cohort_map.csv instead of
+# by querying the CDM domain tables directly. The domain-query path is retained
+# permanently as the comparison oracle — see tests/regression/.
+use_cohort_covariates: true
+cohort_map_file: "covariates/cohort_map.csv"
+
+# =============================================================================
+# REPORT
+# =============================================================================
+report:
+  score_type:             "integer"
+  outcome_label:          "Non-home Discharge (NHD)"
+  model_type_description: "integer risk scores (Iannuzzi 2020 + Subramaniam mFI-5 + Kraiss 2022 sVQI-FS)"
+
+# =============================================================================
+# OUTPUT — defaults to output/<study_name> when omitted.
+# =============================================================================
+output_folder: "output"
+
+# =============================================================================
+# DATABASE METADATA — narrative text in the report's Methods / Supplemental S1.
+# =============================================================================
+cdm_database_id:          "pad_amp_dispo_cdm_v5.4"
+cdm_database_name:        "PAD Amputation Disposition — Synthetic Dataset"
+cdm_database_description: "Synthetic OMOP CDM 5.4 (Synthea) of patients undergoing major lower extremity amputation for dysvascular, diabetic, or wound indications, carrying a modeled non-home discharge outcome (SNF/IRF) and the covariate set for the Iannuzzi 2020, Subramaniam mFI-5 and Kraiss 2022 sVQI-FS risk scores. Generated by pad-amp-dispo-synth; registered in synthetic_data/registry.yaml as pad_amp_dispo. Development/testing only — no real patients."

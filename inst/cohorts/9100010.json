@@ -1,0 +1,152 @@
+{
+  "cdmVersionRange": ">=5.0.0",
+  "_README": [
+    "Renal impairment - the Kraiss sVQI-FS item (1 point): serum creatinine",
+    "> 1.8 mg/dL OR dialysis. Concepts from",
+    "covariates/covariate_concepts_vqifs.csv :: renal_impairment, whose",
+    "concept_role column splits them into the creatinine and dialysis arms.",
+    "",
+    "THREE primary criteria, OR'd, mirroring what",
+    "query_renal_impairment_covariate_counts() does: a Measurement threshold",
+    "plus a dialysis arm that must span BOTH procedure_occurrence and",
+    "condition_occurrence, because dialysis dependence is sometimes coded as a",
+    "diagnosis rather than a procedure.",
+    "",
+    "DELIBERATELY NOT the [DVI] VA-FI Chronic kidney disease cohort (1797953).",
+    "That is a CKD diagnosis proxy; this study's own history is the reason -",
+    "pad-amp-nhd-val used a CKD diagnosis proxy until 2026-07-26 and it",
+    "activated in 99.6% of a pilot cohort, because the descendants of 192359",
+    "pull in acute and unspecified renal failure.",
+    "PrimaryCriteriaLimit / QualifiedLimit / ExpressionLimit are all \"All\" and EndStrategy is StartDate+0, unlike the [DVI] VA-FI cohorts (1797948-1797977) which are \"First\". A first-ever-only cohort cannot answer a lookback-window question."
+  ],
+  "ConceptSets": [
+    {
+      "id": 0,
+      "name": "[DVI] Serum Creatinine",
+      "expression": {
+        "items": [
+          {
+            "concept": {
+              "CONCEPT_ID": 3016723,
+              "CONCEPT_NAME": "Creatinine [Mass/volume] in Serum or Plasma",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "2160-0",
+              "DOMAIN_ID": "Measurement",
+              "VOCABULARY_ID": "LOINC",
+              "CONCEPT_CLASS_ID": "Lab Test"
+            },
+            "isExcluded": false,
+            "includeDescendants": false,
+            "includeMapped": false
+          }
+        ]
+      }
+    },
+    {
+      "id": 1,
+      "name": "[DVI] Dialysis Procedure",
+      "expression": {
+        "items": [
+          {
+            "concept": {
+              "CONCEPT_ID": 4146536,
+              "CONCEPT_NAME": "Renal dialysis",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "265764009",
+              "DOMAIN_ID": "Procedure",
+              "VOCABULARY_ID": "SNOMED",
+              "CONCEPT_CLASS_ID": "Procedure"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 4032243,
+              "CONCEPT_NAME": "Dialysis procedure",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "108241001",
+              "DOMAIN_ID": "Procedure",
+              "VOCABULARY_ID": "SNOMED",
+              "CONCEPT_CLASS_ID": "Procedure"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          }
+        ]
+      }
+    }
+  ],
+  "PrimaryCriteria": {
+    "CriteriaList": [
+      {
+        "Measurement": {
+          "CodesetId": 0,
+          "ValueAsNumber": {
+            "Value": 1.8,
+            "Op": "gt"
+          },
+          "Unit": [
+            {
+              "CONCEPT_ID": 8840,
+              "CONCEPT_NAME": "milligram per deciliter",
+              "CONCEPT_CODE": "mg/dL",
+              "DOMAIN_ID": "Unit",
+              "VOCABULARY_ID": "UCUM",
+              "CONCEPT_CLASS_ID": "Unit",
+              "STANDARD_CONCEPT": "S",
+              "INVALID_REASON": "V"
+            }
+          ]
+        }
+      },
+      {
+        "ProcedureOccurrence": {
+          "CodesetId": 1
+        }
+      },
+      {
+        "ConditionOccurrence": {
+          "CodesetId": 1
+        }
+      }
+    ],
+    "ObservationWindow": {
+      "PriorDays": 0,
+      "PostDays": 0
+    },
+    "PrimaryCriteriaLimit": {
+      "Type": "All"
+    }
+  },
+  "QualifiedLimit": {
+    "Type": "All"
+  },
+  "ExpressionLimit": {
+    "Type": "All"
+  },
+  "InclusionRules": [],
+  "CensoringCriteria": [],
+  "CollapseSettings": {
+    "CollapseType": "ERA",
+    "EraPad": 0
+  },
+  "CensorWindow": {},
+  "EndStrategy": {
+    "DateOffset": {
+      "DateField": "StartDate",
+      "Offset": 0
+    }
+  }
+}
