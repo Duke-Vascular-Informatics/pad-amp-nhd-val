@@ -25,6 +25,11 @@ SELECT 1 as codeset_id, c.concept_id FROM (select distinct I.concept_id FROM
 SELECT 2 as codeset_id, c.concept_id FROM (select distinct I.concept_id FROM
 ( 
   select concept_id from @vocabulary_database_schema.CONCEPT where (concept_id in (4240470))
+UNION  select c.concept_id
+  from @vocabulary_database_schema.CONCEPT c
+  join @vocabulary_database_schema.CONCEPT_ANCESTOR ca on c.concept_id = ca.descendant_concept_id
+  WHERE c.invalid_reason is null
+  and (ca.ancestor_concept_id in (4240470))
 
 ) I
 ) C;

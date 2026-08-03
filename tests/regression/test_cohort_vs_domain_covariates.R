@@ -31,7 +31,14 @@
 #
 # USAGE
 #   Rscript tests/regression/test_cohort_vs_domain_covariates.R
-# Prerequisite: cohorts generated (StrategusCodeToRun.R, or its stage-1 subset).
+#
+# The test GENERATES THE COHORTS ITSELF (see below) rather than assuming a
+# populated cohort table, so it is self-contained and cannot be misled by stale
+# data. That is not a convenience: an earlier version read whatever happened to
+# be in the cohort table, and when a covariate cohort definition was edited it
+# compared the NEW domain-query result against the OLD cohort rows and reported
+# a spurious failure. Regenerating costs a few seconds and removes the entire
+# class of problem.
 # =============================================================================
 
 Sys.setenv("_JAVA_OPTIONS" = "-Xmx4g")
@@ -61,6 +68,42 @@ EXPECTED_DIFF <- c(
   "mfi5:dm", "mfi5:chf", "mfi5:htn",
   "vqifs:htn", "vqifs:chf", "vqifs:cad", "vqifs:dm"
 )
+
+# ---------------------------------------------------------------------------
+# Regenerate every cohort from the definitions currently on disk, so both passes
+# below are compared against the same, current definitions. See the note in the
+# header for why this is not optional.
+#
+# The NHD outcome is regenerated from its hand-authored SQL afterwards, because
+# CohortGenerator would otherwise render its placeholder JSON (all inpatient
+# visits) — the same reason StrategusCodeToRun.R calls generate_nhd_cohort().
+# ---------------------------------------------------------------------------
+message("\n########## PASS 0: regenerate cohorts from current definitions ##########")
+local({
+  omopDb  <- Sys.getenv("OMOP_DATABASE", unset = "omop_synth")
+  cdmTwo  <- paste0(omopDb, ".", Sys.getenv("OMOP_CDM_SCHEMA_OVERRIDE",
+                                            unset = "pad_amp_nhd_prog_cdm_test"))
+  workTwo <- paste0(omopDb, ".", config$results_schema)
+
+  cds <- CohortGenerator::getCohortDefinitionSet(
+    settingsFileName = "inst/Cohorts.csv", jsonFolder = "inst/cohorts",
+    sqlFolder = "inst/sql/sql_server", packageName = NULL)
+  nm <- CohortGenerator::getCohortTableNames(cohortTable = config$cohort_table)
+  CohortGenerator::createCohortTables(
+    connectionDetails = connectionDetails,
+    cohortDatabaseSchema = workTwo, cohortTableNames = nm)
+  CohortGenerator::generateCohortSet(
+    connectionDetails = connectionDetails,
+    cdmDatabaseSchema = cdmTwo, cohortDatabaseSchema = workTwo,
+    cohortTableNames = nm, cohortDefinitionSet = cds, incremental = FALSE)
+
+  source("R/generate_nhd_cohort.R")
+  conn <- DatabaseConnector::connect(connectionDetails)
+  on.exit(DatabaseConnector::disconnect(conn), add = TRUE)
+  generate_nhd_cohort(connection = conn, cdmDatabaseSchema = cdmTwo,
+                      cohortDatabaseSchema = workTwo,
+                      cohortTable = config$cohort_table)
+})
 
 message("\n########## PASS 1: domain-query path (oracle) ##########")
 config$output_folder <- file.path(outRoot, "domain")

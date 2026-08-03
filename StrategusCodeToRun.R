@@ -126,6 +126,39 @@ if (!file.exists(specPath)) {
   stop("Analysis specification not found: ", specPath,
        "\n  Run step 1 first: Rscript CreateStrategusAnalysisSpecification.R")
 }
+
+# ---- Staleness guard: the spec is a BUILD ARTIFACT ---------------------------
+# Strategus reads the cohort definitions out of this JSON, not off disk. Editing
+# inst/cohorts/*.json or inst/Cohorts.csv without re-running step 1 means
+# Strategus silently generates the PREVIOUS definitions while the repo shows the
+# new ones — and the run completes normally with quietly wrong cohorts.
+#
+# This happened during development: a covariate cohort was widened, the
+# regression test (which regenerates from disk) reported the new value, and the
+# full pipeline reported the old one. Only the disagreement between the two
+# surfaced it. Compare timestamps and refuse to run on a stale spec.
+local({
+  sources <- c(list.files(file.path("inst", "cohorts"), pattern = "[.]json$", full.names = TRUE),
+               file.path("inst", "Cohorts.csv"),
+               file.path("inst", "sql", "sql_server") |>
+                 list.files(pattern = "[.]sql$", full.names = TRUE))
+  sources <- sources[file.exists(sources)]
+  specTime <- file.info(specPath)$mtime
+  newer    <- sources[file.info(sources)$mtime > specTime]
+  if (length(newer) > 0) {
+    stop("*** The analysis specification is STALE.\n",
+         "    ", specPath, "\n    was built ", format(specTime),
+         " but these definition files have changed since:\n",
+         paste0("      ", basename(newer), collapse = "\n"),
+         "\n\n    Strategus reads cohort definitions from the specification, not from\n",
+         "    disk, so running now would generate the PREVIOUS definitions while the\n",
+         "    repository shows the new ones — silently, with a clean exit.\n\n",
+         "    Rebuild first:  Rscript CreateStrategusAnalysisSpecification.R ***")
+  }
+  message("Specification freshness check passed (", length(sources),
+          " definition files, none newer than the spec).")
+})
+
 analysisSpecifications <- ParallelLogger::loadSettingsFromJson(specPath)
 
 executionSettings <- Strategus::createCdmExecutionSettings(
