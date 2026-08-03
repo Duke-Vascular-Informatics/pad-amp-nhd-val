@@ -1,0 +1,7 @@
+# Repository-wide default owner.
+#
+# Branch protection on `main` requires review from a code owner, so this file
+# is what makes that requirement enforceable. The `reviewers` team has push
+# access on every repo in the org, which GitHub requires for a team entry to
+# be honored.
+* @Duke-Vascular-Informatics/reviewers
