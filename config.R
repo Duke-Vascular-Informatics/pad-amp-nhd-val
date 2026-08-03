@@ -70,6 +70,11 @@ get_validation_config <- function() {
     study_name   = study_name,
     study_design = p$study_design %||% "prognostic_model",
 
+    # Study window — narrative only (the Methods "Data source" paragraph). Cohort
+    # date bounds live in the cohort definitions, not here.
+    study_start_date = p$study_start_date,
+    study_end_date   = p$study_end_date,
+
     # -------------------------------------------------------------------------
     # Database schemas
     # -------------------------------------------------------------------------

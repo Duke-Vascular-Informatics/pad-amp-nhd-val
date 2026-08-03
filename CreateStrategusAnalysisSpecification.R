@@ -57,13 +57,26 @@ covariateIds  <- setdiff(cohortDefinitionSet$cohortId, c(targetId, nhdOutcomeId)
 # ==============================================================================
 # inst/sql/sql_server/9100001.sql is hand-authored because circe cannot express
 # a discharge-disposition cohort (see inst/cohorts/9100001.json). Its companion
-# JSON is a placeholder that entered as ALL INPATIENT VISITS.
+# JSON is a placeholder that enters as ALL INPATIENT VISITS.
 #
-# The failure this guards against is silent, not loud: if anyone ever runs
-# CirceR::buildCohortQuery() over that placeholder and writes the result to the
-# .sql, the NHD outcome quietly becomes "every inpatient admission". The run
-# still completes, the report still renders, and the metrics still look
-# plausible — they are just measuring the wrong thing. Fail the build instead.
+# SCOPE — READ THIS BEFORE RELYING ON IT.
+# This guard protects the .sql FILE. It does NOT protect the Strategus run,
+# because STRATEGUS NEVER READS THAT FILE: its specification stores only each
+# cohort's JSON (sharedResources$cohortDefinitions rows carry cohortId,
+# cohortName, cohortDefinition — no sql), and the CohortGeneratorModule
+# re-renders SQL from the JSON with CirceR at execution time. Strategus therefore
+# always generates the PLACEHOLDER for 9100001.
+#
+# That is a known and handled part of the design, not an oversight: the runner
+# calls R/generate_nhd_cohort.R immediately after Strategus::execute() to replace
+# the cohort with the real definition, and that function carries a BEHAVIOURAL
+# assertion (event count vs total inpatient visits) which is the actual
+# protection. It was found the hard way — the first full run reported every
+# metric as NA because all 195 target patients had an "outcome".
+#
+# This file-level check is still worth keeping: the .sql IS authoritative for the
+# direct CohortGenerator path (the regression test and the repair step), so a
+# CirceR re-render clobbering it must fail loudly here too.
 nhdSqlPath <- file.path("inst", "sql", "sql_server", paste0(nhdOutcomeId, ".sql"))
 if (!file.exists(nhdSqlPath)) {
   stop("*** ", nhdSqlPath, " is missing. The non-home discharge cohort is ",
@@ -153,7 +166,15 @@ characterizationSpecs <- ch$createModuleSpecifications(
   endAnchor                    = timeAtRisks$endAnchor,
   minCharacterizationMean      = 0.01,
   includeTargetBaseline        = TRUE,
-  includeTimeToEvent           = TRUE,
+  # includeTimeToEvent = FALSE deliberately. Every outcome-dependent
+  # Characterization analysis would run against the PLACEHOLDER version of
+  # cohort 9100001, because Strategus generates that cohort from its JSON (see
+  # R/generate_nhd_cohort.R) and the hand-authored SQL is only applied afterwards
+  # by the runner. Time-to-event computed against "all inpatient visits" would be
+  # meaningless output that nonetheless looks like a result. Only the
+  # target-baseline table (the Table 1 source) is retained, and it does not read
+  # the outcome cohort at all.
+  includeTimeToEvent           = FALSE,
   includeRiskFactors           = FALSE,
   includeDechallengeRechallenge = FALSE,
   includeCaseSeries            = FALSE

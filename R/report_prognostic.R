@@ -3810,8 +3810,9 @@
   )
   doc <- body_add_par(doc, "Manuscript Draft: Methods and Results", style = "heading 1")
   doc <- body_add_par(doc, paste0(
-    "PAD Major Lower-Extremity Amputation and Non-Home Discharge Risk Score: ",
-    "External Validation of Iannuzzi 2020 and Subramaniam mFI-5"
+    "PAD Major Lower-Extremity Amputation and Non-Home Discharge: ",
+    "External Validation of the Iannuzzi 2020 Score, the Subramaniam mFI-5, ",
+    "and the Kraiss 2022 sVQI-FS"
   ), style = "Normal")
   doc <- body_add_par(doc, paste("Date:", format(Sys.Date(), "%Y-%m-%d")), style = "Normal")
   doc <- body_add_par(doc, "", style = "Normal")
@@ -3827,8 +3828,9 @@
     if (!is.null(config$study_start_date)) format(as.Date(config$study_start_date), "%B %d, %Y") else "N/A",
     " to ",
     if (!is.null(config$study_end_date))   format(as.Date(config$study_end_date),   "%B %d, %Y") else "N/A",
-    ". All cohort definitions, concept mappings, and analytic scripts are compatible with any ",
-    "OMOP CDM v5 data source. Full data source metadata are reported in Supplemental Table S1."
+    ". Full data source metadata are reported in Supplemental Table S1; the analytic ",
+    "implementation and its portability to other OMOP CDM v5 sources are described under ",
+    "Implementation and code deployment, below."
   ), style = "Normal")
   doc <- body_add_par(doc, section_num("Target and outcome cohort definitions"), style = "heading 3")
   doc <- body_add_par(doc, paste0(
@@ -3877,6 +3879,68 @@
     if (!is.null(person_level)) length(unique(person_level$subject_id)) else "N",
     " patients with at least one qualifying amputation within the study window."
   ), style = "Normal")
+
+  # ---------------------------------------------------------------------------
+  # Methods: implementation and code deployment.
+  #
+  # Added when this study was ported to Strategus. The Methods previously
+  # described only the statistical procedure, which left a reader unable to tell
+  # which artefacts are network-portable OHDSI cohort definitions and which are
+  # local SQL — a distinction that matters for reproducing this analysis at
+  # another site, and one this study cannot avoid because its outcome is not
+  # expressible in Circe.
+  # ---------------------------------------------------------------------------
+  doc <- body_add_par(doc, section_num("Implementation and code deployment"), style = "heading 3")
+  doc <- body_add_par(doc, paste0(
+    "\tThe analysis was implemented as an OHDSI Strategus (v1.5.0) study package, so that the ",
+    "same code and cohort definitions can be executed unmodified at any site holding an OMOP CDM ",
+    "v5 instance. Cohort construction, cohort diagnostics, and baseline characterization are ",
+    "delegated to standard HADES modules — CohortGenerator, CohortDiagnostics, and ",
+    "Characterization — invoked from a single declarative analysis specification. Cohorts are ",
+    "specified as OHDSI Circe JSON expressions and are rendered to dialect-specific SQL by CirceR ",
+    "at execution time, so no site-specific SQL editing is required. All schema and table names ",
+    "are supplied at run time; no credentials or institution-specific identifiers are embedded in ",
+    "the analytic code."
+  ), style = "Normal")
+  doc <- body_add_par(doc, paste0(
+    "\tPredictor ascertainment is likewise cohort-based rather than expressed as ad hoc queries ",
+    "against the CDM domain tables. Each component of each risk score is resolved to a named ",
+    "cohort definition, and a single mapping table links every published score item to the cohort ",
+    "that operationalizes it, together with that item's point value and its lookback window. ",
+    "Where an equivalent cohort definition already existed in the investigators' shared phenotype ",
+    "library it was reused unchanged; the remainder were authored for this study and are named and ",
+    "versioned for later contribution to that library. Two consequences of this design are ",
+    "reported transparently in the Limitations, because they affect what the scores measure: some ",
+    "reused definitions are broader than the corresponding published score item, and some cannot ",
+    "carry a lookback window."
+  ), style = "Normal")
+  doc <- body_add_par(doc, paste0(
+    "\tThree elements fall outside what the Strategus modules can express and are implemented as ",
+    "documented extensions. First, the non-home discharge outcome is derived from ",
+    "visit_occurrence.discharged_to_concept_id, an attribute the Circe cohort-definition schema ",
+    "does not support; it is therefore implemented as hand-authored, parameterized SQL that is ",
+    "applied to the generated cohort table before any analysis reads it, and is protected by an ",
+    "automated check that halts the pipeline if the definition is ever silently replaced. Second, ",
+    "application of the three published scoring rules is performed by a study-specific step, ",
+    "because the Strategus prediction module fits new models rather than applying fixed published ",
+    "weights. Third, three predictors requiring arithmetic on measurement values — body mass index ",
+    "computed from height and weight, and unit normalization of laboratory results — are computed ",
+    "in analytic code rather than as cohort definitions. Every such deviation is recorded in the ",
+    "study repository alongside the definition it applies to."
+  ), style = "Normal")
+  doc <- body_add_par(doc, paste0(
+    "\tTo verify that moving predictor ascertainment from direct CDM queries to cohort definitions ",
+    "did not change what was measured, both implementations are retained and an automated ",
+    "regression test scores every instrument twice — once by each route — and compares the ",
+    "resulting per-patient predictor values. Predictors whose definitions are semantically ",
+    "identical between the two routes are required to agree exactly; predictors that are expected ",
+    "to differ, because the reused cohort definition cannot carry a lookback window, are quantified ",
+    "rather than suppressed, and the magnitude of each difference is reported. A second automated ",
+    "check confirms that each authored cohort's concept set still matches the concept set recorded ",
+    "for that score component, so that a later revision of a shared definition cannot silently ",
+    "change this study's predictors."
+  ), style = "Normal")
+
   doc <- body_add_par(doc, section_num("Risk score evaluation"), style = "heading 3")
 
   # --- Transportability framing ---------------------------------------------

@@ -150,6 +150,27 @@ Strategus::execute(
 message("Strategus execution complete -> ",
         file.path(outputLocation, databaseName, "strategusOutput"))
 
+# ---- Repair the NHD cohort ----------------------------------------------------
+# MUST run before scoring. Strategus does not execute
+# inst/sql/sql_server/9100001.sql — its specification stores only each cohort's
+# JSON, and the CohortGeneratorModule re-renders SQL from that JSON with CirceR.
+# For 9100001 the JSON is a placeholder (circe cannot express a
+# discharge-disposition criterion), so Strategus has just written "every
+# inpatient visit" into the cohort table. Left alone, every target patient would
+# have an outcome, the outcome would be constant, and every metric would be NA.
+#
+# See R/generate_nhd_cohort.R for the full explanation and the behavioural
+# assertion that fails the run if the placeholder logic ever takes effect.
+source("R/generate_nhd_cohort.R")
+conn <- DatabaseConnector::connect(connectionDetails)
+generate_nhd_cohort(
+  connection           = conn,
+  cdmDatabaseSchema    = cdmDatabaseSchema,     # overlay: has concept + concept_relationship
+  cohortDatabaseSchema = workDatabaseSchema,
+  cohortTable          = cohortTableName
+)
+DatabaseConnector::disconnect(conn)
+
 # ---- Custom step: apply the three published integer risk scores --------------
 # Strategus has populated the cohort table; the scores are computed from it.
 source("config.R")

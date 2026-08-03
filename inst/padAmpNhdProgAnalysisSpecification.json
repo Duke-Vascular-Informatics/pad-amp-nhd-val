@@ -154,13 +154,7 @@
       "module": "CharacterizationModule",
       "settings": {
         "analysis": {
-          "timeToEventSettings": [
-            {
-              "targetIds": 1797941,
-              "outcomeIds": 9100001,
-              "attr_class": "timeToEventSettings"
-            }
-          ],
+          "timeToEventSettings": null,
           "dechallengeRechallengeSettings": null,
           "targetBaselineSettings": [
             {

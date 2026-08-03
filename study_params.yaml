@@ -21,6 +21,15 @@ study_name:   "pad_amp_nhd_prog"
 study_design: "prognostic_model"
 
 # =============================================================================
+# STUDY WINDOW
+# Reported in the Methods "Data source" paragraph. Index events outside this
+# range are out of scope. Matches pad-amp-nhd-val so the two studies describe
+# the same window.
+# =============================================================================
+study_start_date: "2017-01-01"
+study_end_date:   "2025-12-31"
+
+# =============================================================================
 # DATABASE SCHEMAS
 # =============================================================================
 # cdm_schema is the PHYSICAL clinical CDM schema, which the custom step's SQL
