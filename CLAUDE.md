@@ -89,7 +89,7 @@ the workspace root's index.
 
 | Remote | URL | What to push |
 |--------|-----|-------------|
-| `origin` | `git@github.com:adam-mdmph/pad-amp-nhd-prog.git` | Full repository |
+| `origin` | `git@github.com:Duke-Vascular-Informatics/pad-amp-nhd-prog.git` | Full repository |
 
 ```bash
 BRANCH=$(gh api user --jq .login)
