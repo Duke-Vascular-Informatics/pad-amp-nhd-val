@@ -45,6 +45,55 @@
 # =============================================================================
 
 # -----------------------------------------------------------------------------
+# bracket_quote() / results_schema_prefix()
+#
+# SQL Server identifier helpers. In pad-amp-nhd-val these lived in R/cohorts.R,
+# which is NOT ported here — under Strategus, cohort instantiation belongs to
+# CohortGenerator, so the rest of that file has no purpose in this repo. These
+# two are the only pieces risk_score_pipeline.R actually calls, so they are
+# carried here rather than dragging in a file whose other functions would be
+# dead and misleading.
+#
+# The bracket-quoting matters on Duke PRCC, where the personal results schema is
+# a backslash-containing "domain\netid" — unquoted, SQL Server reads that as a
+# malformed multi-part name.
+# -----------------------------------------------------------------------------
+bracket_quote <- function(name) {
+  needs_quoting  <- grepl("[\\\\\\s\\-\\.]", name, perl = TRUE)
+  already_quoted <- grepl("^\\[", name)
+  if (needs_quoting && !already_quoted) paste0("[", name, "]") else name
+}
+
+# Fully-qualified prefix for the results/cohort table. Returns a three-part
+# "[db].[schema]" when results_database is set and differs from the CDM
+# database, otherwise the bracket-quoted schema alone.
+results_schema_prefix <- function(config) {
+  schema <- bracket_quote(config$results_schema)
+  rdb    <- config$results_database
+  if (!is.null(rdb) && !is.na(rdb) &&
+      nchar(trimws(rdb)) > 0 && trimws(rdb) != "CHANGE_ME" &&
+      trimws(rdb) != trimws(config$database %||% "")) {
+    paste0(bracket_quote(trimws(rdb)), ".", schema)
+  } else {
+    schema
+  }
+}
+
+# NULL-coalescing helper used above and by the cohort-map lookup.
+`%||%` <- function(x, y) if (is.null(x)) y else x
+
+# Subgroup label lookups (fetch_subgroup_labels / fetch_proc_type_labels) used
+# by compute_subgroup_bias(). Sourced rather than assumed to be on the search
+# path, so the pipeline works when called standalone as well as from the runner.
+if (!exists("fetch_subgroup_labels", mode = "function")) {
+  local({
+    p <- file.path("R", "cohort_demographics.R")
+    if (file.exists(p)) source(p) else
+      warning("R/cohort_demographics.R not found; subgroup bias analysis will be skipped.")
+  })
+}
+
+# -----------------------------------------------------------------------------
 # read_score_specs()
 #
 # Reads and validates the covariate specification CSV files that define the
@@ -1724,9 +1773,31 @@ query_covariate_counts <- function(connection, config, covariate, covariate_conc
 # qualifying event across any domain within the lookback window.
 # -----------------------------------------------------------------------------
 query_auto_domain_covariate_counts <- function(connection, config, covariate, covariate_concepts) {
-  concept_ids <- unique(covariate_concepts$concept_id)
-  concept_ids <- concept_ids[!is.na(concept_ids) & concept_ids > 0]
-  include_desc <- any(covariate_concepts$include_descendants)
+  valid <- !is.na(covariate_concepts$concept_id) & covariate_concepts$concept_id > 0
+  concept_ids <- unique(covariate_concepts$concept_id[valid])
+
+  # PER-CONCEPT descendant expansion.
+  #
+  # This function previously used `any(covariate_concepts$include_descendants)`,
+  # which expands descendants for EVERY concept as soon as ONE of them is
+  # flagged TRUE. That is wrong whenever a covariate mixes the two flags, and
+  # ambu_deficit / nonambulatory do exactly that: four rollup concepts marked
+  # TRUE plus three leaf concepts marked FALSE.
+  #
+  # The concrete damage, measured on this dataset: concept 4240470 Wheelchair is
+  # marked include_descendants = FALSE, but the collapse pulled in its
+  # descendants 4045112 Manual wheelchair (436 rows), 45767832 Wheelchair
+  # accessory and 45767840 Power-assisted wheelchair, taking the device arm from
+  # 21 patients to 46 and the whole covariate from 71 to 89. The cohort-based
+  # path honours the flag per concept (circe stores it per item), so the two
+  # paths disagreed by 18 patients — which is how this was found.
+  #
+  # The remaining `any()` call sites in this file share the shape but not the
+  # bug: every other covariate's concepts carry a uniform flag. renal_impairment
+  # mixes flags but already scopes its `any()` per concept_role.
+  expand_ids <- unique(covariate_concepts$concept_id[valid &
+                         as.logical(covariate_concepts$include_descendants)])
+  include_desc <- length(expand_ids) > 0
 
   if (length(concept_ids) == 0) {
     stop(
@@ -1735,6 +1806,9 @@ query_auto_domain_covariate_counts <- function(connection, config, covariate, co
     )
   }
   concept_id_string <- paste(concept_ids, collapse = ",")
+  # When nothing is flagged for expansion the placeholder is unused, but it must
+  # still be a valid list for string_split().
+  expand_id_string  <- paste(if (include_desc) expand_ids else concept_ids, collapse = ",")
 
   # One SELECT per domain table, each contributing (subject_id, event_date)
   # rows for concepts found in THAT table. Concepts absent from a given table
@@ -1760,12 +1834,18 @@ query_auto_domain_covariate_counts <- function(connection, config, covariate, co
              SELECT CAST(id AS BIGINT) AS concept_id
              FROM (SELECT value AS id FROM string_split('@concept_ids', ',')) s
            ),
+           -- Only the concepts whose own include_descendants flag is TRUE are
+           -- rolled up. See the note above query_auto_domain_covariate_counts().
+           expandable_concept_ids AS (
+             SELECT CAST(id AS BIGINT) AS concept_id
+             FROM (SELECT value AS id FROM string_split('@expand_concept_ids', ',')) s
+           ),
            expanded_concepts AS (
              SELECT concept_id FROM concept_ids
              UNION
              SELECT ca.descendant_concept_id AS concept_id
              FROM @cdm_schema.concept_ancestor ca
-             JOIN concept_ids i
+             JOIN expandable_concept_ids i
                ON ca.ancestor_concept_id = i.concept_id
              WHERE @include_descendants = 1
            ),
@@ -1786,6 +1866,7 @@ query_auto_domain_covariate_counts <- function(connection, config, covariate, co
     target_id = config$target_cohort_id,
     cdm_schema = config$cdm_schema,
     concept_ids = concept_id_string,
+    expand_concept_ids = expand_id_string,
     include_descendants = ifelse(include_desc, 1, 0),
     lookback_start = as.integer(covariate$lookback_start_day),
     lookback_end = as.integer(covariate$lookback_end_day)
