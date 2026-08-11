@@ -34,13 +34,22 @@ study_end_date:   "2025-12-31"
 # =============================================================================
 # cdm_schema is the PHYSICAL clinical CDM schema, which the custom step's SQL
 # queries directly. It is populated by the pad-amp-dispo-synth repo and
-# registered in synthetic_data/registry.yaml as dataset id `pad_amp_dispo`.
+# registered in synthetic_data/registry.yaml as dataset id `pad_amp` (this
+# study is pinned to version v2 as of the 2026-08-09 consolidation).
 #
 # StrategusCodeToRun.R points Strategus ITSELF at a view-overlay schema
 # (clinical tables + omop_vocab unioned into one schema), because
 # Strategus::createCdmExecutionSettings has no separate vocabulary-schema
 # parameter. That overlay is built from this physical schema — see the runner.
-cdm_schema: "omop_synth_pad_amp_dispo"
+#
+# MUST match the physical schema the overlay was actually built from. Found
+# out of sync 2026-08-11: this had drifted to v1 (omop_synth_pad_amp_dispo,
+# 1,474 persons) while the already-built overlay pointed at v2
+# (omop_synth_pad_amp_v2, 1,544 persons) -- a cross-schema person_id join,
+# not an error, so it fails silently. Verify with the overlay's view
+# definition (SELECT VIEW_DEFINITION FROM INFORMATION_SCHEMA.VIEWS WHERE
+# TABLE_SCHEMA = '<overlay>' AND TABLE_NAME = 'person') before changing this.
+cdm_schema: "omop_synth_pad_amp_v2"
 
 # results_schema defaults to <study_name>_results when omitted.
 # results_schema: ~

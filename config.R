@@ -86,8 +86,13 @@ get_validation_config <- function() {
     # -------------------------------------------------------------------------
     vocab_schema   = p$vocab_schema   %||% "omop_vocab",
     # Physical clinical CDM produced by pad-amp-dispo-synth (registry id
-    # pad_amp_dispo). Strategus itself reads a view-overlay built over this.
-    cdm_schema     = p$cdm_schema     %||% "omop_synth_pad_amp_dispo",
+    # pad_amp, dataset version v2 as of the 2026-08-09 consolidation).
+    # Strategus itself reads a view-overlay built over this. Must match the
+    # physical schema the overlay (pad_amp_nhd_prog_cdm_test by default) was
+    # actually built from -- verify with the overlay's view definition before
+    # changing this, since the two silently diverging is a person_id-join
+    # corruption, not an error.
+    cdm_schema     = p$cdm_schema     %||% "omop_synth_pad_amp_v2",
     results_schema = p$results_schema %||% paste0(study_name, "_results"),
     cohort_table   = p$cohort_table   %||% study_name,
 

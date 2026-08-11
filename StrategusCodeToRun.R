@@ -24,8 +24,15 @@
 #                            to consume (R/extract_report_inputs.R)
 #
 # DATA SOURCE
-#   Physical CDM  : omop_synth_pad_amp_dispo   (built by pad-amp-dispo-synth,
-#                   registry id pad_amp_dispo)
+#   Physical CDM  : omop_synth_pad_amp_v2   (built by pad-amp-dispo-synth,
+#                   registry id pad_amp, version v2 as of the 2026-08-09
+#                   consolidation). MUST match the physical schema the
+#                   overlay below was actually built from -- these drifting
+#                   apart is a silent cross-schema person_id join, not an
+#                   error. Found out of sync 2026-08-11: this default (and
+#                   study_params.yaml's cdm_schema) had been left at v1
+#                   (omop_synth_pad_amp_dispo, 1,474 persons) while the
+#                   already-built overlay pointed at v2 (1,544 persons).
 #   Strategus sees: pad_amp_nhd_prog_cdm_test, a schema of read-only views over
 #                   the physical CDM UNION omop_vocab. The overlay exists because
 #                   Strategus::createCdmExecutionSettings has no separate
@@ -59,9 +66,9 @@ Sys.setenv(DATABASECONNECTOR_JAR_FOLDER = "/workspace/synthea-omop-template/driv
 omopDatabase       <- Sys.getenv("OMOP_DATABASE", unset = "omop_synth")
 overlaySchemaBare  <- Sys.getenv("OMOP_CDM_SCHEMA_OVERRIDE",     unset = "pad_amp_nhd_prog_cdm_test")
 resultsSchemaBare  <- Sys.getenv("OMOP_RESULTS_SCHEMA_OVERRIDE", unset = "pad_amp_nhd_prog_results")
-physicalCdmSchema  <- Sys.getenv("OMOP_PHYSICAL_CDM_SCHEMA",     unset = "omop_synth_pad_amp_dispo")
+physicalCdmSchema  <- Sys.getenv("OMOP_PHYSICAL_CDM_SCHEMA",     unset = "omop_synth_pad_amp_v2")
 vocabSchemaBare    <- Sys.getenv("OMOP_VOCAB_SCHEMA",            unset = "omop_vocab")
-overlayRegistryId  <- "pad_amp_dispo"   # synthetic_data/registry.yaml id
+overlayRegistryId  <- "pad_amp_dispo"   # synthetic_data/registry.yaml id (former_ids -> pad_amp)
 
 cdmDatabaseSchema  <- paste0(omopDatabase, ".", overlaySchemaBare)
 workDatabaseSchema <- paste0(omopDatabase, ".", resultsSchemaBare)
@@ -242,19 +249,16 @@ report_inputs_dir <- extract_report_inputs(
   connection_details = connectionDetails
 )
 
-# PHI: writes output/pad_amp_nhd_edge_<date>.csv containing MRN, age,
-# procedure date. Stays on PRCC. See section 5 of R/extract_report_inputs.R
-# for why this function does not belong in a shareable analysis-core repo
-# long-term — it is reserved for duke-prcc-deploy (not yet created).
-edge_person_level_path <- file.path(config$output_folder, "iannuzzi", "person_level_scores.csv")
-if (file.exists(edge_person_level_path)) {
-  export_edge_cases(
-    person_level       = read.csv(edge_person_level_path, stringsAsFactors = FALSE),
-    config             = config,
-    connection_details = connectionDetails,
-    output_dir         = config$output_folder
-  )
-}
+# PHI: edge_case_export.R (writes output/pad_amp_nhd_edge_<date>.csv containing
+# MRN, age, procedure date) moved to duke-prcc-deploy/studies/pad-amp-nhd-prog/
+# 2026-08-11 -- it does not belong in this shareable analysis-core repo. Run it
+# from a clone of duke-prcc-deploy on Duke PRCC, pointed at this run's config
+# and person_level_scores.csv, once that study's PRCC runtime layer exists
+# (see that repo's studies/pad-amp-nhd-prog/README.md).
+message(
+  "Edge-case export moved to duke-prcc-deploy/studies/pad-amp-nhd-prog/ -- run ",
+  "it from there on Duke PRCC, not from this repo."
+)
 
 message(
   "Analysis complete. To generate the Word report, run GenerateReport.R from ",

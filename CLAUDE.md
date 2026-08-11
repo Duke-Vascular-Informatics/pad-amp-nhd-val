@@ -31,7 +31,7 @@ Shared baseline (applies first):
 |------|------|--------------|
 | 1 | `CreateStrategusAnalysisSpecification.R` | Builds `inst/padAmpNhdProgAnalysisSpecification.json`. Re-run after any change to `inst/`. |
 | 2 | `StrategusCodeToRun.R` | `Strategus::execute()`, then the custom scoring step, then `R/extract_report_inputs.R`. Stops there — see below. Fresh R session required. |
-| 9 | `workflow/09_build_portable_analysis_bundle.sh` | Duke GitLab deployment bundle (Strategus + scoring + extract only — no report code to bundle). |
+| 9 | (separate repo) `duke-prcc-deploy/studies/pad-amp-nhd-prog/` | Duke GitLab deployment bundle config + PHI-producing `edge_case_export.R`, moved out of this repo 2026-08-11 (see `workflow/README.md`). **Not yet deployable** — this study's PRCC runtime layer was never built; the in-repo script it replaced was an unmodified `pad-amp-ed-desc` copy that would have failed immediately. |
 | — | (separate repo) `pad-amp-nhd-prog-report/GenerateReport.R` | Manual step, run against this repo's `output/` directory (or a copied-out results export) to produce the Word manuscript. |
 
 Supporting: `scripts/render_cohort_sql.R` (JSON → SQL, skips the hand-authored NHD
@@ -39,12 +39,27 @@ cohort), `tests/regression/test_cohort_vs_domain_covariates.R`.
 
 ### Data source
 
-Physical CDM `omop_synth_pad_amp_dispo`, produced by **`pad-amp-dispo-synth`** and
-registered in `../synthetic_data/registry.yaml` as `pad_amp_dispo`. Strategus itself
-reads a view-overlay (`pad_amp_nhd_prog_cdm_test`) that unions the CDM with `omop_vocab`,
-because `Strategus::createCdmExecutionSettings` has no vocabulary-schema parameter. The
-runner builds that overlay automatically if it is missing. The custom step and report
-query the **physical** schema directly.
+Physical CDM `omop_synth_pad_amp_v2`, produced by **`pad-amp-dispo-synth`** and
+registered in `../synthetic_data/registry.yaml` as `pad_amp` (this study is pinned to
+version v2 as of the 2026-08-09 consolidation). Strategus itself reads a view-overlay
+(`pad_amp_nhd_prog_cdm_test`) that unions the CDM with `omop_vocab`, because
+`Strategus::createCdmExecutionSettings` has no vocabulary-schema parameter. The runner
+builds that overlay automatically if it is missing. The custom step and report query
+the **physical** schema directly, via `config$cdm_schema` — **this must match the
+physical schema the overlay was actually built from.** Found out of sync 2026-08-11:
+`study_params.yaml` had drifted to v1 (`omop_synth_pad_amp_dispo`, 1,474 persons) while
+the already-built overlay pointed at v2 (1,544 persons) — a silent cross-schema
+person_id join, not an error. Verify with the overlay's view definition
+(`SELECT VIEW_DEFINITION FROM INFORMATION_SCHEMA.VIEWS WHERE TABLE_SCHEMA = '<overlay>'
+AND TABLE_NAME = 'person'`) before ever changing either value. If a re-run shows
+`Skipping cohorts already generated: <ids>` for cohorts other than 9100001 right after
+changing which physical schema is pinned, the cohort table itself is stale from a run
+against the old schema — Strategus's incremental mode does not know the underlying data
+changed. Drop the `<results_schema>_*` incremental-tracking tables (the study's own
+results schema only — `pad_amp_nhd_prog`, `_checksum`, `_inclusion*`, `_censor_stats`,
+`_summary_stats`, `_subset_attrition`, plus the `attrition_*`/`characterization_cohorts_*`/
+`target_settings_*` Characterization tables) and clear the local gitignored `results/`
+folder before re-running.
 
 ### Things that will bite you
 
@@ -105,5 +120,7 @@ BRANCH=$(gh api user --jq .login)
 git push origin "$BRANCH"   # then open a PR into main
 ```
 
-Duke GitLab routing, if added, is handled by `workflow/09_build_portable_analysis_bundle.sh`
-only. Never `git subtree push` or a bare `git push gitlab`.
+Duke GitLab deployment (Step 9) is handled entirely by the separate
+[`duke-prcc-deploy`](https://gitlab.dhe.duke.edu/apj20/duke-prcc-deploy) repo's
+`studies/pad-amp-nhd-prog/` config — not by anything in this repo. Never `git subtree
+push` or a bare `git push gitlab` from here.
