@@ -83,10 +83,28 @@ cran_packages <- c(
   "tidyr",               # pivot_longer, pivot_wider, unnest
   "readr",               # Fast CSV reading / writing
   # Reporting and output
-  "officer",             # Word (.docx) report generation
-  "flextable",           # Formatted tables for Word / HTML output
+  # officer/flextable REMOVED 2026-08-11 — Word-report-only, and the Word
+  # report moved to pad-amp-nhd-prog-report entirely (Phase 1,
+  # docs/MIGRATION_PLAN_REPO_SPLIT.md). This repo builds no Word document.
+  # If you find yourself reaching for either here, the code you're writing
+  # probably belongs in the report repo, not this one.
   "openxlsx",            # Excel (.xlsx) output
   "knitr",               # R Markdown report rendering
+  # Both are hard requirements of the omopReportToolkit package (see
+  # github_packages below), which R/risk_score_pipeline.R library()s at load
+  # time for its own diagnostic calibration plot — a QC artifact of the
+  # scoring step, independent of the (now separate) Word report. Omitting
+  # either halts the scoring run the moment that plot is attempted, after
+  # every other package has already installed successfully. Ported from
+  # pad-amp-nhd-val (#43), found there by auditing a portable bundle for
+  # runnability rather than assuming a clean build meant a working one.
+  "ragg",                # 600 dpi TIFF device for the diagnostic calibration
+                         # plot — softly loaded (requireNamespace, not
+                         # library()) in omopReportToolkit's figure_style.R,
+                         # since it compiles against system libraries an
+                         # analytic-space install may not have
+  "patchwork",           # stacks calibration/decision-curve panels with
+                         # their strips — pure R, hard requirement
   # Dev / housekeeping
   "remotes",
   "languageserver",
@@ -108,7 +126,13 @@ github_packages <- list(
   list(package = "ETLSyntheaBuilder",      repo = "OHDSI/ETL-Synthea",            ref = "v2.1.0"),
   list(package = "Achilles",               repo = "OHDSI/Achilles",               ref = "main"),
   list(package = "DataQualityDashboard",   repo = "OHDSI/DataQualityDashboard",   ref = "main"),
-  list(package = "CohortDiagnostics",      repo = "OHDSI/CohortDiagnostics",      ref = "main")
+  list(package = "CohortDiagnostics",      repo = "OHDSI/CohortDiagnostics",      ref = "main"),
+  # Pinned to a commit, not a branch — see that repo's README before bumping.
+  # PRIVATE repo: this install requires GITHUB_PAT (or another token renv
+  # recognises) to be set in the environment this script runs in.
+  list(package = "omopReportToolkit",
+       repo = "Duke-Vascular-Informatics/omop-report-toolkit",
+       ref  = "4f6a3fb42d5417c7cc76ace1c20c5f032a1728a3")
 )
 
 available_cran <- tryCatch(rownames(available.packages()), error = function(e) character(0))

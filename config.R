@@ -3,9 +3,8 @@
 # Central configuration for the pad-amp-nhd-prog prognostic Strategus study.
 #
 # Reads study_params.yaml and returns a named list consumed by:
-#   scripts/analysis/integer_score_validation.R (the custom scoring step),
-#   R/risk_score_pipeline.R, and
-#   R/report_extended.R / R/report_prognostic.R (the Word manuscript report).
+#   scripts/analysis/integer_score_validation.R (the custom scoring step) and
+#   R/risk_score_pipeline.R.
 #
 # NOTE: this is deliberately a MINIMAL config layer, not the full
 # synthea-omop-template config.R. Under Strategus, cohort instantiation,
@@ -14,8 +13,15 @@
 #     environment variables (not from this file).
 #   - Cohorts are Strategus/CohortGenerator-owned, defined in inst/ and
 #     referenced here only by their cohort_definition_id.
-# This file exists to supply the schema names, cohort ids, per-score covariate
-# file paths, and narrative metadata the custom step + report still need.
+# This file exists to supply the schema names, cohort ids, and per-score
+# covariate file paths the custom step still needs.
+#
+# The Word report (pad-amp-nhd-prog-report, a separate repo as of 2026-08-11)
+# does NOT read this file. Its ~9 narrative/parameter fields — a subset of
+# what get_validation_config() returns below — are written into
+# report_inputs/_report_config.yaml by R/extract_report_inputs.R instead, so
+# the report repo needs no study_params.yaml of its own. See that file's
+# header for why duplicating this file into the report repo would be worse.
 # =============================================================================
 
 get_validation_config <- function() {
@@ -101,6 +107,18 @@ get_validation_config <- function() {
     prediction_window_days     = as.integer(p$prediction_window_days     %||% 90L),
     min_prior_observation_days = as.integer(p$min_prior_observation_days %||% 1L),
     covariate_lookback_days    = as.integer(p$covariate_lookback_days    %||% 365L),
+
+    # Upper bound (in PERCENT) of the decision-curve threshold axis.
+    # NULL/absent = choose it from the data (see save_dca_plot() in
+    # pad-amp-nhd-prog-report's R/report_prognostic.R). Set this explicitly
+    # when the clinically plausible threshold range is known and should be
+    # shown regardless of what the models happen to predict — a data-driven
+    # bound must never be allowed to crop the range a clinician would
+    # actually act over. Ported from pad-amp-nhd-val (#42). Written into
+    # report_inputs/_report_config.yaml by R/extract_report_inputs.R for the
+    # report repo to read — see that file's header.
+    dca_threshold_max_pct = if (is.null(p$dca_threshold_max_pct)) NULL
+                            else as.numeric(p$dca_threshold_max_pct),
 
     # -------------------------------------------------------------------------
     # Scoring

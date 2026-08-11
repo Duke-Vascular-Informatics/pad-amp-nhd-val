@@ -95,6 +95,19 @@ min_prior_observation_days: 1
 
 covariate_lookback_days: 365
 
+# Upper bound (PERCENT) of the decision-curve (Figure 4) threshold axis.
+# Commented out = chosen from the data: the axis stops just past the point
+# where no model classifies any patient as high risk and every curve is
+# identically 0 (the clinical impact strip in the lower panel makes that
+# visible). Net benefit is always COMPUTED over 1-99% regardless; this only
+# controls what is displayed, and the figure caption states the range used.
+#
+# Set it explicitly once the clinically plausible threshold range for acting
+# on NHD risk is agreed — a data-driven bound must not crop the range
+# clinicians actually act over merely because this cohort's models never
+# predict that high. Ported from pad-amp-nhd-val (#42).
+# dca_threshold_max_pct: 60
+
 # =============================================================================
 # SCORING
 # Set per-run by scripts/analysis/integer_score_validation.R. Listed here so the

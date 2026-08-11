@@ -41,8 +41,20 @@
 #                                   CalibrationSlope for score_only / lookup /
 #                                   recalibrated models, with ci_lower / ci_upper
 #   calibration_table_<model>.csv — decile calibration tables (predicted, observed)
-#   calibration_<model>.png       — calibration plots
+#   calibration_<model>.{tiff,pdf,png} — calibration plots (600 dpi TIFF and
+#                                   vector PDF for journal submission, plus a
+#                                   screen-resolution PNG)
 # =============================================================================
+
+# Shared greyscale figure styling used by save_calibration_plot() below,
+# provided by the omopReportToolkit package (docs/MIGRATION_PLAN_REPO_SPLIT.md
+# Phase 1). library()'d directly here — this repo no longer has a
+# report_helpers.R at all (the Word report, and everything it needed, moved
+# to pad-amp-nhd-prog-report in Phase 1) — so this is this repo's ONLY
+# consumer of the toolkit, producing a diagnostic calibration PNG as a QC
+# artifact of the scoring step, independent of whether a report is ever
+# generated from this run's output.
+library(omopReportToolkit)
 
 # -----------------------------------------------------------------------------
 # bracket_quote() / results_schema_prefix()
@@ -2843,22 +2855,25 @@ compute_subgroup_bias <- function(person_level,
 # Calls ggplot2::ggsave() at 150 dpi, 7×5 inches.
 # -----------------------------------------------------------------------------
 save_calibration_plot <- function(calibration_table, model_name, output_folder) {
+  ax <- .calibration_axis_limits(c(calibration_table$predicted,
+                                   calibration_table$observed))
+
   p <- ggplot2::ggplot(calibration_table, ggplot2::aes(x = predicted, y = observed)) +
-    ggplot2::geom_point(size = 2) +
     ggplot2::geom_line() +
-    ggplot2::geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "gray") +
+    ggplot2::geom_point(size = 2) +
+    .calibration_reference_line() +
     ggplot2::labs(
       title = paste("Calibration Plot:", model_name),
       x = "Mean predicted risk",
       y = "Observed event rate"
     ) +
-    ggplot2::scale_x_continuous(limits = c(0, 1), breaks = seq(0, 1, 0.2)) +
-    ggplot2::scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, 0.2)) +
+    ggplot2::scale_x_continuous(limits = ax$limits, breaks = ax$breaks) +
+    ggplot2::scale_y_continuous(limits = ax$limits, breaks = ax$breaks) +
     ggplot2::coord_equal() +
-    ggplot2::theme_minimal()
+    theme_manuscript()
 
-  out_file <- file.path(output_folder, paste0("calibration_", model_name, ".png"))
-  ggplot2::ggsave(out_file, p, width = 5, height = 5, dpi = 150)
+  save_figure(p, output_folder, paste0("calibration_", model_name, ".png"),
+              width = 5, height = 5)
 }
 
 # =============================================================================

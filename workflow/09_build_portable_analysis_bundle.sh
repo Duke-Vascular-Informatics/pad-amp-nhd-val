@@ -31,14 +31,35 @@
 # on Duke PRCC, then pushes it to a GitLab remote so PRCC can clone/pull it.
 #
 # HYBRID bundle: unlike the pure-Strategus pad-oler-aki-desc bundle, this study
-# runs Strategus::execute() AND a retained custom analysis + Word-manuscript
-# report. So step 3 syncs BOTH the self-contained inst/ directory (Strategus
-# cohort JSON/SQL/Cohorts.csv + the generated analysis-spec JSON) plus
-# CreateStrategusAnalysisSpecification.R (the aki-desc pattern), AND the report
-# chain + retained custom step + covariate CSVs (the amp-ed additions):
-#   R/report_extended.R -> R/report.R, R/report_helpers.R,
-#   R/report_descriptive.R, scripts/analysis/descriptive_ed_analysis.R,
-#   covariates/*.csv.
+# runs Strategus::execute() AND a retained custom analysis step. So step 3
+# syncs BOTH the self-contained inst/ directory (Strategus cohort JSON/SQL/
+# Cohorts.csv + the generated analysis-spec JSON) plus
+# CreateStrategusAnalysisSpecification.R (the aki-desc pattern), AND this
+# study's scoring chain + covariate CSVs:
+#   R/risk_score_pipeline.R, scripts/analysis/integer_score_validation.R,
+#   R/extract_report_inputs.R (Phase 0 extract/render split — see that file's
+#   own header), covariates/*.csv.
+#
+# NOT COPIED, as of 2026-08-11 (Phase 1, docs/MIGRATION_PLAN_REPO_SPLIT.md):
+# R/report_extended.R, R/report_helpers.R, R/report_prognostic.R,
+# covariates/model_metadata.yaml, R/figure_style.R. The Word report moved to
+# its own repo, pad-amp-nhd-prog-report, entirely — this repo's PRCC bundle
+# now produces CSVs (report_inputs/, the scoring outputs) and stops there.
+# Generating the manuscript from a PRCC export is a separate, manual step run
+# from a clone of pad-amp-nhd-prog-report, not something this bundle builds
+# or runs. Do not re-add copy_bundle_file lines for any of these five files —
+# none of them exist in this repo any more, and copy_bundle_file's not-found
+# guard would just skip them silently, masking that the bundle no longer
+# needs them at all rather than that something is missing.
+#
+# CORRECTED 2026-08-10 (superseded by the above, kept for history): this list
+# previously named R/report_descriptive.R and
+# scripts/analysis/descriptive_ed_analysis.R — copy_bundle_file's own
+# not-found guard skipped both silently every run, because neither file exists
+# in this repo. They were carried over unmodified from the pad-amp-ed-desc
+# bundle script this one was scaffolded from. That same audit found every file
+# this study's report_extended.R sourced was missing from the manifest too —
+# fixed then, moot now that those files left the repo entirely.
 #
 # The Duke PRCC runtime layer (R/connection.R, R/drivers.R, config.R,
 # run_analysis.R, setup_prcc_env.sh, install_packages.R, install_r_packages.sh,
@@ -157,7 +178,7 @@ fi
 echo "  inst/ -> portable/$STUDY_NAME/inst/"
 echo "  CreateStrategusAnalysisSpecification.R -> portable/$STUDY_NAME/"
 
-echo "[Step 3] Syncing report chain + retained custom step + covariates ..."
+echo "[Step 3] Syncing scoring chain + covariates (no report — see header) ..."
 copy_bundle_file() {
   local src="$REPO_ROOT/$1" dst="$BUNDLE/$2"
   if [[ ! -f "$src" ]]; then echo "  [WARN] Not found, skipping: $1"; return; fi
@@ -165,14 +186,14 @@ copy_bundle_file() {
   cp -f "$src" "$dst"
   echo "  $1 -> portable/$STUDY_NAME/$2"
 }
-# report_extended.R is loaded as report.R on PRCC (see run_analysis.R). It
-# sources report_helpers.R + report_descriptive.R (the prognostic/causal
-# templates are guarded with file.exists() and deliberately NOT shipped).
-copy_bundle_file "R/report_extended.R"     "R/report.R"
-copy_bundle_file "R/report_helpers.R"      "R/report_helpers.R"
-copy_bundle_file "R/report_descriptive.R"  "R/report_descriptive.R"
-copy_bundle_file "scripts/analysis/descriptive_ed_analysis.R" \
-                 "scripts/analysis/descriptive_ed_analysis.R"
+# risk_score_pipeline.R is sourced independently by StrategusCodeToRun.R (not
+# via a report dispatcher — there is no report.R in this bundle any more).
+# figure_style.R is NOT copied — it is the omopReportToolkit package,
+# installed by install_packages.R, not a file in this repo.
+copy_bundle_file "R/risk_score_pipeline.R"   "R/risk_score_pipeline.R"
+copy_bundle_file "R/extract_report_inputs.R" "R/extract_report_inputs.R"
+copy_bundle_file "scripts/analysis/integer_score_validation.R" \
+                 "scripts/analysis/integer_score_validation.R"
 if compgen -G "$REPO_ROOT/covariates/*.csv" > /dev/null 2>&1; then
   for _csv in "$REPO_ROOT/covariates/"*.csv; do
     [[ -f "$_csv" ]] && copy_bundle_file "covariates/$(basename "$_csv")" \

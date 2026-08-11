@@ -3279,6 +3279,36 @@
       "Maintainer": "David Gohel <david.gohel@ardata.fr>",
       "Repository": "CRAN"
     },
+    "omopReportToolkit": {
+      "Package": "omopReportToolkit",
+      "Version": "0.1.0",
+      "Source": "GitHub",
+      "Type": "Package",
+      "Title": "Render-Only Manuscript Report Helpers for OMOP CDM Studies",
+      "Depends": [
+        "R (>= 4.1.0)"
+      ],
+      "Imports": [
+        "ggplot2 (>= 3.0.0)",
+        "officer",
+        "flextable",
+        "patchwork",
+        "pROC"
+      ],
+      "Suggests": [
+        "ragg"
+      ],
+      "License": "GPL-3",
+      "Encoding": "UTF-8",
+      "Author": "Duke Vascular Informatics [aut, cre]",
+      "Maintainer": "Duke Vascular Informatics <noreply@duke.edu>",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteUsername": "Duke-Vascular-Informatics",
+      "RemoteRepo": "omop-report-toolkit",
+      "RemoteRef": "4f6a3fb42d5417c7cc76ace1c20c5f032a1728a3",
+      "RemoteSha": "4f6a3fb42d5417c7cc76ace1c20c5f032a1728a3"
+    },
     "openssl": {
       "Package": "openssl",
       "Version": "2.4.2",
@@ -3385,6 +3415,11 @@
       "Author": "Xavier Robin [cre, aut] (ORCID: <https://orcid.org/0000-0002-6813-3200>), Natacha Turck [aut], Alexandre Hainard [aut], Natalia Tiberti [aut], Fr\u00e9d\u00e9rique Lisacek [aut], Jean-Charles Sanchez [aut], Markus M\u00fcller [aut], Stefan Siegert [ctb] (Fast DeLong code), Matthias Doering [ctb] (Hand & Till Multiclass), Zane Billings [ctb] (DeLong paired test CI)",
       "Maintainer": "Xavier Robin <pROC-cran@xavier.robin.name>",
       "Repository": "CRAN"
+    },
+    "patchwork": {
+      "Package": "patchwork",
+      "Version": "1.3.2",
+      "Source": "Repository"
     },
     "pillar": {
       "Package": "pillar",

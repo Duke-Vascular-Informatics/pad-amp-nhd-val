@@ -2,18 +2,26 @@
 # StrategusCodeToRun.R  —  PIPELINE STEP 2
 #
 # Runs the pad-amp-nhd-prog analysis in the devcontainer against the
-# pad_amp_dispo synthetic CDM, then the custom scoring step and the report.
+# pad_amp_dispo synthetic CDM: Strategus, the custom scoring step, and the
+# report-input extract. This repo is Strategus-faithful and stops here —
+# the Word manuscript is a SEPARATE repo, pad-amp-nhd-prog-report, run as its
+# own step against this run's output/ directory. See docs/MIGRATION_PLAN_REPO_SPLIT.md
+# (Phase 1, 2026-08-11) for why the report was moved out entirely rather than
+# just having its database access removed.
 #
 #   1  CreateStrategusAnalysisSpecification.R  (run this first)
 #   2  THIS SCRIPT
 #   9  workflow/09_build_portable_analysis_bundle.sh
+#   —  pad-amp-nhd-prog-report/GenerateReport.R (separate repo, run manually
+#      after this script, pointed at this script's output/ directory)
 #
 # WHAT RUNS, IN ORDER
 #   Strategus::execute()  -> generates 15 cohorts, CohortDiagnostics on the
 #                            target, Characterization for Table 1
 #   custom step           -> applies the three published integer risk scores
 #                            (scripts/analysis/integer_score_validation.R)
-#   report                -> Word manuscript (R/report_extended.R)
+#   extract                -> writes report_inputs/*.csv for the report repo
+#                            to consume (R/extract_report_inputs.R)
 #
 # DATA SOURCE
 #   Physical CDM  : omop_synth_pad_amp_dispo   (built by pad-amp-dispo-synth,
@@ -220,14 +228,37 @@ source("R/risk_score_pipeline.R")
 source("scripts/analysis/integer_score_validation.R")
 run_integer_score_validation(connectionDetails, config)
 
-# ---- Report ------------------------------------------------------------------
-source("R/report_extended.R")
-generate_manuscript_report(
-  output_dir         = config$output_folder,
-  score_output_dir   = file.path(config$output_folder, "iannuzzi"),
-  mfi5_output_dir    = file.path(config$output_folder, "mfi5"),
-  vqifs_output_dir   = file.path(config$output_folder, "vqifs"),
-  connection_details = connectionDetails,
-  config             = config
+# ---- Extract report inputs -------------------------------------------------
+# This is where this repo's responsibility ENDS. docs/MIGRATION_PLAN_REPO_SPLIT.md
+# (Phase 1, 2026-08-11) moved the Word report out entirely, into its own repo
+# — pad-amp-nhd-prog-report — so that this repo can stay Strategus-faithful:
+# cohorts, spec, the retained scoring step, and this extract layer, which turns
+# CDM queries into CSV artifacts. Nothing past this point imports ggplot2,
+# officer, or flextable, and nothing here builds a Word document.
+source("R/extract_report_inputs.R")
+message("Extracting report inputs from the CDM ...")
+report_inputs_dir <- extract_report_inputs(
+  config             = config,
+  connection_details = connectionDetails
+)
+
+# PHI: writes output/pad_amp_nhd_edge_<date>.csv containing MRN, age,
+# procedure date. Stays on PRCC. See section 5 of R/extract_report_inputs.R
+# for why this function does not belong in a shareable analysis-core repo
+# long-term — it is reserved for duke-prcc-deploy (not yet created).
+edge_person_level_path <- file.path(config$output_folder, "iannuzzi", "person_level_scores.csv")
+if (file.exists(edge_person_level_path)) {
+  export_edge_cases(
+    person_level       = read.csv(edge_person_level_path, stringsAsFactors = FALSE),
+    config             = config,
+    connection_details = connectionDetails,
+    output_dir         = config$output_folder
+  )
+}
+
+message(
+  "Analysis complete. To generate the Word report, run GenerateReport.R from ",
+  "a clone of pad-amp-nhd-prog-report with RESULTS_DIR=", config$output_folder,
+  " — see that repo's README."
 )
 message("Done.")

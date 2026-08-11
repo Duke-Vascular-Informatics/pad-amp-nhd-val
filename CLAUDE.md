@@ -15,6 +15,14 @@ Shared baseline (applies first):
 - Layout follows `pad-amp-ed-desc` (Strategus), **not** the `synthea-omop-template`
   scaffold: root-level spec builder + runner, `inst/` for cohorts, `R/` is `source()`d
   rather than installed. There is no `workflow/01–08` and no `synthea/`.
+- **This repo builds no Word document and never should.** The manuscript report
+  moved to [`pad-amp-nhd-prog-report`](https://github.com/Duke-Vascular-Informatics/pad-amp-nhd-prog-report)
+  entirely (2026-08-11) — a separate repo, not just a separate file — so this one
+  can stay Strategus-faithful: no `ggplot2`/`officer`/`flextable` imports for
+  reporting purposes. If a change here seems to need one of those, it belongs in
+  the report repo instead. The one exception is `R/risk_score_pipeline.R`'s own
+  diagnostic calibration plot (via `omopReportToolkit`) — a QC artifact of the
+  scoring step, independent of whether a report is ever generated from a run.
 - Repo is **private**.
 
 ### Pipeline
@@ -22,8 +30,9 @@ Shared baseline (applies first):
 | Step | File | What it does |
 |------|------|--------------|
 | 1 | `CreateStrategusAnalysisSpecification.R` | Builds `inst/padAmpNhdProgAnalysisSpecification.json`. Re-run after any change to `inst/`. |
-| 2 | `StrategusCodeToRun.R` | `Strategus::execute()`, then the custom scoring step, then the Word report. Fresh R session required. |
-| 9 | `workflow/09_build_portable_analysis_bundle.sh` | Duke GitLab deployment bundle. |
+| 2 | `StrategusCodeToRun.R` | `Strategus::execute()`, then the custom scoring step, then `R/extract_report_inputs.R`. Stops there — see below. Fresh R session required. |
+| 9 | `workflow/09_build_portable_analysis_bundle.sh` | Duke GitLab deployment bundle (Strategus + scoring + extract only — no report code to bundle). |
+| — | (separate repo) `pad-amp-nhd-prog-report/GenerateReport.R` | Manual step, run against this repo's `output/` directory (or a copied-out results export) to produce the Word manuscript. |
 
 Supporting: `scripts/render_cohort_sql.R` (JSON → SQL, skips the hand-authored NHD
 cohort), `tests/regression/test_cohort_vs_domain_covariates.R`.
