@@ -30,7 +30,9 @@
 # custom step does produce. Worth revisiting only as a confirmatory arm.)
 #
 # COHORTS — see inst/Cohorts.csv for the full per-cohort rationale.
-#   target     1797941   [DVI] Major Lower Extremity Amputation   (reused verbatim)
+#   target     9100011   [DVI] Major LE Amputation (dysvascular, trauma/cancer
+#                        excluded) — this study's own, forked 2026-08-12 from the
+#                        shared 1797941 rather than editing it (see below)
 #   outcome    9100001   [DVI] Non-Home Discharge                 (hand-authored SQL)
 #   covariates 1797949-1797952 reused VA-FI; 9100002-9100010 authored here
 ################################################################################
@@ -48,9 +50,24 @@ cohortDefinitionSet <- CohortGenerator::getCohortDefinitionSet(
 )
 if (any(duplicated(cohortDefinitionSet$cohortId))) stop("*** duplicate cohort IDs ***")
 
-targetId      <- 1797941L
+# CHANGED 2026-08-12: was 1797941 ([DVI] Major Lower Extremity Amputation),
+# which is shared VERBATIM with pad-amp-ed-desc. This study needed a broadened
+# wound definition, condition_occurrence instead of condition_era, and a
+# trauma/malignancy exclusion; making those edits in 1797941 would have
+# silently moved a merged, PRCC-verified study's target population. See
+# inst/Cohorts.csv's 9100011 entry for the full rationale and provenance.
+targetId      <- 9100011L
 nhdOutcomeId  <- 9100001L
-covariateIds  <- setdiff(cohortDefinitionSet$cohortId, c(targetId, nhdOutcomeId))
+# 1797941 (the shared cohort this study's target was forked FROM) stays in
+# inst/Cohorts.csv on purpose: CohortGenerator still instantiates it, so every
+# run produces an old-vs-new count side by side in cg_cohort_count.csv -- which
+# is exactly the comparison that motivated the fork. It is NOT a covariate, so
+# it is excluded here explicitly rather than falling through setdiff() (which
+# would silently list it as one, inert today only because the PLP module is
+# disabled).
+legacyTargetId <- 1797941L
+covariateIds  <- setdiff(cohortDefinitionSet$cohortId,
+                         c(targetId, nhdOutcomeId, legacyTargetId))
 
 # ==============================================================================
 # 2. SENTINEL GUARD — protect the hand-authored NHD SQL

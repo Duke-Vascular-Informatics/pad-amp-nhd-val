@@ -99,7 +99,7 @@ get_validation_config <- function() {
     # -------------------------------------------------------------------------
     # Cohort ids in the Strategus-generated cohort table
     # -------------------------------------------------------------------------
-    target_cohort_id  = as.integer(p$target$cohort_id  %||% 1797941L),
+    target_cohort_id  = as.integer(p$target$cohort_id  %||% 9100011L),
     outcome_cohort_id = as.integer(p$outcome$cohort_id %||% 9100001L),
 
     # Index-procedure concept ids — drives the report's cohort-restricted

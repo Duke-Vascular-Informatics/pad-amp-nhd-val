@@ -66,7 +66,11 @@ cohort_table: "pad_amp_nhd_prog"
 # =============================================================================
 target:
   # Reused VERBATIM from pad-amp-ed-desc — the same population this study needs.
-  cohort_id: 1797941   # [DVI] Major Lower Extremity Amputation
+  # CHANGED 2026-08-12 from 1797941 (shared with pad-amp-ed-desc — must not be
+  # edited in place). 9100011 is this study's own: broadened LE-wound set,
+  # condition_occurrence rather than condition_era, and a trauma/malignancy
+  # exclusion anchored to the index admission. See inst/Cohorts.csv.
+  cohort_id: 9100011   # [DVI] Major LE Amputation (dysvascular, trauma/cancer excluded)
 
   # Index event concept ids. Used by the custom step's cohort-restricted
   # procedure crosswalk, not for cohort entry (inst/ owns that).
