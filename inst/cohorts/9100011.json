@@ -910,6 +910,7 @@
                 "Coeff": -1
               },
               "End": {
+                "Days": 365,
                 "Coeff": 1
               },
               "UseIndexEnd": false,
@@ -934,6 +935,7 @@
                 "Coeff": -1
               },
               "End": {
+                "Days": 365,
                 "Coeff": 1
               },
               "UseIndexEnd": false,
@@ -955,9 +957,11 @@
             },
             "StartWindow": {
               "Start": {
+                "Days": 365,
                 "Coeff": -1
               },
               "End": {
+                "Days": 365,
                 "Coeff": 1
               },
               "UseIndexEnd": false,
@@ -974,7 +978,8 @@
         ],
         "DemographicCriteriaList": [],
         "Groups": []
-      }
+      },
+      "description": "At least one of PAD, diabetes mellitus, or lower-extremity wound, on condition_occurrence. WINDOWS ARE PER-INDICATION and were tightened 2026-08-12 from the unbounded window inherited from 1797941: PAD and DM are chronic, so any prior documentation counts and the window runs to +1 year (the amputation admission is frequently where PAD is first formally coded); a wound is an acute episode, so it is bracketed to +/-1 year -- a wound five years earlier is not this amputation's indication."
     },
     {
       "name": "No trauma or malignancy indication",
