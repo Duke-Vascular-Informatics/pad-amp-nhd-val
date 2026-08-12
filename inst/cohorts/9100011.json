@@ -982,8 +982,8 @@
       "description": "At least one of PAD, diabetes mellitus, or lower-extremity wound, on condition_occurrence. WINDOWS ARE PER-INDICATION and were tightened 2026-08-12 from the unbounded window inherited from 1797941: PAD and DM are chronic, so any prior documentation counts and the window runs to +1 year (the amputation admission is frequently where PAD is first formally coded); a wound is an acute episode, so it is bracketed to +/-1 year -- a wound five years earlier is not this amputation's indication."
     },
     {
-      "name": "No trauma or malignancy indication",
-      "description": "Excludes amputations plausibly performed FOR trauma or malignancy: zero traumatic-amputation and zero malignant-neoplasm condition records within 30 days either side of the index admission. Deliberately NOT an all-time history exclusion -- see this cohort's entry in inst/Cohorts.csv.",
+      "name": "No traumatic amputation indication",
+      "description": "Zero traumatic-amputation condition records within 30 days either side of the index admission. Its own rule (split from the former combined trauma-or-malignancy rule on 2026-08-12) so attrition attributes exclusions to trauma vs malignancy separately. Not visit-restricted: the trauma may be coded on a preceding ED or transfer encounter rather than the index stay.",
       "expression": {
         "Type": "ALL",
         "CriteriaList": [
@@ -1012,7 +1012,18 @@
               "Count": 0,
               "IsDistinct": false
             }
-          },
+          }
+        ],
+        "DemographicCriteriaList": [],
+        "Groups": []
+      }
+    },
+    {
+      "name": "No malignancy during the index admission",
+      "description": "Zero malignant-neoplasm condition records ATTACHED TO THE INDEX INPATIENT VISIT (RestrictVisit, the same mechanism the nested amputation criterion uses). Replaces a +/-30-day window that excluded 302 of 935 patients (32%) on real Duke data -- implausible for a dysvascular amputation cohort, since 443392 with descendants is broad and an elderly vascular admission commonly carries an active or historical cancer code within a month. WATCH FOR THE OPPOSITE FAILURE: if this rule now excludes ~0 patients, check whether condition_occurrence.visit_occurrence_id is populated in the source CDM -- an unpopulated column makes a visit-restricted criterion match nothing and the exclusion silently inert.",
+      "expression": {
+        "Type": "ALL",
+        "CriteriaList": [
           {
             "Criteria": {
               "ConditionOccurrence": {
@@ -1021,17 +1032,15 @@
             },
             "StartWindow": {
               "Start": {
-                "Days": 30,
                 "Coeff": -1
               },
               "End": {
-                "Days": 30,
                 "Coeff": 1
               },
               "UseIndexEnd": false,
               "UseEventEnd": false
             },
-            "RestrictVisit": false,
+            "RestrictVisit": true,
             "IgnoreObservationPeriod": false,
             "Occurrence": {
               "Type": 0,
