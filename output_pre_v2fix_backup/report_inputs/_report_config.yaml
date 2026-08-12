@@ -1,9 +1,0 @@
-cdm_database_name: PAD Amputation Disposition — Synthetic Dataset
-dca_threshold_max_pct: ~
-min_prior_observation_days: 1
-prediction_window_days: 90
-score_type: integer
-study_design: prognostic_model
-study_end_date: '2025-12-31'
-study_start_date: '2017-01-01'
-var_imp_file: ~

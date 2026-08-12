@@ -18,6 +18,24 @@ results/
 output/
 dist/*.zip
 
+# Renamed/temporary variants of the above. `output/` does NOT match a directory
+# called output_pre_v2fix_backup/ -- which is exactly how 127 result files,
+# including person_level_scores.csv and an edge-case export, were committed on
+# 2026-08-12 after an `mv output output_pre_v2fix_backup` during debugging.
+# (Synthetic data in that instance; the same slip with Duke data would not have
+# been.) Rename an output directory and it stays ignored.
+output*/
+*_output/
+results*/
+
+# Belt and braces: NEVER commit these, wherever they live. A directory-based
+# rule only protects the directories someone thought of; these are the files
+# that actually matter, so they are matched by name at any depth.
+person_level_scores.csv
+*_edge_*.csv
+demographics_age.csv
+discharge_types.csv
+
 # Duke GitLab deployment bundle — has its own embedded .git
 portable/
 
