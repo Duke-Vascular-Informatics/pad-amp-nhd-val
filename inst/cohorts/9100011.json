@@ -982,8 +982,8 @@
       "description": "At least one of PAD, diabetes mellitus, or lower-extremity wound, on condition_occurrence. WINDOWS ARE PER-INDICATION and were tightened 2026-08-12 from the unbounded window inherited from 1797941: PAD and DM are chronic, so any prior documentation counts and the window runs to +1 year (the amputation admission is frequently where PAD is first formally coded); a wound is an acute episode, so it is bracketed to +/-1 year -- a wound five years earlier is not this amputation's indication."
     },
     {
-      "name": "No traumatic amputation indication",
-      "description": "Zero traumatic-amputation condition records within 30 days either side of the index admission. Its own rule (split from the former combined trauma-or-malignancy rule on 2026-08-12) so attrition attributes exclusions to trauma vs malignancy separately. Not visit-restricted: the trauma may be coded on a preceding ED or transfer encounter rather than the index stay.",
+      "name": "No traumatic amputation documented BEFORE the index admission",
+      "description": "Zero traumatic-amputation records in [index - 30d, index - 1d] -- STRICTLY BEFORE the admission, changed 2026-08-12 from a +/-30d window that excluded 220 of 935 real Duke patients (24%). That figure is not clinically credible for a cohort already filtered to PAD/diabetes/wound: all 220 had passed the dysvascular indication rule. The likely mechanism is CODING OVERLAP -- this concept's descendants are 'Traumatic amputation above knee', '... below knee', '... of foot', which is exactly how a coder may describe the surgical amputation that just happened, not the mechanism that caused it. A +/-30d window therefore catches the index amputation's own coding. A genuine traumatic amputation is preceded by the injury; a miscode of the surgery appears on or after the admission date. Restricting to strictly-prior separates them as far as OMOP allows -- circe has no 'NOT at this visit' operator, so the index encounter cannot be excluded directly. THIS MAKES THE NEXT RUN A TEST: if the exclusion collapses from 220 to a small number, the codes were on the index admission and the miscoding hypothesis is confirmed; if it stays near 220, the trauma genuinely precedes the admission and these are real traumatic cases. ACCEPTED COST: a same-day trauma-to-amputation case (injury and amputation coded on the admission date) is no longer excluded.",
       "expression": {
         "Type": "ALL",
         "CriteriaList": [
@@ -999,8 +999,8 @@
                 "Coeff": -1
               },
               "End": {
-                "Days": 30,
-                "Coeff": 1
+                "Days": 1,
+                "Coeff": -1
               },
               "UseIndexEnd": false,
               "UseEventEnd": false
