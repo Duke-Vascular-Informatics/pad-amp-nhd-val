@@ -249,6 +249,19 @@ report_inputs_dir <- extract_report_inputs(
   connection_details = connectionDetails
 )
 
+# ---- Aggregate report inputs ------------------------------------------------
+# Reduces this run's PERSON-LEVEL output to aggregate-only artifacts so the
+# report repo can render every figure and table without any patient-level data
+# (see R/aggregate_report_inputs.R's header for how ROC/DCA/tiers are exact
+# under this reduction, not approximated). Also deletes the two row-level
+# files extract_report_inputs() wrote purely to feed the report
+# (demographics_age.csv, discharge_types.csv) once they have been aggregated.
+#
+# Runs AFTER the scoring step, which is what produces the person_level_scores.csv
+# files it reads.
+source("R/aggregate_report_inputs.R")
+aggregate_report_inputs(config, min_cell_count = minCellCount)
+
 # PHI: edge_case_export.R (writes output/pad_amp_nhd_edge_<date>.csv containing
 # MRN, age, procedure date) moved to duke-prcc-deploy/studies/pad-amp-nhd-prog/
 # 2026-08-11 -- it does not belong in this shareable analysis-core repo. Run it

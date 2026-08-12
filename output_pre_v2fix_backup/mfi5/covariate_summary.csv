@@ -1,0 +1,6 @@
+covariate_id,covariate_name,domain,n_positive,n_total,n_missing,mean_points
+fs_dep,Dependent functional status (frailty / impaired mobility),observation,55,195,0,0.28205128205128205
+dm,Diabetes mellitus (any type),condition,169,195,0,0.8666666666666667
+copd,Chronic obstructive pulmonary disease,condition,68,195,0,0.3487179487179487
+chf,Congestive heart failure (within 30 days prior),condition,60,195,0,0.3076923076923077
+htn,Hypertension,condition,107,195,0,0.5487179487179488

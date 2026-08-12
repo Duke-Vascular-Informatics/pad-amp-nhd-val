@@ -120,16 +120,51 @@ cohortGeneratorSpecs   <- cg$createModuleSpecifications(generateStats = TRUE)
 # runInclusionStatistics = FALSE avoids CohortGenerator::insertInclusionRuleNames
 # crashing on a backslash results schema (dhe\netid) on Duke PRCC; attrition
 # still comes from the CohortGenerator module.
+#
+# ---- Runtime on a real CDM (2026-08-12) -------------------------------------
+# The remaining sub-analyses were reviewed for cost against manuscript value
+# once this study moved to real Duke data, where the CDM is orders of magnitude
+# larger than the synthetic dev schema and the cheap-looking scans stop being
+# cheap. Two were turned off:
+#
+#   runOrphanConcepts = FALSE
+#     Scans the vocabulary and CDM for concepts RELATED TO but excluded from
+#     each concept set -- the "did I miss a code?" check. That is a
+#     phenotype-AUTHORING tool, and this study authors no phenotypes: every
+#     cohort here is an already-verified [DVI] definition being reused (see
+#     inst/Cohorts.csv). It is typically the slowest single diagnostic on a
+#     large CDM because the candidate space is the whole vocabulary.
+#     TURN IT BACK ON if a cohort definition is ever edited here rather than
+#     reused -- at that point it is exactly the check you want.
+#
+#   runCohortRelationship = FALSE
+#     Pairwise overlap between every cohort across time windows, so cost grows
+#     with the square of the cohort count (15 here). Nothing in the manuscript
+#     reads it: Table 1 comes from Characterization, attrition from
+#     CohortGenerator, and the covariate cohorts' relationships to each other
+#     are a modelling detail the score definitions already fix.
+#
+# DELIBERATELY LEFT ON:
+#   runIncludedSourceConcepts = TRUE
+#     Also a large-CDM scan, but it answers a question that is genuinely open
+#     on a database this study has not run against before: does Duke's source
+#     coding actually map into these concept sets, or are the cohorts quietly
+#     under-capturing? Keep it for at least the first Duke run; it is a
+#     reasonable thing to disable on subsequent re-runs of the SAME database
+#     once that has been confirmed.
+#
+# These only take effect after re-running this script -- Strategus reads the
+# spec JSON, not this file (see the staleness guard in StrategusCodeToRun.R).
 cd <- CohortDiagnosticsModule$new()
 cohortDiagnosticsSpecs <- cd$createModuleSpecifications(
   cohortIds                         = c(targetId),
   runInclusionStatistics            = FALSE,
   runIncludedSourceConcepts         = TRUE,
-  runOrphanConcepts                 = TRUE,
+  runOrphanConcepts                 = FALSE,
   runBreakdownIndexEvents           = TRUE,
   runVisitContext                   = TRUE,
   runIncidenceRate                  = FALSE,
-  runCohortRelationship             = TRUE,
+  runCohortRelationship             = FALSE,
   runTemporalCohortCharacterization = FALSE,
   minCharacterizationMean           = 0.01
 )

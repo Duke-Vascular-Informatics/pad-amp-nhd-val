@@ -1,0 +1,11 @@
+covariate_id,covariate_name,domain,n_positive,n_total,n_missing,mean_points
+htn,Hypertension,condition,164,195,0,0.841025641025641
+chf,Congestive heart failure,condition,111,195,0,0.5692307692307692
+cad,Coronary artery disease,condition,46,195,0,0.2358974358974359
+pvd,Peripheral vascular disease,condition,168,195,0,0.8615384615384616
+dm,Diabetes mellitus (any type),condition,169,195,0,0.8666666666666667
+copd,Chronic obstructive pulmonary disease,condition,68,195,0,0.3487179487179487
+renal_impairment,Renal impairment (creatinine > 1.8 mg/dL or dialysis),condition,89,195,0,0.4564102564102564
+anemia,Anemia (sex-specific Hgb threshold: <13 g/dL M / <12 g/dL F),condition,131,195,64,0.6717948717948717
+underweight,Underweight (BMI < 18.5),measurement,15,195,180,0.07692307692307693
+nonambulatory,Non-ambulatory / impaired ambulation status,auto,89,195,0,0.4564102564102564

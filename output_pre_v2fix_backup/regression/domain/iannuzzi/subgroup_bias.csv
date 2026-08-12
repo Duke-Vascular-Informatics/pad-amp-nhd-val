@@ -1,0 +1,7 @@
+subgroup_var,subgroup_level,n,n_events,ece,ci_lower,ci_upper
+sex,Female,52,15,0.2907,0.2064,0.4346
+sex,Male,46,18,0.1058,0.0814,0.2996
+race,White,64,24,0.1856,0.1142,0.315
+ethnicity,Non-Hispanic,80,28,0.1832,0.1154,0.2923
+age_group,<65,61,18,0.174,0.1134,0.2868
+age_group,65-74,28,11,0.3269,0.2126,0.4783
