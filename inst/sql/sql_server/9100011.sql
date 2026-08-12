@@ -79,12 +79,12 @@ UNION  select c.concept_id
 ) C UNION ALL 
 SELECT 5 as codeset_id, c.concept_id FROM (select distinct I.concept_id FROM
 ( 
-  select concept_id from @vocabulary_database_schema.CONCEPT where (concept_id in (4096479))
+  select concept_id from @vocabulary_database_schema.CONCEPT where (concept_id in (194229,72487,197751,4095264,4187096))
 UNION  select c.concept_id
   from @vocabulary_database_schema.CONCEPT c
   join @vocabulary_database_schema.CONCEPT_ANCESTOR ca on c.concept_id = ca.descendant_concept_id
   WHERE c.invalid_reason is null
-  and (ca.ancestor_concept_id in (4096479))
+  and (ca.ancestor_concept_id in (194229,72487,197751,4095264,4187096))
 
 ) I
 ) C UNION ALL 
@@ -382,7 +382,7 @@ FROM
 
 -- End Condition Occurrence Criteria
 
-) A on A.person_id = P.person_id  AND A.START_DATE >= P.OP_START_DATE AND A.START_DATE <= P.OP_END_DATE AND A.START_DATE >= DATEADD(day,-30,P.START_DATE) AND A.START_DATE <= DATEADD(day,-1,P.START_DATE) ) cc on p.person_id = cc.person_id and p.event_id = cc.event_id
+) A on A.person_id = P.person_id  AND A.START_DATE >= P.OP_START_DATE AND A.START_DATE <= P.OP_END_DATE AND A.START_DATE >= P.OP_START_DATE AND A.START_DATE <= P.OP_END_DATE AND A.visit_occurrence_id = P.visit_occurrence_id ) cc on p.person_id = cc.person_id and p.event_id = cc.event_id
 GROUP BY p.person_id, p.event_id
 HAVING COUNT(cc.event_id) = 0
 -- End Correlated Criteria
