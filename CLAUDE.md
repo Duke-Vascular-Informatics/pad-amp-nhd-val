@@ -99,8 +99,12 @@ folder before re-running.
 
 ### Cohort id allocation
 
-`9100001–9100029` is a **local** block, deliberately outside the ATLAS-demo
-`1796xxx–1797xxx` range so a future ATLAS assignment cannot collide. All are named
+This repo holds **`9100001`–`9100011`** out of the reserved local block, which sits
+deliberately outside the ATLAS-demo id range so a future ATLAS assignment cannot
+collide. The block's bounds and the allocation ledger live in
+`strategus-study-template/docs/STRATEGUS_CONVENTIONS.md` §6 — do not restate them
+here. (They used to be restated here and in every `logic_description` below, and
+all of it went stale at once when the block was widened on 2026-08-13.) All are named
 `[DVI] …` from the start so pushing them upstream is not a rename exercise. They are
 **not yet in ATLAS** (`alignment_status: LOCAL ONLY` in `inst/Cohorts.csv`); creating them
 there is a separate, explicit, user-initiated action — the workspace `[DVI]` tooling is
