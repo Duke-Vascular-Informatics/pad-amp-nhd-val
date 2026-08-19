@@ -51,14 +51,25 @@
 # change cannot loosen an existing threshold.
 #
 # INPUTS   config$output_folder/{iannuzzi,mfi5,vqifs}/person_level_scores.csv
-#          config$output_folder/report_inputs/discharge_types.csv  (transient)
-#          config$output_folder/report_inputs/demographics_age.csv (transient)
+#          demog_age, discharge_types — data frames passed in directly by the
+#          caller (StrategusCodeToRun.R), not read from disk. See REVISION
+#          2026-08-19 below.
 # OUTPUTS  config$output_folder/report_inputs/agg_*.csv
 #
 # Called by StrategusCodeToRun.R (and run_analysis.R in the PRCC bundle)
-# immediately after extract_report_inputs(), which produces the two transient
-# row-level files above. Those two are DELETED once aggregated -- see
-# .drop_row_level_inputs() at the bottom.
+# immediately after extract_report_inputs(), passing that call's return
+# value straight through as demog_age/discharge_types (same R session, same
+# process — no file in between).
+#
+# REVISION 2026-08-19 — demog_age/discharge_types used to be read from two
+# transient row-level CSVs (demographics_age.csv, discharge_types.csv) that
+# extract_report_inputs() wrote and this function deleted once aggregated
+# (.drop_row_level_inputs(), still present below but now only a defensive
+# cleanup for stale files left by a pre-2026-08-19 run — not load-bearing).
+# That write-then-delete pattern left a real window — a crash between the
+# two steps, or a run with keep_row_level = TRUE — where patient-level data
+# sat on disk. Per explicit instruction, no patient-level file is written at
+# all now: these two frames travel only as in-memory function arguments.
 # =============================================================================
 
 
@@ -250,19 +261,32 @@
 # -----------------------------------------------------------------------------
 # aggregate_report_inputs()
 #
-# Main entry point. Reads the person-level scoring outputs plus the two
-# transient row-level extract artifacts, writes the agg_*.csv set, and (unless
-# keep_row_level = TRUE) deletes the row-level inputs it consumed.
+# Main entry point. Reads the person-level scoring outputs from disk, takes
+# demog_age/discharge_types as in-memory arguments (see REVISION 2026-08-19
+# in the file header), writes the agg_*.csv set, and (unless
+# keep_row_level = TRUE) runs the now-defensive-only row-level-file cleanup.
 #
 # @param config           Study config from get_validation_config()/get_prcc_config().
 # @param min_cell_count   Suppression threshold for count-bearing cells.
-# @param keep_row_level   TRUE leaves demographics_age.csv / discharge_types.csv
-#                         and person_level_scores.csv in place. Only for local
-#                         debugging -- never on PRCC.
+# @param demog_age        Data frame from extract_report_inputs()'s return
+#                          value ($demog_age) — one row per patient, age at
+#                          index. NULL skips the age-summary section.
+# @param discharge_types  Data frame from extract_report_inputs()'s return
+#                          value ($discharge_types) — subject_id/discharge_type,
+#                          one row per patient. NULL skips the by-year/month
+#                          discharge-type section.
+# @param keep_row_level   TRUE skips the legacy-file cleanup
+#                         (.drop_row_level_inputs()) and leaves
+#                         person_level_scores.csv in place. Only for local
+#                         debugging -- never on PRCC. Since 2026-08-19 this no
+#                         longer controls whether demographics_age.csv /
+#                         discharge_types.csv are written -- they never are.
 # @return The report_inputs directory path, invisibly.
 # -----------------------------------------------------------------------------
 aggregate_report_inputs <- function(config,
                                     min_cell_count = 5L,
+                                    demog_age = NULL,
+                                    discharge_types = NULL,
                                     keep_row_level = FALSE) {
 
   out_dir <- config$output_folder
@@ -538,11 +562,12 @@ aggregate_report_inputs <- function(config,
          "agg_risk_tiers")
 
   # ---------------------------------------------------------------------------
-  # 6. Age summary (Table 1's age row) -- replaces demographics_age.csv
+  # 6. Age summary (Table 1's age row) -- consumes demog_age directly (no
+  #    demographics_age.csv is written anywhere in this pipeline as of
+  #    2026-08-19 -- see file header REVISION note)
   # ---------------------------------------------------------------------------
-  age_f <- file.path(ri_dir, "demographics_age.csv")
-  if (file.exists(age_f)) {
-    a <- utils::read.csv(age_f, stringsAsFactors = FALSE)
+  if (!is.null(demog_age) && nrow(demog_age) > 0) {
+    a <- demog_age
     ac <- names(a)[toupper(names(a)) == "AGE_AT_INDEX"][1]
     ages <- if (!is.na(ac)) as.numeric(a[[ac]]) else numeric(0)
     ages <- ages[!is.na(ages)]
@@ -567,23 +592,24 @@ aggregate_report_inputs <- function(config,
   # ---------------------------------------------------------------------------
   # 7. NHD rate by year and by month (Figure 1, Supplemental Figure S5)
   #
-  # Needs index_date x discharge_type, which lives across two row-level files:
-  # person_level_scores.csv (index_date, outcome) and discharge_types.csv
-  # (subject_id -> disposition). Joined here, once, then reduced to counts.
+  # Needs index_date x discharge_type: person_level_scores.csv (index_date,
+  # outcome, read from disk above -- this study's primary analytic result,
+  # not a report-only artifact) joined against the discharge_types argument
+  # (in-memory -- no discharge_types.csv is written anywhere in this pipeline
+  # as of 2026-08-19, see file header REVISION note). Joined here, once, then
+  # reduced to counts.
   #
   # The >= 11 (year) and >= 5 (month) minimums are the report's own existing
   # thresholds, kept as-is rather than replaced by min_cell_count so this
   # change can only tighten suppression, never loosen it.
   # ---------------------------------------------------------------------------
   pl_i  <- pl_list[["iannuzzi"]]
-  dt_f  <- file.path(ri_dir, "discharge_types.csv")
   if (!is.null(pl_i) && "index_date" %in% names(pl_i)) {
-    if (file.exists(dt_f)) {
-      dt <- utils::read.csv(dt_f, stringsAsFactors = FALSE)
-      if (nrow(dt) > 0 && "subject_id" %in% names(dt)) {
-        dt$subject_id <- as.integer(dt$subject_id)
-        pl_i <- merge(pl_i, dt, by = "subject_id", all.x = TRUE)
-      }
+    if (!is.null(discharge_types) && nrow(discharge_types) > 0 &&
+        "subject_id" %in% names(discharge_types)) {
+      dt <- discharge_types
+      dt$subject_id <- as.integer(dt$subject_id)
+      pl_i <- merge(pl_i, dt, by = "subject_id", all.x = TRUE)
     }
     yr <- suppressWarnings(as.integer(format(as.Date(pl_i$index_date), "%Y")))
     mo <- suppressWarnings(as.integer(format(as.Date(pl_i$index_date), "%m")))
@@ -628,6 +654,11 @@ aggregate_report_inputs <- function(config,
            "agg_nhd_by_month")
   }
 
+  # Defensive-only as of 2026-08-19: nothing in this run wrote
+  # demographics_age.csv / discharge_types.csv (they never touch disk
+  # anymore -- see file header REVISION note), so this only cleans up
+  # leftovers from a report_inputs/ directory populated by a pre-2026-08-19
+  # run of this pipeline.
   if (!keep_row_level) .drop_row_level_inputs(config, ri_dir)
 
   message("[aggregate] Done.")
@@ -663,15 +694,17 @@ aggregate_report_inputs <- function(config,
 # -----------------------------------------------------------------------------
 # .drop_row_level_inputs()
 #
-# Deletes the row-level files the aggregation consumed, so what remains under
-# output/ for a results export is aggregate-only.
+# DEFENSIVE-ONLY as of 2026-08-19 (see file header REVISION note): as of that
+# date, nothing in this pipeline ever writes demographics_age.csv or
+# discharge_types.csv to report_inputs/ in the first place -- both travel
+# only as in-memory arguments now. This function still deletes them IF
+# FOUND, purely to clean up a report_inputs/ directory left over from a run
+# of the pre-2026-08-19 code (which did write, then delete, those two files
+# as a separate step -- the exact two-step gap this revision closes).
 #
 # person_level_scores.csv is deliberately NOT deleted: it is this study's
 # primary analytic result, it stays on PRCC as the source of truth for any
 # re-analysis, and export_results_for_review.R already refuses to package it.
-# The point of this function is narrower -- remove the row-level files that
-# existed ONLY to feed the report, so a report-inputs export needs no
-# per-subject data at all.
 # -----------------------------------------------------------------------------
 .drop_row_level_inputs <- function(config, ri_dir) {
   for (f in c("demographics_age.csv", "discharge_types.csv")) {

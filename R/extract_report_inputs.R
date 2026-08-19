@@ -28,8 +28,7 @@
 #   config             — study config from get_validation_config()
 #   connection_details — DatabaseConnector connection details
 #
-# OUTPUTS  (all under <output_folder>/report_inputs/)
-#   demographics_age.csv             one row per target-cohort patient: age_at_index
+# OUTPUTS  (all under <output_folder>/report_inputs/, unless noted)
 #   demographics_sex.csv             concept_id / category / n
 #   demographics_race.csv            concept_id / category / n
 #   demographics_ethnicity.csv       concept_id / category / n
@@ -38,7 +37,6 @@
 #   nhd_outcomes_scalars.csv         one row: n_nhd, median_los, los_p25,
 #                                    los_p75, n_readmission, n_death
 #   nhd_outcomes_destinations.csv    destination / n
-#   discharge_types.csv              subject_id / discharge_type
 #   cdm_source_metadata.csv          cdm_version / vocabulary_version (methods text)
 #   supp_cdm_source.csv              full cdm_source row (Supplemental Table S1)
 #   supp_cpt_codes.csv               CPT codes by subgroup (Supplemental Table S3)
@@ -53,17 +51,33 @@
 #   _manifest.csv                    what was written, when, and against which
 #                                    schemas — so a stale render is detectable
 #
+#   NOT written to disk at all (returned in-memory instead — see RETURN VALUE):
+#   age at index, subject_id -> discharge_type
+#
 #   Written OUTSIDE report_inputs/, into the study output folder:
 #   pad_amp_nhd_edge_<date>.csv      PHI — see section 5. Not a render input.
 #
+# RETURN VALUE (REVISED 2026-08-19 — see DISCLOSURE BOUNDARY below for why)
+#   A list: `dir` (the report_inputs_dir path, as before), `demog_age`
+#   (the age-at-index data frame — one row per patient, from `demog$age`),
+#   `discharge_types` (subject_id/discharge_type — one row per patient).
+#   StrategusCodeToRun.R must pass `demog_age`/`discharge_types` straight into
+#   `aggregate_report_inputs()`, which turns them into `agg_age_summary.csv` /
+#   `agg_age_groups.csv` / `agg_nhd_by_year.csv` — see that file's header.
+#   These two frames are NEVER written to a file anywhere in this pipeline.
+#
 # DISCLOSURE BOUNDARY — READ BEFORE ADDING AN OUTPUT
-#   Everything above is aggregate EXCEPT two files, both of which are keyed by
-#   `subject_id` (an OMOP person_id — pseudonymous within the CDM, not an MRN):
-#     - demographics_age.csv   one age per patient, unaggregated
-#     - discharge_types.csv    one disposition per patient
-#   Both are required by the render half (the age IQR and the Figure 1 stacked
-#   chart are computed there, not here) and both are pseudonymous, so they are
-#   in scope for this directory.
+#   Everything above is aggregate. Age-at-index and discharge-type used to be
+#   written here as `demographics_age.csv` / `discharge_types.csv` — one row
+#   per patient each, pseudonymous (keyed by `subject_id`, an OMOP person_id,
+#   not an MRN) but not aggregate — then read back and aggregated by
+#   `aggregate_report_inputs.R`, which deleted the two files afterward. That
+#   two-step "write, then delete" pattern left a real window (a crash between
+#   the two steps, or a run with `keep_row_level = TRUE`) where patient-level
+#   data sat in `report_inputs/`. Per explicit instruction (2026-08-19), no
+#   patient-level file is written at all now: both frames are returned
+#   in-memory and consumed directly by `aggregate_report_inputs()` in the same
+#   R session — see RETURN VALUE above.
 #
 #   What must NEVER be written here: direct identifiers. In particular
 #   output/pad_amp_nhd_edge_<date>.csv contains MRN, age, and procedure date.
@@ -815,8 +829,12 @@ extract_report_inputs <- function(config,
 
   # ---- Demographics (Table 1) ------------------------------------------------
   # Returns a named list of six data frames, any of which may be NULL.
+  # "age" is patient-level (one row per patient) and is deliberately NOT
+  # written to disk — see the file header's RETURN VALUE / DISCLOSURE
+  # BOUNDARY sections. It is returned in-memory for aggregate_report_inputs()
+  # to consume directly.
   demog <- fetch_demographics_from_omop(config, connection_details)
-  for (part in c("age", "sex", "race", "ethnicity", "indication", "procedure_type")) {
+  for (part in c("sex", "race", "ethnicity", "indication", "procedure_type")) {
     nm <- paste0("demographics_", part)
     note(.write_report_input(demog[[part]], inputs_dir, nm), nm)
   }
@@ -844,10 +862,11 @@ extract_report_inputs <- function(config,
   }
 
   # ---- Discharge dispositions (Figure 1) -------------------------------------
-  # Person-level: subject_id + discharge_type. Pseudonymous — see the
-  # disclosure-boundary note in the file header before adding columns.
+  # Person-level: subject_id + discharge_type. Pseudonymous, and — as of
+  # 2026-08-19 — deliberately NOT written to disk; see the file header's
+  # RETURN VALUE / DISCLOSURE BOUNDARY sections before adding a write call
+  # back here.
   dtypes <- fetch_discharge_types_from_omop(config, connection_details)
-  note(.write_report_input(dtypes, inputs_dir, "discharge_types"), "discharge_types")
 
   # ---- Supplemental tables + cdm_source metadata -----------------------------
   # Defined in section 4. These were inline DatabaseConnector calls inside the
@@ -896,7 +915,16 @@ extract_report_inputs <- function(config,
   utils::write.csv(manifest, file.path(inputs_dir, "_manifest.csv"), row.names = FALSE)
 
   message("[extract] Done — ", length(written), " file(s) written to ", inputs_dir)
-  invisible(inputs_dir)
+
+  # Return shape changed 2026-08-19: was invisible(inputs_dir) (a bare path).
+  # StrategusCodeToRun.R's `report_inputs_dir <- extract_report_inputs(...)`
+  # is the only caller and never used that value again, so this is safe, but
+  # any NEW caller must use `$dir`, not the return value directly as a path.
+  invisible(list(
+    dir             = inputs_dir,
+    demog_age       = demog$age,
+    discharge_types = dtypes
+  ))
 }
 
 

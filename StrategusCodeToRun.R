@@ -244,7 +244,7 @@ run_integer_score_validation(connectionDetails, config)
 # officer, or flextable, and nothing here builds a Word document.
 source("R/extract_report_inputs.R")
 message("Extracting report inputs from the CDM ...")
-report_inputs_dir <- extract_report_inputs(
+extractResult <- extract_report_inputs(
   config             = config,
   connection_details = connectionDetails
 )
@@ -253,14 +253,20 @@ report_inputs_dir <- extract_report_inputs(
 # Reduces this run's PERSON-LEVEL output to aggregate-only artifacts so the
 # report repo can render every figure and table without any patient-level data
 # (see R/aggregate_report_inputs.R's header for how ROC/DCA/tiers are exact
-# under this reduction, not approximated). Also deletes the two row-level
-# files extract_report_inputs() wrote purely to feed the report
-# (demographics_age.csv, discharge_types.csv) once they have been aggregated.
+# under this reduction, not approximated).
 #
-# Runs AFTER the scoring step, which is what produces the person_level_scores.csv
-# files it reads.
+# demog_age/discharge_types are extract_report_inputs()'s in-memory return
+# values, passed straight through in the same R session — as of 2026-08-19,
+# neither is ever written to disk as its own file; see both scripts'
+# REVISION notes. Runs AFTER the scoring step, which is what produces the
+# person_level_scores.csv files this step reads from disk.
 source("R/aggregate_report_inputs.R")
-aggregate_report_inputs(config, min_cell_count = minCellCount)
+aggregate_report_inputs(
+  config,
+  min_cell_count  = minCellCount,
+  demog_age       = extractResult$demog_age,
+  discharge_types = extractResult$discharge_types
+)
 
 # PHI: edge_case_export.R (writes output/pad_amp_nhd_edge_<date>.csv containing
 # MRN, age, procedure date) moved to duke-prcc-deploy/studies/pad-amp-nhd-prog/
