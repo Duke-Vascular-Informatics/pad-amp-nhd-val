@@ -88,3 +88,10 @@ NIH/NCATS **K12TR005435**.
 ## License
 
 GPL-3.0. This is copyleft: redistributed or modified versions must remain GPL-3.0.
+
+### Third-party vocabulary content
+
+A small number of concept sets in `inst/cohorts/*.json` include CPT4/HCPCS
+procedure concepts (proprietary terminologies — CPT4 is AMA-owned) alongside
+SNOMED CT. No vocabulary data is distributed with this repo, only concept
+IDs/names referenced in cohort definitions.
