@@ -2646,9 +2646,28 @@ calc_ece <- function(pred, truth, n_bins = 10L) {
 # -----------------------------------------------------------------------------
 # compute_subgroup_bias()
 #
-# Evaluates ECE (Expected Calibration Error) for the lookup model within each
-# demographic and clinical subgroup.  Groups with fewer than min_events observed
-# outcome events are suppressed to avoid unreliable estimates.
+# Evaluates ECE (Expected Calibration Error) AND AUROC (discrimination) for one
+# model's predictions within each demographic and clinical subgroup.  Groups
+# with fewer than min_events observed outcome events are suppressed to avoid
+# unreliable estimates.
+#
+# WHICH MODEL'S PREDICTIONS (changed 2026-09-06)
+# ----------------------------------------------
+# This used to hardcode `predicted_risk_lookup` — the published score-to-risk
+# mapping. That had two consequences, one blocking and one wrong:
+#
+#   1. Only Iannuzzi 2020 publishes such a mapping. mFI-5 and sVQI-FS have no
+#      lookup column at all, so this function returned NULL for them and
+#      neither score could ever have a subgroup bias analysis.
+#   2. The report captioned every subgroup section "(Recalibrated)" and drew
+#      its forest-plot reference line at the RECALIBRATED overall ECE, while
+#      the subgroup estimates themselves were lookup-based. The figure was
+#      therefore comparing two different models against each other.
+#
+# The default is now `predicted_risk_recalibrated`, which every score has,
+# which makes the three scores comparable to one another, and which makes the
+# existing "(Recalibrated)" label true. Pass prediction_col explicitly to
+# assess the published mapping instead — meaningful only for Iannuzzi.
 #
 # Subgroups evaluated:
 #   sex        — Female / Male  (from OMOP person table via fetch_subgroup_labels)
@@ -2663,23 +2682,31 @@ calc_ece <- function(pred, truth, n_bins = 10L) {
 # The random seed is fixed at 42 for reproducibility.
 #
 # Arguments:
-#   person_level — data frame returned by evaluate_integer_risk_score()
-#   connection   — open DatabaseConnector connection object
-#   config       — list from get_validation_config()
-#   B            — number of bootstrap resamples (default 200)
-#   min_events   — minimum observed events required per subgroup (default 10)
-#   test_only    — restrict to split_set == "test" rows (default TRUE)
+#   person_level   — data frame returned by evaluate_integer_risk_score()
+#   connection     — open DatabaseConnector connection object
+#   config         — list from get_validation_config()
+#   B              — number of bootstrap resamples (default 200)
+#   min_events     — minimum observed events required per subgroup (default 10)
+#   test_only      — restrict to split_set == "test" rows (default TRUE)
+#   prediction_col — column of person_level holding the predicted risks to
+#                    assess (default "predicted_risk_recalibrated")
 #
 # Returns a data frame with columns:
-#   subgroup_var, subgroup_level, n, n_events, ece, ci_lower, ci_upper
+#   subgroup_var, subgroup_level, n, n_events,
+#   ece, ci_lower, ci_upper, auroc, auroc_ci_lower, auroc_ci_upper
+# auroc / auroc_ci_lower / auroc_ci_upper are NA for a subgroup whose outcome
+# is constant (no events or all events), matching compute_binary_metrics()'s
+# existing NA convention. Both metrics are bootstrapped from the same resampled
+# index per iteration so they stay correlated draw-for-draw.
 # Returns NULL if demographics cannot be fetched or no subgroups qualify.
 # -----------------------------------------------------------------------------
 compute_subgroup_bias <- function(person_level,
                                   connection,
                                   config,
-                                  B          = 200L,
-                                  min_events = 10L,
-                                  test_only  = TRUE) {
+                                  B              = 200L,
+                                  min_events     = 10L,
+                                  test_only      = TRUE,
+                                  prediction_col = "predicted_risk_recalibrated") {
 
   # ---------------------------------------------------------------------------
   # Step 0 — restrict to the evaluation (test) partition.
@@ -2746,10 +2773,16 @@ compute_subgroup_bias <- function(person_level,
   }
 
   # ---------------------------------------------------------------------------
-  # Step 4 — require the lookup model predictions.
+  # Step 4 — require the requested prediction column.
+  #
+  # Named rather than positional so the failure message says which model was
+  # asked for. A missing predicted_risk_recalibrated means the recalibration
+  # step did not run, which is a real problem worth surfacing; a missing
+  # predicted_risk_lookup just means this score publishes no mapping.
   # ---------------------------------------------------------------------------
-  if (!"predicted_risk_lookup" %in% names(df)) {
-    warning("[subgroup_bias] predicted_risk_lookup column not found — skipping.")
+  if (!prediction_col %in% names(df)) {
+    warning("[subgroup_bias] column '", prediction_col,
+            "' not found in person_level — skipping subgroup bias analysis.")
     return(NULL)
   }
 
@@ -2798,7 +2831,7 @@ compute_subgroup_bias <- function(person_level,
 
       # Filter to this subgroup; drop rows with missing predictions or outcomes.
       grp <- df[!is.na(df[[var]]) & as.character(df[[var]]) == lvl, ]
-      grp <- grp[!is.na(grp$predicted_risk_lookup) & !is.na(grp$outcome), ]
+      grp <- grp[!is.na(grp[[prediction_col]]) & !is.na(grp$outcome), ]
 
       n_total  <- nrow(grp)
       n_events <- sum(as.integer(grp$outcome), na.rm = TRUE)
@@ -2812,18 +2845,42 @@ compute_subgroup_bias <- function(person_level,
         next
       }
 
-      # Observed ECE for this subgroup.
-      ece_obs <- calc_ece(grp$predicted_risk_lookup, as.numeric(grp$outcome))
+      # Observed ECE and AUROC for this subgroup. AUROC reuses
+      # compute_binary_metrics() so NA-handling (constant outcome) matches the
+      # overall-cohort discrimination metrics exactly.
+      ece_obs   <- calc_ece(grp[[prediction_col]], as.numeric(grp$outcome))
+      auroc_obs <- compute_binary_metrics(grp$outcome, grp[[prediction_col]])$auroc
 
-      # Bootstrap to obtain 95% percentile CI.
-      boot_eces <- vapply(seq_len(B), function(i) {
-        idx <- sample(n_total, n_total, replace = TRUE)
-        calc_ece(grp$predicted_risk_lookup[idx], as.numeric(grp$outcome[idx]))
-      }, numeric(1L))
-      boot_eces <- boot_eces[!is.na(boot_eces)]
+      # Bootstrap to obtain 95% percentile CIs. The same resampled index is
+      # used for both metrics per iteration so they stay correlated draw-for-
+      # draw rather than being resampled independently.
+      boot_mat <- vapply(seq_len(B), function(i) {
+        idx  <- sample(n_total, n_total, replace = TRUE)
+        y_i  <- as.numeric(grp$outcome[idx])
+        p_i  <- grp[[prediction_col]][idx]
+        auroc_i <- if (length(unique(y_i)) < 2) {
+          NA_real_
+        } else {
+          as.numeric(pROC::auc(pROC::roc(y_i, p_i, quiet = TRUE, direction = "<")))
+        }
+        c(ece = calc_ece(p_i, y_i), auroc = auroc_i)
+      }, numeric(2L))
+
+      boot_eces   <- boot_mat["ece", ]
+      boot_eces   <- boot_eces[!is.na(boot_eces)]
+      boot_aurocs <- boot_mat["auroc", ]
+      boot_aurocs <- boot_aurocs[!is.na(boot_aurocs)]
 
       ci_lo <- stats::quantile(boot_eces, 0.025, na.rm = TRUE)
       ci_hi <- stats::quantile(boot_eces, 0.975, na.rm = TRUE)
+
+      if (length(boot_aurocs) > 0L) {
+        auroc_ci_lo <- stats::quantile(boot_aurocs, 0.025, na.rm = TRUE)
+        auroc_ci_hi <- stats::quantile(boot_aurocs, 0.975, na.rm = TRUE)
+      } else {
+        auroc_ci_lo <- NA_real_
+        auroc_ci_hi <- NA_real_
+      }
 
       results[[length(results) + 1L]] <- data.frame(
         subgroup_var   = var,
@@ -2833,6 +2890,9 @@ compute_subgroup_bias <- function(person_level,
         ece            = round(ece_obs, 4),
         ci_lower       = round(as.numeric(ci_lo), 4),
         ci_upper       = round(as.numeric(ci_hi), 4),
+        auroc          = if (is.na(auroc_obs)) NA_real_ else round(auroc_obs, 4),
+        auroc_ci_lower = if (is.na(auroc_ci_lo)) NA_real_ else round(as.numeric(auroc_ci_lo), 4),
+        auroc_ci_upper = if (is.na(auroc_ci_hi)) NA_real_ else round(as.numeric(auroc_ci_hi), 4),
         stringsAsFactors = FALSE
       )
     }
@@ -2967,9 +3027,9 @@ run_integer_risk_score_pipeline <- function(config, connection_details,
   }
 
   # ---------------------------------------------------------------------------
-  # Subgroup bias analysis — ECE per demographic and clinical subgroup.
-  # Suppressed for subgroups with fewer than 10 observed outcome events.
-  # Uses 200 bootstrap resamples per subgroup for speed.
+  # Subgroup bias analysis — ECE and AUROC per demographic and clinical
+  # subgroup. Suppressed for subgroups with fewer than 10 observed outcome
+  # events. Uses 200 bootstrap resamples per subgroup for speed.
   # ---------------------------------------------------------------------------
   message("Computing subgroup bias analysis (B = 200 per subgroup) ...")
   subgroup_bias <- tryCatch(
