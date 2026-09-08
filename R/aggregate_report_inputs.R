@@ -519,9 +519,9 @@ aggregate_report_inputs <- function(config,
     if (is.null(d) || nrow(d) == 0) return(NULL)
     r <- d[[risk_col]]
     tier <- ifelse(is.na(r), NA_character_,
-             ifelse(r < 0.30, "Low (<30%)",
-              ifelse(r <= 0.70, "Intermediate (30–70%)", "High (>70%)")))
-    lv <- c("Low (<30%)", "Intermediate (30–70%)", "High (>70%)")
+             ifelse(r < 0.50, "Low (<50%)",
+              ifelse(r <= 0.80, "Intermediate (50–80%)", "High (>80%)")))
+    lv <- c("Low (<50%)", "Intermediate (50–80%)", "High (>80%)")
     tier_rows[[label]] <<- do.call(rbind, lapply(lv, function(tl) {
       sel <- !is.na(tier) & tier == tl
       data.frame(model_label = label, tier = tl,
