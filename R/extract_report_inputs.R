@@ -1139,8 +1139,8 @@ extract_report_inputs <- function(config,
 # 5. EDGE-CASE EXPORT — MOVED, 2026-08-11
 #
 # export_edge_cases() (PHI-producing: writes MRN, age, procedure date) moved
-# to duke-prcc-deploy/studies/pad-amp-nhd-prog/edge_case_export.R — see
-# studies.yaml's pad-amp-nhd-prog entry (`edge_case_export` block) and that
+# to duke-prcc-deploy/studies/pad-amp-nhd-val/edge_case_export.R — see
+# studies.yaml's pad-amp-nhd-val entry (`edge_case_export` block) and that
 # file's own header for the full history. This repo is the confirmed
 # long-term shareable analysis-core citizen; PHI-producing, Duke/PRCC-only
 # logic does not belong here.

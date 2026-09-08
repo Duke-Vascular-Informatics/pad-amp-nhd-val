@@ -50,7 +50,7 @@
 # provided by the omopReportToolkit package (docs/MIGRATION_PLAN_REPO_SPLIT.md
 # Phase 1). library()'d directly here — this repo no longer has a
 # report_helpers.R at all (the Word report, and everything it needed, moved
-# to pad-amp-nhd-prog-report in Phase 1) — so this is this repo's ONLY
+# to pad-amp-nhd-val-report in Phase 1) — so this is this repo's ONLY
 # consumer of the toolkit, producing a diagnostic calibration PNG as a QC
 # artifact of the scoring step, independent of whether a report is ever
 # generated from this run's output.

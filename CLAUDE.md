@@ -1,4 +1,4 @@
-# pad-amp-nhd-prog — CLAUDE Instructions (Local Wrapper)
+# pad-amp-nhd-val — CLAUDE Instructions (Local Wrapper)
 
 Shared baseline (applies first):
 
@@ -8,15 +8,21 @@ Shared baseline (applies first):
 
 - **Study design: prognostic model, Strategus-based.** External validation of three
   published integer risk scores against **non-home discharge (NHD)** after major lower
-  extremity amputation, plus a scaffold for de-novo model development.
+  extremity amputation.
   - Iannuzzi 2020 NHD score — 0–18 points, has a published score→risk lookup
   - Subramaniam 2018 mFI-5 — 0–5 points, no published lookup
   - Kraiss 2022 sVQI-FS — 0–10 points as implemented (10 of the paper's 11 items)
+- **This repo is a frozen, validation-only fork of `pad-amp-nhd-prog`** (forked
+  2026-09-07, full git history preserved), made to keep this analysis stable for a
+  publication. `pad-amp-nhd-prog` continues toward a de-novo risk score — this repo
+  still carries its disabled `ENABLE_PLP_DEVELOPMENT` scaffold only because it was
+  forked before that work started; de-novo development happens in `pad-amp-nhd-prog`,
+  not here.
 - Layout follows `pad-amp-ed-desc` (Strategus), **not** the `synthea-omop-template`
   scaffold: root-level spec builder + runner, `inst/` for cohorts, `R/` is `source()`d
   rather than installed. There is no `workflow/01–08` and no `synthea/`.
 - **This repo builds no Word document and never should.** The manuscript report
-  moved to [`pad-amp-nhd-prog-report`](https://github.com/Duke-Vascular-Informatics/pad-amp-nhd-prog-report)
+  moved to [`pad-amp-nhd-val-report`](https://github.com/Duke-Vascular-Informatics/pad-amp-nhd-val-report)
   entirely (2026-08-11) — a separate repo, not just a separate file — so this one
   can stay Strategus-faithful: no `ggplot2`/`officer`/`flextable` imports for
   reporting purposes. If a change here seems to need one of those, it belongs in
@@ -29,10 +35,10 @@ Shared baseline (applies first):
 
 | Step | File | What it does |
 |------|------|--------------|
-| 1 | `CreateStrategusAnalysisSpecification.R` | Builds `inst/padAmpNhdProgAnalysisSpecification.json`. Re-run after any change to `inst/`. |
+| 1 | `CreateStrategusAnalysisSpecification.R` | Builds `inst/padAmpNhdValAnalysisSpecification.json`. Re-run after any change to `inst/`. |
 | 2 | `StrategusCodeToRun.R` | `Strategus::execute()`, then the custom scoring step, then `R/extract_report_inputs.R`. Stops there — see below. Fresh R session required. |
-| 9 | (separate repo) `duke-prcc-deploy/studies/pad-amp-nhd-prog/` | Duke GitLab deployment bundle config + PHI-producing `edge_case_export.R`, moved out of this repo 2026-08-11 (see `workflow/README.md`). **Not yet deployable** — this study's PRCC runtime layer was never built; the in-repo script it replaced was an unmodified `pad-amp-ed-desc` copy that would have failed immediately. |
-| — | (separate repo) `pad-amp-nhd-prog-report/GenerateReport.R` | Manual step, run against this repo's `output/` directory (or a copied-out results export) to produce the Word manuscript. |
+| 9 | (separate repo) `duke-prcc-deploy/studies/pad-amp-nhd-val/` | Duke GitLab deployment bundle config + PHI-producing `edge_case_export.R`, moved out of this repo 2026-08-11 (see `workflow/README.md`). **Not yet deployable** — this study's PRCC runtime layer was never built; the in-repo script it replaced was an unmodified `pad-amp-ed-desc` copy that would have failed immediately. |
+| — | (separate repo) `pad-amp-nhd-val-report/GenerateReport.R` | Manual step, run against this repo's `output/` directory (or a copied-out results export) to produce the Word manuscript. |
 
 Supporting: `scripts/render_cohort_sql.R` (JSON → SQL, skips the hand-authored NHD
 cohort), `tests/regression/test_cohort_vs_domain_covariates.R`.
@@ -42,7 +48,7 @@ cohort), `tests/regression/test_cohort_vs_domain_covariates.R`.
 Physical CDM `omop_synth_pad_amp_v2`, produced by **`pad-amp-dispo-synth`** and
 registered in `../synthetic_data/registry.yaml` as `pad_amp` (this study is pinned to
 version v2 as of the 2026-08-09 consolidation). Strategus itself reads a view-overlay
-(`pad_amp_nhd_prog_cdm_test`) that unions the CDM with `omop_vocab`, because
+(`pad_amp_nhd_val_cdm_test`) that unions the CDM with `omop_vocab`, because
 `Strategus::createCdmExecutionSettings` has no vocabulary-schema parameter. The runner
 builds that overlay automatically if it is missing. The custom step and report query
 the **physical** schema directly, via `config$cdm_schema` — **this must match the
@@ -56,7 +62,7 @@ AND TABLE_NAME = 'person'`) before ever changing either value. If a re-run shows
 changing which physical schema is pinned, the cohort table itself is stale from a run
 against the old schema — Strategus's incremental mode does not know the underlying data
 changed. Drop the `<results_schema>_*` incremental-tracking tables (the study's own
-results schema only — `pad_amp_nhd_prog`, `_checksum`, `_inclusion*`, `_censor_stats`,
+results schema only — `pad_amp_nhd_val`, `_checksum`, `_inclusion*`, `_censor_stats`,
 `_summary_stats`, `_subset_attrition`, plus the `attrition_*`/`characterization_cohorts_*`/
 `target_settings_*` Characterization tables) and clear the local gitignored `results/`
 folder before re-running.
@@ -101,7 +107,10 @@ folder before re-running.
 
 This repo holds **`9100001`–`9100011`** out of the reserved local block, which sits
 deliberately outside the ATLAS-demo id range so a future ATLAS assignment cannot
-collide. The block's bounds and the allocation ledger live in
+collide. **Shared with `pad-amp-nhd-prog`** — this repo is a frozen fork of it and the
+cohort definitions were byte-identical at fork time (2026-09-07), so the ledger
+records the range once against `pad-amp-nhd-prog` rather than claiming a duplicate
+range here. The block's bounds and the allocation ledger live in
 `strategus-study-template/docs/STRATEGUS_CONVENTIONS.md` §6 — do not restate them
 here. (They used to be restated here and in every `logic_description` below, and
 all of it went stale at once when the block was widened on 2026-08-13.) All are named
@@ -117,7 +126,7 @@ the workspace root's index.
 
 | Remote | URL | What to push |
 |--------|-----|-------------|
-| `origin` | `git@github.com:Duke-Vascular-Informatics/pad-amp-nhd-prog.git` | Full repository |
+| `origin` | `git@github.com:Duke-Vascular-Informatics/pad-amp-nhd-val.git` | Full repository |
 
 ```bash
 BRANCH=$(gh api user --jq .login)
@@ -126,5 +135,5 @@ git push origin "$BRANCH"   # then open a PR into main
 
 Duke GitLab deployment (Step 9) is handled entirely by the separate
 [`duke-prcc-deploy`](https://gitlab.dhe.duke.edu/apj20/duke-prcc-deploy) repo's
-`studies/pad-amp-nhd-prog/` config — not by anything in this repo. Never `git subtree
+`studies/pad-amp-nhd-val/` config — not by anything in this repo. Never `git subtree
 push` or a bare `git push gitlab` from here.

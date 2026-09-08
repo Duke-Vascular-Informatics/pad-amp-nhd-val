@@ -1,8 +1,15 @@
-# pad-amp-nhd-prog
+# pad-amp-nhd-val
 
 External validation of three published integer risk scores against **non-home discharge
-(NHD)** after major lower extremity amputation, with a scaffold for de-novo model
-development. Strategus-based, following the `pad-amp-ed-desc` pattern.
+(NHD)** after major lower extremity amputation. Strategus-based, following the
+`pad-amp-ed-desc` pattern.
+
+This is a **frozen, validation-only fork of `pad-amp-nhd-prog`** (forked 2026-09-07),
+made to keep this analysis stable for a publication while `pad-amp-nhd-prog` itself
+continues toward a de-novo risk score. It carries the same disabled
+`ENABLE_PLP_DEVELOPMENT` scaffold `pad-amp-nhd-prog` has (see below) simply because it
+was forked before that flag was ever flipped — de-novo model development happens in
+`pad-amp-nhd-prog`, not here.
 
 | Score | Range | Published lookup |
 |---|---|---|
@@ -21,7 +28,7 @@ Rscript StrategusCodeToRun.R                     # step 2: execute + score + rep
 Run everything through the dev container:
 
 ```bash
-docker exec omop_dev-devcontainer-1 bash -lc 'cd /workspace/pad-amp-nhd-prog && Rscript StrategusCodeToRun.R'
+docker exec omop_dev-devcontainer-1 bash -lc 'cd /workspace/pad-amp-nhd-val && Rscript StrategusCodeToRun.R'
 ```
 
 ## What runs where

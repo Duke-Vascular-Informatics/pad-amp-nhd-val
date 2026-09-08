@@ -1,11 +1,11 @@
 cff-version: 1.2.0
 message: >
-  If you use this template repository in your research, please cite it using
-  the metadata below.
+  If you use this study's code in your research, please cite it using the
+  metadata below.
 
 title: >
-  Synthea-OMOP Study Development Template: An End-to-End Observational Study Pipeline for OMOP CDM
-  using OHDSI HADES and Synthea Synthetic Data
+  External Validation of Three Published Integer Risk Scores for Non-Home
+  Discharge After Major Lower Extremity Amputation
 
 authors:
   - given-names: "Adam P."
@@ -23,66 +23,57 @@ authors:
     affiliation: "Duke University School of Medicine, Department of Surgery"
 
 version: "1.0.0"
-date-released: "2026-04-27"
+date-released: "2026-09-07"
 
-repository-code: "https://github.com/Duke-Vascular-Informatics/synthea-omop-template"
-url: "https://github.com/Duke-Vascular-Informatics/synthea-omop-template"
+repository-code: "https://github.com/Duke-Vascular-Informatics/pad-amp-nhd-val"
+url: "https://github.com/Duke-Vascular-Informatics/pad-amp-nhd-val"
 
 license: GPL-3.0
 
 abstract: >
-  A GitHub Template Repository providing an end-to-end pipeline for observational
-  studies on an OMOP CDM v5.4 SQL Server database. Supports cohort characterization,
-  prognostic modelling, and causal inference using the OHDSI HADES R toolstack.
-  Includes synthetic data generation via Synthea for reproducible development and
-  testing. Workflow steps cover environment setup, cohort definition, ETL to OMOP,
-  data quality assessment (ACHILLES, Data Quality Dashboard), analysis, and
-  manuscript-format report generation.
+  A Strategus-based OMOP CDM v5.4 observational study externally validating
+  three published integer risk scores — Iannuzzi 2020, Subramaniam 2018 mFI-5,
+  and Kraiss 2022 sVQI-FS — against non-home discharge after major lower
+  extremity amputation. Each score is evaluated for discrimination (AUROC,
+  AUPRC) and calibration (Brier score, expected calibration error, calibration
+  intercept/slope), including a subgroup differential-performance (bias)
+  assessment across demographic and clinical strata. This repository is a
+  frozen, validation-only fork of pad-amp-nhd-prog, made to keep the analysis
+  underlying a publication stable while pad-amp-nhd-prog continues toward a
+  de-novo risk score.
   Funding: Research reported in this publication was supported by the National
-  Center For Advancing Translational Sciences of the National Institutes of Health
-  under Award Number K12TR005435. The content is solely the responsibility of the
-  authors and does not necessarily represent the official views of the National
-  Institutes of Health.
+  Center For Advancing Translational Sciences of the National Institutes of
+  Health under Award Number K12TR005435. The content is solely the
+  responsibility of the authors and does not necessarily represent the
+  official views of the National Institutes of Health.
 
 keywords:
   - OMOP CDM
   - OHDSI
-  - observational study
-  - real-world data
+  - Strategus
+  - external validation
+  - risk score
+  - non-home discharge
+  - amputation
   - clinical informatics
-  - PatientLevelPrediction
-  - CohortMethod
   - FeatureExtraction
-  - Synthea
   - R
 
 references:
+  - type: software
+    title: "OHDSI Strategus"
+    authors:
+      - name: "Observational Health Data Sciences and Informatics (OHDSI)"
+    url: "https://github.com/OHDSI/Strategus"
+
+  - type: software
+    title: "OHDSI FeatureExtraction"
+    authors:
+      - name: "Observational Health Data Sciences and Informatics (OHDSI)"
+    url: "https://github.com/OHDSI/FeatureExtraction"
+
   - type: software
     title: "OHDSI PatientLevelPrediction"
     authors:
       - name: "Observational Health Data Sciences and Informatics (OHDSI)"
     url: "https://github.com/OHDSI/PatientLevelPrediction"
-
-  - type: software
-    title: "OHDSI ETL-Synthea"
-    authors:
-      - name: "Observational Health Data Sciences and Informatics (OHDSI)"
-    url: "https://github.com/OHDSI/ETL-Synthea"
-
-  - type: software
-    title: "Synthea: Synthetic Patient Population Simulator"
-    authors:
-      - name: "The MITRE Corporation"
-    url: "https://github.com/synthetichealth/synthea"
-
-  - type: software
-    title: "OHDSI Achilles"
-    authors:
-      - name: "Observational Health Data Sciences and Informatics (OHDSI)"
-    url: "https://github.com/OHDSI/Achilles"
-
-  - type: software
-    title: "OHDSI DataQualityDashboard"
-    authors:
-      - name: "Observational Health Data Sciences and Informatics (OHDSI)"
-    url: "https://github.com/OHDSI/DataQualityDashboard"

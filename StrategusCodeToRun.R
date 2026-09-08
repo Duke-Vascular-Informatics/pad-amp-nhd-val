@@ -1,10 +1,10 @@
 ################################################################################
 # StrategusCodeToRun.R  —  PIPELINE STEP 2
 #
-# Runs the pad-amp-nhd-prog analysis in the devcontainer against the
+# Runs the pad-amp-nhd-val analysis in the devcontainer against the
 # pad_amp_dispo synthetic CDM: Strategus, the custom scoring step, and the
 # report-input extract. This repo is Strategus-faithful and stops here —
-# the Word manuscript is a SEPARATE repo, pad-amp-nhd-prog-report, run as its
+# the Word manuscript is a SEPARATE repo, pad-amp-nhd-val-report, run as its
 # own step against this run's output/ directory. See docs/MIGRATION_PLAN_REPO_SPLIT.md
 # (Phase 1, 2026-08-11) for why the report was moved out entirely rather than
 # just having its database access removed.
@@ -12,7 +12,7 @@
 #   1  CreateStrategusAnalysisSpecification.R  (run this first)
 #   2  THIS SCRIPT
 #   9  workflow/09_build_portable_analysis_bundle.sh
-#   —  pad-amp-nhd-prog-report/GenerateReport.R (separate repo, run manually
+#   —  pad-amp-nhd-val-report/GenerateReport.R (separate repo, run manually
 #      after this script, pointed at this script's output/ directory)
 #
 # WHAT RUNS, IN ORDER
@@ -33,7 +33,7 @@
 #                   study_params.yaml's cdm_schema) had been left at v1
 #                   (omop_synth_pad_amp_dispo, 1,474 persons) while the
 #                   already-built overlay pointed at v2 (1,544 persons).
-#   Strategus sees: pad_amp_nhd_prog_cdm_test, a schema of read-only views over
+#   Strategus sees: pad_amp_nhd_val_cdm_test, a schema of read-only views over
 #                   the physical CDM UNION omop_vocab. The overlay exists because
 #                   Strategus::createCdmExecutionSettings has no separate
 #                   vocabulary-schema parameter, so clinical and vocabulary
@@ -64,8 +64,8 @@ Sys.setenv(DATABASECONNECTOR_JAR_FOLDER = "/workspace/synthea-omop-template/driv
 # Two-part "database.schema" form is REQUIRED — on this SQL Server instance
 # CohortGenerator misreads a bare schema name as the database name.
 omopDatabase       <- Sys.getenv("OMOP_DATABASE", unset = "omop_synth")
-overlaySchemaBare  <- Sys.getenv("OMOP_CDM_SCHEMA_OVERRIDE",     unset = "pad_amp_nhd_prog_cdm_test")
-resultsSchemaBare  <- Sys.getenv("OMOP_RESULTS_SCHEMA_OVERRIDE", unset = "pad_amp_nhd_prog_results")
+overlaySchemaBare  <- Sys.getenv("OMOP_CDM_SCHEMA_OVERRIDE",     unset = "pad_amp_nhd_val_cdm_test")
+resultsSchemaBare  <- Sys.getenv("OMOP_RESULTS_SCHEMA_OVERRIDE", unset = "pad_amp_nhd_val_results")
 physicalCdmSchema  <- Sys.getenv("OMOP_PHYSICAL_CDM_SCHEMA",     unset = "omop_synth_pad_amp_v2")
 vocabSchemaBare    <- Sys.getenv("OMOP_VOCAB_SCHEMA",            unset = "omop_vocab")
 overlayRegistryId  <- "pad_amp_dispo"   # synthetic_data/registry.yaml id (former_ids -> pad_amp)
@@ -76,7 +76,7 @@ workDatabaseSchema <- paste0(omopDatabase, ".", resultsSchemaBare)
 databaseName    <- Sys.getenv("OMOP_CDM_DATABASE_NAME", unset = "DevContainerSynthea")
 outputLocation  <- file.path(getwd(), "results")   # gitignored
 minCellCount    <- 5                                # OHDSI small-cell suppression default
-cohortTableName <- "pad_amp_nhd_prog"
+cohortTableName <- "pad_amp_nhd_val"
 
 connectionDetails <- DatabaseConnector::createConnectionDetails(
   dbms     = "sql server",
@@ -136,7 +136,7 @@ if (length(overlayTables) == 0) {
 }
 
 # ---- Execute Strategus -------------------------------------------------------
-specPath <- file.path("inst", "padAmpNhdProgAnalysisSpecification.json")
+specPath <- file.path("inst", "padAmpNhdValAnalysisSpecification.json")
 if (!file.exists(specPath)) {
   stop("Analysis specification not found: ", specPath,
        "\n  Run step 1 first: Rscript CreateStrategusAnalysisSpecification.R")
@@ -238,7 +238,7 @@ run_integer_score_validation(connectionDetails, config)
 # ---- Extract report inputs -------------------------------------------------
 # This is where this repo's responsibility ENDS. docs/MIGRATION_PLAN_REPO_SPLIT.md
 # (Phase 1, 2026-08-11) moved the Word report out entirely, into its own repo
-# — pad-amp-nhd-prog-report — so that this repo can stay Strategus-faithful:
+# — pad-amp-nhd-val-report — so that this repo can stay Strategus-faithful:
 # cohorts, spec, the retained scoring step, and this extract layer, which turns
 # CDM queries into CSV artifacts. Nothing past this point imports ggplot2,
 # officer, or flextable, and nothing here builds a Word document.
@@ -269,19 +269,19 @@ aggregate_report_inputs(
 )
 
 # PHI: edge_case_export.R (writes output/pad_amp_nhd_edge_<date>.csv containing
-# MRN, age, procedure date) moved to duke-prcc-deploy/studies/pad-amp-nhd-prog/
+# MRN, age, procedure date) moved to duke-prcc-deploy/studies/pad-amp-nhd-val/
 # 2026-08-11 -- it does not belong in this shareable analysis-core repo. Run it
 # from a clone of duke-prcc-deploy on Duke PRCC, pointed at this run's config
 # and person_level_scores.csv, once that study's PRCC runtime layer exists
-# (see that repo's studies/pad-amp-nhd-prog/README.md).
+# (see that repo's studies/pad-amp-nhd-val/README.md).
 message(
-  "Edge-case export moved to duke-prcc-deploy/studies/pad-amp-nhd-prog/ -- run ",
+  "Edge-case export moved to duke-prcc-deploy/studies/pad-amp-nhd-val/ -- run ",
   "it from there on Duke PRCC, not from this repo."
 )
 
 message(
   "Analysis complete. To generate the Word report, run GenerateReport.R from ",
-  "a clone of pad-amp-nhd-prog-report with RESULTS_DIR=", config$output_folder,
+  "a clone of pad-amp-nhd-val-report with RESULTS_DIR=", config$output_folder,
   " — see that repo's README."
 )
 message("Done.")
