@@ -2,7 +2,7 @@
 # R/aggregate_report_inputs.R
 #
 # Turns this study's PERSON-LEVEL scoring output into AGGREGATE-ONLY artifacts
-# that pad-amp-nhd-prog-report can render every figure and table from, so no
+# that pad-amp-nhd-val-report can render every figure and table from, so no
 # row-level patient data ever has to leave PRCC.
 #
 # WHY THIS EXISTS

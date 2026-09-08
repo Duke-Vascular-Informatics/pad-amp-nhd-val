@@ -1,9 +1,11 @@
 # =============================================================================
-# study_params.yaml — pad-amp-nhd-prog
+# study_params.yaml — pad-amp-nhd-val
 #
 # Prognostic study: external validation of three published integer risk scores
-# against NON-HOME DISCHARGE (NHD) after major lower extremity amputation, plus
-# a scaffold for de-novo model development.
+# against NON-HOME DISCHARGE (NHD) after major lower extremity amputation.
+#
+# Frozen, validation-only fork of pad-amp-nhd-prog (forked 2026-09-07) for a
+# publication. De-novo score development continues in pad-amp-nhd-prog, not here.
 #
 #   1. Iannuzzi 2020 NHD score        (0-18 points, 9 components)
 #   2. Subramaniam 2018 mFI-5         (0-5 points, 5 components)
@@ -17,7 +19,7 @@
 # read.
 # =============================================================================
 
-study_name:   "pad_amp_nhd_prog"
+study_name:   "pad_amp_nhd_val"
 study_design: "prognostic_model"
 
 # =============================================================================
@@ -57,7 +59,7 @@ cdm_schema: "omop_synth_pad_amp_v2"
 # cohort_table is the Strategus CohortGenerator output table (cohortTableName in
 # StrategusCodeToRun.R) — NOT a <study_name>_cohort default. The custom step
 # reads the cohorts Strategus generates, keyed by the cohort ids below.
-cohort_table: "pad_amp_nhd_prog"
+cohort_table: "pad_amp_nhd_val"
 
 # =============================================================================
 # COHORTS

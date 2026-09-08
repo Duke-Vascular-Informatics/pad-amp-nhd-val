@@ -1,13 +1,13 @@
 ################################################################################
 # CreateStrategusAnalysisSpecification.R  —  PIPELINE STEP 1
 #
-# Builds the Strategus (v1.5.0) analysis specification for pad-amp-nhd-prog:
+# Builds the Strategus (v1.5.0) analysis specification for pad-amp-nhd-val:
 # external validation of three published integer risk scores against NON-HOME
 # DISCHARGE (NHD) after major lower extremity amputation, plus a disabled
 # scaffold for de-novo model development.
 #
 # Pipeline:
-#   1  THIS SCRIPT                                   -> inst/padAmpNhdProgAnalysisSpecification.json
+#   1  THIS SCRIPT                                   -> inst/padAmpNhdValAnalysisSpecification.json
 #   2  StrategusCodeToRun.R                          -> Strategus::execute() + the custom scoring step
 #   9  workflow/09_build_portable_analysis_bundle.sh -> Duke GitLab deployment bundle
 #
@@ -323,7 +323,7 @@ if (ENABLE_PLP_DEVELOPMENT) {
           "arm awaits a study-team decision on predictors and approach.")
 }
 
-specPath <- file.path("inst", "padAmpNhdProgAnalysisSpecification.json")
+specPath <- file.path("inst", "padAmpNhdValAnalysisSpecification.json")
 ParallelLogger::saveSettingsToJson(analysisSpecifications, specPath)
 
 message("[spec] Wrote ", specPath)

@@ -1,6 +1,6 @@
 # =============================================================================
 # config.R
-# Central configuration for the pad-amp-nhd-prog prognostic Strategus study.
+# Central configuration for the pad-amp-nhd-val prognostic Strategus study.
 #
 # Reads study_params.yaml and returns a named list consumed by:
 #   scripts/analysis/integer_score_validation.R (the custom scoring step) and
@@ -16,7 +16,7 @@
 # This file exists to supply the schema names, cohort ids, and per-score
 # covariate file paths the custom step still needs.
 #
-# The Word report (pad-amp-nhd-prog-report, a separate repo as of 2026-08-11)
+# The Word report (pad-amp-nhd-val-report, a separate repo as of 2026-08-11)
 # does NOT read this file. Its ~9 narrative/parameter fields — a subset of
 # what get_validation_config() returns below — are written into
 # report_inputs/_report_config.yaml by R/extract_report_inputs.R instead, so
@@ -47,7 +47,7 @@ get_validation_config <- function() {
   # Helper: return y when x is NULL.
   `%||%` <- function(x, y) if (is.null(x)) y else x
 
-  study_name <- p$study_name %||% "pad_amp_nhd_prog"
+  study_name <- p$study_name %||% "pad_amp_nhd_val"
 
   # ---------------------------------------------------------------------------
   # Per-score definitions, keyed by score id.
@@ -88,7 +88,7 @@ get_validation_config <- function() {
     # Physical clinical CDM produced by pad-amp-dispo-synth (registry id
     # pad_amp, dataset version v2 as of the 2026-08-09 consolidation).
     # Strategus itself reads a view-overlay built over this. Must match the
-    # physical schema the overlay (pad_amp_nhd_prog_cdm_test by default) was
+    # physical schema the overlay (pad_amp_nhd_val_cdm_test by default) was
     # actually built from -- verify with the overlay's view definition before
     # changing this, since the two silently diverging is a person_id-join
     # corruption, not an error.
@@ -115,7 +115,7 @@ get_validation_config <- function() {
 
     # Upper bound (in PERCENT) of the decision-curve threshold axis.
     # NULL/absent = choose it from the data (see save_dca_plot() in
-    # pad-amp-nhd-prog-report's R/report_prognostic.R). Set this explicitly
+    # pad-amp-nhd-val-report's R/report_prognostic.R). Set this explicitly
     # when the clinically plausible threshold range is known and should be
     # shown regardless of what the models happen to predict — a data-driven
     # bound must never be allowed to crop the range a clinician would

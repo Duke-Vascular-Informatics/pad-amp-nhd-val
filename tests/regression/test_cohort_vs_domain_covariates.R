@@ -57,8 +57,8 @@ source("R/risk_score_pipeline.R")
 source("scripts/analysis/integer_score_validation.R")
 
 config <- get_validation_config()
-config$results_schema <- Sys.getenv("OMOP_RESULTS_SCHEMA_OVERRIDE", unset = "pad_amp_nhd_prog_results")
-config$cohort_table   <- "pad_amp_nhd_prog"
+config$results_schema <- Sys.getenv("OMOP_RESULTS_SCHEMA_OVERRIDE", unset = "pad_amp_nhd_val_results")
+config$cohort_table   <- "pad_amp_nhd_val"
 
 outRoot <- file.path(getwd(), "output", "regression")
 dir.create(outRoot, recursive = TRUE, showWarnings = FALSE)
@@ -82,7 +82,7 @@ message("\n########## PASS 0: regenerate cohorts from current definitions ######
 local({
   omopDb  <- Sys.getenv("OMOP_DATABASE", unset = "omop_synth")
   cdmTwo  <- paste0(omopDb, ".", Sys.getenv("OMOP_CDM_SCHEMA_OVERRIDE",
-                                            unset = "pad_amp_nhd_prog_cdm_test"))
+                                            unset = "pad_amp_nhd_val_cdm_test"))
   workTwo <- paste0(omopDb, ".", config$results_schema)
 
   cds <- CohortGenerator::getCohortDefinitionSet(
