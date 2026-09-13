@@ -148,6 +148,20 @@ fetch_demographics_from_omop <- function(config, connection_details) {
     # The DATEDIFF(DAY, ...) / 365.25 division is done in floating-point
     # so that fractional years are preserved before FLOOR rounds down to the
     # last completed year — matching the user-specified formula exactly.
+    # WHERE-clause year_of_birth guard is load-bearing, not cosmetic: on real
+    # (non-Synthea) CDMs, person.year_of_birth can carry a garbage sentinel
+    # value for a small number of records (e.g. 0, or another out-of-range
+    # year). DATEFROMPARTS() returns NULL for a NULL input, but THROWS for a
+    # non-NULL out-of-range year -- and unlike a WHERE-clause NULL comparison,
+    # a single bad row's arithmetic error aborts the entire batch with zero
+    # rows returned and no exception message ever reaching R (SQL Server
+    # evaluates the expression before any per-row filtering elsewhere).
+    # Confirmed this way against a real Duke PRCC run: no "[report] Age query
+    # failed" message ever printed, yet agg_age_summary.csv was never written
+    # -- consistent with the query executing "successfully" but as zero rows,
+    # not with a caught exception. Explicit CAST(...AS INT) guards against a
+    # column-type surprise on a real CDM (Synthea's ETL always writes plain
+    # integers; a real site's ETL is not guaranteed to).
     sql_age <- SqlRender::render(
       paste0(
         "WITH ", dedup_person_cte, "
@@ -156,9 +170,9 @@ fetch_demographics_from_omop <- function(config, connection_details) {
              FLOOR(
                CAST(DATEDIFF(DAY,
                  DATEFROMPARTS(
-                   p.year_of_birth,
-                   COALESCE(p.month_of_birth, 7),
-                   COALESCE(p.day_of_birth,   1)
+                   CAST(p.year_of_birth AS INT),
+                   COALESCE(CAST(p.month_of_birth AS INT), 7),
+                   COALESCE(CAST(p.day_of_birth AS INT),   1)
                  ),
                  t.cohort_start_date
                ) AS FLOAT) / 365.25
@@ -166,7 +180,8 @@ fetch_demographics_from_omop <- function(config, connection_details) {
            AS FLOAT) AS age_at_index
          FROM @results_schema.@cohort_table t
          INNER JOIN dedup_person p ON p.person_id = t.subject_id
-         WHERE t.cohort_definition_id = @target_id"
+         WHERE t.cohort_definition_id = @target_id
+           AND p.year_of_birth BETWEEN 1900 AND YEAR(GETDATE())"
       ),
       results_schema = results_schema_prefix(config),
       cohort_table   = config$cohort_table,
@@ -183,6 +198,14 @@ fetch_demographics_from_omop <- function(config, connection_details) {
         NULL
       }
     )
+    # A 0-row (but non-NULL) result is a distinct failure mode from a caught
+    # exception -- it means the query executed but every candidate row was
+    # excluded (e.g. an out-of-range year_of_birth, or a subject_id absent
+    # from dedup_person). Surface it explicitly rather than silently letting
+    # agg_age_summary.csv go unwritten downstream with no log trace at all.
+    if (!is.null(age_df) && nrow(age_df) == 0) {
+      message("[report] Age query returned 0 rows -- agg_age_summary.csv will not be written.")
+    }
 
     # Returns concept_id, category (concept_name), and n per group so that
     # downstream lookups can match on concept_id rather than on concept_name
