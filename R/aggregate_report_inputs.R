@@ -520,8 +520,8 @@ aggregate_report_inputs <- function(config,
     r <- d[[risk_col]]
     tier <- ifelse(is.na(r), NA_character_,
              ifelse(r < 0.50, "Low (<50%)",
-              ifelse(r <= 0.80, "Intermediate (50–80%)", "High (>80%)")))
-    lv <- c("Low (<50%)", "Intermediate (50–80%)", "High (>80%)")
+              ifelse(r <= 0.70, "Intermediate (50–70%)", "High (>70%)")))
+    lv <- c("Low (<50%)", "Intermediate (50–70%)", "High (>70%)")
     tier_rows[[label]] <<- do.call(rbind, lapply(lv, function(tl) {
       sel <- !is.na(tier) & tier == tl
       data.frame(model_label = label, tier = tl,
@@ -620,14 +620,29 @@ aggregate_report_inputs <- function(config,
                         stringsAsFactors = FALSE)
       dfy <- dfy[!is.na(dfy$year), ]
       yrs <- sort(unique(dfy$year))
+      # "Overall" (any NHD disposition) is computed here, from the raw
+      # per-patient `sub` frame, alongside the 5 named-type rows -- NOT
+      # derived later by summing them, because .suppress_counts() below
+      # blanks each row independently: a year's SNF row could be suppressed
+      # to NA while its other 4 type-rows survive, and summing only the
+      # visible rows would silently undercount the true overall total. Going
+      # through the same raw-count -> single suppression-call path as the
+      # named types gives "Overall" its own correct, independent suppression.
       year_tbl <- do.call(rbind, lapply(yrs, function(y) {
         sub <- dfy[dfy$year == y, ]
         n_y <- nrow(sub)
         if (n_y < 11L) return(NULL)   # report's own existing year minimum
-        do.call(rbind, lapply(nhd_levels, function(tp) data.frame(
-          year = y, n = n_y, discharge_type = tp,
-          events = sum(sub$dtype == tp, na.rm = TRUE), stringsAsFactors = FALSE
-        )))
+        rbind(
+          data.frame(
+            year = y, n = n_y, discharge_type = "Overall",
+            events = sum(sub$dtype %in% nhd_levels, na.rm = TRUE),
+            stringsAsFactors = FALSE
+          ),
+          do.call(rbind, lapply(nhd_levels, function(tp) data.frame(
+            year = y, n = n_y, discharge_type = tp,
+            events = sum(sub$dtype == tp, na.rm = TRUE), stringsAsFactors = FALSE
+          )))
+        )
       }))
       if (!is.null(year_tbl)) {
         year_tbl$nhd_rate <- 100 * year_tbl$events / year_tbl$n
