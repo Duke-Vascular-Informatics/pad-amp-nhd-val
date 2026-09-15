@@ -859,22 +859,43 @@ extract_report_inputs <- function(config,
   written <- character(0)
   note    <- function(ok, name) if (isTRUE(ok)) written <<- c(written, name)
 
+  # Small-cell suppression threshold. config$min_cell_count is only set in
+  # the Duke PRCC bundle's hand-authored config.R (5L there); the source
+  # repo's own config.R/study_params.yaml never carried this field (Strategus
+  # gets its own copy as a separate local variable in StrategusCodeToRun.R,
+  # not through config) -- default to 5L, the OHDSI standard already used
+  # everywhere else in this pipeline, so the dev-container synthetic run
+  # applies the same rule as PRCC rather than silently applying none.
+  min_cell_count <- config$min_cell_count %||% 5L
+
   # ---- Demographics (Table 1) ------------------------------------------------
   # Returns a named list of six data frames, any of which may be NULL.
   # "age" is patient-level (one row per patient) and is deliberately NOT
   # written to disk — see the file header's RETURN VALUE / DISCLOSURE
   # BOUNDARY sections. It is returned in-memory for aggregate_report_inputs()
   # to consume directly.
+  #
+  # SUPPRESSED as of 2026-09-15 -- these five category-count frames (sex,
+  # race, ethnicity, indication, procedure_type) were never run through
+  # .suppress_counts() before, unlike every agg_* artifact aggregate_
+  # report_inputs.R builds. Found via supp_admission_source.csv shipping an
+  # unsuppressed small cell in a real Duke export.
   demog <- fetch_demographics_from_omop(config, connection_details)
   for (part in c("sex", "race", "ethnicity", "indication", "procedure_type")) {
     nm <- paste0("demographics_", part)
-    note(.write_report_input(demog[[part]], inputs_dir, nm), nm)
+    note(.write_report_input(.suppress_counts(demog[[part]], "n", min_cell_count),
+                             inputs_dir, nm), nm)
   }
 
   # ---- NHD outcomes (Table 2) ------------------------------------------------
   # Six scalars plus one data frame. The scalars are flattened into a single
   # one-row CSV so the reader can rebuild the original list shape exactly,
   # including any NA that came from a sub-query that failed.
+  #
+  # SUPPRESSED as of 2026-09-15, same reason as demographics above.
+  # median_los/los_p25/los_p75 are NOT count columns (they're a length-of-stay
+  # summary statistic derived across the whole NHD group) and are left alone
+  # -- only n_nhd/n_readmission/n_death are counts that could be small.
   nhd <- fetch_nhd_outcomes_from_omop(config, connection_details)
   if (!is.null(nhd)) {
     scalars <- data.frame(
@@ -886,8 +907,10 @@ extract_report_inputs <- function(config,
       n_death       = nhd$n_death,
       stringsAsFactors = FALSE
     )
+    scalars <- .suppress_counts(scalars, c("n_nhd", "n_readmission", "n_death"), min_cell_count)
     note(.write_report_input(scalars, inputs_dir, "nhd_outcomes_scalars"), "nhd_outcomes_scalars")
-    note(.write_report_input(nhd$dest_df, inputs_dir, "nhd_outcomes_destinations"),
+    note(.write_report_input(.suppress_counts(nhd$dest_df, "n", min_cell_count),
+                             inputs_dir, "nhd_outcomes_destinations"),
          "nhd_outcomes_destinations")
   } else {
     message("[extract] nhd_outcomes: fetch returned NULL — no files written")
@@ -987,15 +1010,24 @@ extract_report_inputs <- function(config,
 .extract_supplemental <- function(config, connection_details, inputs_dir) {
   written <- character(0)
   conn <- NULL
+  min_cell_count <- config$min_cell_count %||% 5L
   try({
     conn <- DatabaseConnector::connect(connection_details)
 
-    run <- function(sql, name) {
+    # suppress_cols: optional character vector of count-bearing column names
+    # to run through .suppress_counts() before writing. Added 2026-09-15 --
+    # every category-count query in this function (CPT codes, discharge
+    # destinations, admission source) had shipped unsuppressed small cells
+    # (found via a real Duke export of supp_admission_source.csv with cells
+    # of 1-3), since this whole function predates .suppress_counts() and
+    # nothing had wired it in.
+    run <- function(sql, name, suppress_cols = NULL) {
       tryCatch({
         r <- DatabaseConnector::querySql(
           conn, SqlRender::translate(sql, targetDialect = "sql server")
         )
         names(r) <- tolower(names(r))
+        if (!is.null(suppress_cols)) r <- .suppress_counts(r, suppress_cols, min_cell_count)
         if (.write_report_input(r, inputs_dir, name)) written <<- c(written, name)
       }, error = function(e) {
         message("[extract] ", name, ": query failed — ", conditionMessage(e))
@@ -1105,7 +1137,7 @@ extract_report_inputs <- function(config,
     vocab_schema   = config$vocab_schema,
     cdm_schema     = config$cdm_schema
   )
-    run(sql_cpt, "supp_cpt_codes")
+    run(sql_cpt, "supp_cpt_codes", suppress_cols = "case_count")
 
     # ---- Supplemental Table S4 — Discharge destination source codes ----------
 
@@ -1159,7 +1191,7 @@ extract_report_inputs <- function(config,
     vocab_schema   = config$vocab_schema %||% "omop_vocab",
     target_id      = config$target_cohort_id
   )
-    run(sql_dest_supp, "supp_discharge_destinations")
+    run(sql_dest_supp, "supp_discharge_destinations", suppress_cols = c("visit_count", "person_count"))
 
     # ---- Supplemental (diagnostic) — Admission source codes ------------------
     #
@@ -1210,7 +1242,7 @@ extract_report_inputs <- function(config,
       vocab_schema   = config$vocab_schema %||% "omop_vocab",
       target_id      = config$target_cohort_id
     )
-    run(sql_admit_supp, "supp_admission_source")
+    run(sql_admit_supp, "supp_admission_source", suppress_cols = c("visit_count", "person_count"))
   }, silent = TRUE)
 
   if (!is.null(conn)) try(DatabaseConnector::disconnect(conn), silent = TRUE)
