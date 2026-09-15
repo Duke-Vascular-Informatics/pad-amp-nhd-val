@@ -41,6 +41,15 @@
 #   supp_cdm_source.csv              full cdm_source row (Supplemental Table S1)
 #   supp_cpt_codes.csv               CPT codes by subgroup (Supplemental Table S3)
 #   supp_discharge_destinations.csv  discharge source codes (Supplemental Table S4)
+#   supp_admission_source.csv        admitted_from source codes/concepts, raw
+#                                    distribution -- diagnostic only, added
+#                                    2026-09-15 to check whether the target
+#                                    cohort should be restricted to
+#                                    home-admitted patients. Not yet consumed
+#                                    by the report; no classification column
+#                                    (unlike supp_discharge_destinations) since
+#                                    Duke's admission-source coding is not yet
+#                                    known -- see this file's own query comment.
 #   _report_config.yaml              the ~9 config$ fields report_prognostic.R
 #                                    actually reads (narrative dates, DCA axis
 #                                    bound, score_type routing — no schema
@@ -1151,6 +1160,57 @@ extract_report_inputs <- function(config,
     target_id      = config$target_cohort_id
   )
     run(sql_dest_supp, "supp_discharge_destinations")
+
+    # ---- Supplemental (diagnostic) — Admission source codes ------------------
+    #
+    # Added 2026-09-15 to answer a study-design question: should the target
+    # cohort be restricted to patients admitted from home (excluding SNF/
+    # hospital-transfer admissions)? Two things are unknown before writing
+    # that filter: (1) whether the real Duke CDM populates
+    # visit_occurrence.admitted_from_concept_id / admitted_from_source_value
+    # at all -- in the synthetic CDM this study runs against, both are
+    # always 0/NULL (the ETL's discharge-disposition fix-up has no
+    # admission-source equivalent), so writing a filter now risks the exact
+    # failure CIRCE_ESCAPE_HATCH.md warns about: silently excluding everyone
+    # (if "home" requires a positive match on an unpopulated field) or no
+    # one (if only recognized facility codes are excluded); (2) what Duke's
+    # actual admission-source coding is -- there is no documented UB-04-style
+    # mapping for admission source anywhere in this workspace, unlike
+    # discharge (see sql_dest_supp above). This query is diagnostic only: it
+    # reports the raw distribution so a filter can be designed from real
+    # values, per Rule 1 (no concept IDs guessed here). Deliberately no
+    # classification column (unlike supp_discharge_destinations) since the
+    # coding scheme isn't known yet.
+    #
+    # Same join shape as sql_dest_supp above (this study's index visit:
+    # inpatient, visit_concept_id 9201, bracketing the target cohort's
+    # cohort_start_date) so the two distributions describe the same visits.
+    sql_admit_supp <- SqlRender::render(
+      "SELECT
+         COALESCE(vo.admitted_from_source_value, '(none / NULL)') AS admission_source_code,
+         vo.admitted_from_concept_id                              AS omop_concept_id,
+         COALESCE(MAX(c.concept_name), 'Unknown')                 AS concept_name,
+         COUNT(*)                                                 AS visit_count,
+         COUNT(DISTINCT vo.person_id)                             AS person_count
+       FROM @results_schema.@cohort_table oc
+       JOIN @cdm_schema.visit_occurrence vo
+         ON vo.person_id        = oc.subject_id
+        AND vo.visit_concept_id = 9201
+        AND CAST(vo.visit_start_date AS DATE) <= CAST(oc.cohort_start_date AS DATE)
+        AND CAST(COALESCE(vo.visit_end_date, vo.visit_start_date) AS DATE)
+            >= CAST(oc.cohort_start_date AS DATE)
+       LEFT JOIN @vocab_schema.concept c
+         ON c.concept_id = vo.admitted_from_concept_id
+       WHERE oc.cohort_definition_id = @target_id
+       GROUP BY vo.admitted_from_source_value, vo.admitted_from_concept_id
+       ORDER BY person_count DESC",
+      results_schema = results_schema_prefix(config),
+      cohort_table   = config$cohort_table,
+      cdm_schema     = config$cdm_schema,
+      vocab_schema   = config$vocab_schema %||% "omop_vocab",
+      target_id      = config$target_cohort_id
+    )
+    run(sql_admit_supp, "supp_admission_source")
   }, silent = TRUE)
 
   if (!is.null(conn)) try(DatabaseConnector::disconnect(conn), silent = TRUE)
