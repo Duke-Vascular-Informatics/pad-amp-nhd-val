@@ -74,15 +74,17 @@
 
 
 # -----------------------------------------------------------------------------
-# .suppress_counts()
+# .suppress_counts() -- MOVED to R/risk_score_pipeline.R 2026-09-15.
 #
-# Applies small-cell suppression to the named count columns of a data frame.
-# Rows whose count falls below `min_cell_count` (and is not exactly 0) get NA
-# in every named column plus suppressed = TRUE.
-#
-# A genuine 0 is NOT suppressed: "no patients in this category" discloses no
-# individual, and blanking it would make an empty stratum indistinguishable
-# from a small one -- the opposite of what a reviewer needs to see.
+# extract_report_inputs.R needed the same function (its own several raw-count
+# artifacts -- demographics_*, nhd_outcomes_destinations, supp_cpt_codes,
+# supp_discharge_destinations, supp_admission_source -- had never been
+# suppressed at all, found when supp_admission_source shipped a real Duke
+# export with unsuppressed cells of 1-3), but risk_score_pipeline.R is
+# sourced before this file and extract_report_inputs.R in the pipeline, so
+# moving the one shared definition there (rather than duplicating it) is
+# both files' single source of truth now. See that file for the
+# implementation and doc comment.
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 # .rbind_union()
@@ -100,32 +102,6 @@
     for (cc in setdiff(all_cols, names(d))) d[[cc]] <- NA
     d[, all_cols, drop = FALSE]
   }))
-}
-
-
-.suppress_counts <- function(df, count_cols, min_cell_count = 5L,
-                             derived_cols = character(0)) {
-  if (is.null(df) || nrow(df) == 0) return(df)
-  count_cols <- intersect(count_cols, names(df))
-  if (length(count_cols) == 0) return(df)
-
-  small <- Reduce(`|`, lapply(count_cols, function(cc) {
-    v <- suppressWarnings(as.numeric(df[[cc]]))
-    !is.na(v) & v > 0 & v < min_cell_count
-  }))
-  small[is.na(small)] <- FALSE
-
-  for (cc in count_cols) df[[cc]][small] <- NA
-
-  # DERIVED COLUMNS MUST GO TOO. Blanking a count while leaving a rate computed
-  # from it is not suppression: with n = 11 shown and nhd_rate = 27.272727%,
-  # the "suppressed" event count is recoverable by multiplication (= 3). Found
-  # exactly that leak in agg_nhd_by_year on 2026-08-11. Any column derived from
-  # a suppressed count must be blanked in the same rows.
-  for (dc in intersect(derived_cols, names(df))) df[[dc]][small] <- NA
-
-  df$suppressed <- small
-  df
 }
 
 

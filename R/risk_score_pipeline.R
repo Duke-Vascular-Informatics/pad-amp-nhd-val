@@ -94,6 +94,52 @@ results_schema_prefix <- function(config) {
 # NULL-coalescing helper used above and by the cohort-map lookup.
 `%||%` <- function(x, y) if (is.null(x)) y else x
 
+# -----------------------------------------------------------------------------
+# .suppress_counts()
+#
+# Applies small-cell suppression to the named count columns of a data frame.
+# Rows whose count falls below `min_cell_count` (and is not exactly 0) get NA
+# in every named column plus suppressed = TRUE.
+#
+# A genuine 0 is NOT suppressed: "no patients in this category" discloses no
+# individual, and blanking it would make an empty stratum indistinguishable
+# from a small one -- the opposite of what a reviewer needs to see.
+#
+# MOVED here from R/aggregate_report_inputs.R 2026-09-15 so
+# R/extract_report_inputs.R can use the same function -- this file is
+# sourced first in the pipeline (config.R, then this file, then the custom
+# scoring step, then extract_report_inputs.R, then aggregate_report_inputs.R),
+# so it is the single place both later files can share it from without
+# duplicating the logic. Prompted by supp_admission_source.csv shipping a
+# real Duke export with unsuppressed cells of 1-3 -- every raw-count
+# artifact extract_report_inputs.R writes directly (not run back through
+# aggregate_report_inputs.R) had never been suppressed at all.
+# -----------------------------------------------------------------------------
+.suppress_counts <- function(df, count_cols, min_cell_count = 5L,
+                             derived_cols = character(0)) {
+  if (is.null(df) || nrow(df) == 0) return(df)
+  count_cols <- intersect(count_cols, names(df))
+  if (length(count_cols) == 0) return(df)
+
+  small <- Reduce(`|`, lapply(count_cols, function(cc) {
+    v <- suppressWarnings(as.numeric(df[[cc]]))
+    !is.na(v) & v > 0 & v < min_cell_count
+  }))
+  small[is.na(small)] <- FALSE
+
+  for (cc in count_cols) df[[cc]][small] <- NA
+
+  # DERIVED COLUMNS MUST GO TOO. Blanking a count while leaving a rate computed
+  # from it is not suppression: with n = 11 shown and nhd_rate = 27.272727%,
+  # the "suppressed" event count is recoverable by multiplication (= 3). Found
+  # exactly that leak in agg_nhd_by_year on 2026-08-11. Any column derived from
+  # a suppressed count must be blanked in the same rows.
+  for (dc in intersect(derived_cols, names(df))) df[[dc]][small] <- NA
+
+  df$suppressed <- small
+  df
+}
+
 # Subgroup label lookups (fetch_subgroup_labels / fetch_proc_type_labels) used
 # by compute_subgroup_bias(). Sourced rather than assumed to be on the search
 # path, so the pipeline works when called standalone as well as from the runner.
