@@ -229,7 +229,7 @@ DatabaseConnector::disconnect(conn)
 # 9100001-style placeholder-JSON escape-hatch machinery.
 source("R/exclude_facility_admissions.R")
 conn <- DatabaseConnector::connect(connectionDetails)
-exclude_facility_admissions(
+facilityExclusion <- exclude_facility_admissions(
   connection           = conn,
   cdmDatabaseSchema    = cdmDatabaseSchema,
   cohortDatabaseSchema = workDatabaseSchema,
@@ -263,8 +263,10 @@ run_integer_score_validation(connectionDetails, config)
 source("R/extract_report_inputs.R")
 message("Extracting report inputs from the CDM ...")
 extractResult <- extract_report_inputs(
-  config             = config,
-  connection_details = connectionDetails
+  config                = config,
+  connection_details    = connectionDetails,
+  strategus_output_dir  = file.path(outputLocation, databaseName, "strategusOutput"),
+  facility_exclusion    = facilityExclusion
 )
 
 # ---- Aggregate report inputs ------------------------------------------------
