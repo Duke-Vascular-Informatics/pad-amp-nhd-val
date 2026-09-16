@@ -45,11 +45,15 @@
 #                                    distribution -- diagnostic only, added
 #                                    2026-09-15 to check whether the target
 #                                    cohort should be restricted to
-#                                    home-admitted patients. Not yet consumed
-#                                    by the report; no classification column
-#                                    (unlike supp_discharge_destinations) since
-#                                    Duke's admission-source coding is not yet
-#                                    known -- see this file's own query comment.
+#                                    home-admitted patients. Not directly
+#                                    read by the report (that decision is now
+#                                    baked into exclude_facility_admissions()
+#                                    instead) -- kept as a standing diagnostic.
+#   agg_consort_flow.csv             CONSORT funnel: one row per cohort stage
+#                                    (entry criteria, each circe InclusionRule,
+#                                    then the facility-admission exclusion),
+#                                    cumulative n at each. Added 2026-09-16;
+#                                    see .extract_consort_flow()'s own header.
 #   _report_config.yaml              the ~9 config$ fields report_prognostic.R
 #                                    actually reads (narrative dates, DCA axis
 #                                    bound, score_type routing — no schema
@@ -846,9 +850,24 @@ if (!exists("%||%", mode = "function")) `%||%` <- function(x, y) if (is.null(x))
 #' Side effects: creates `inputs_dir` and writes the CSVs listed in the file
 #' header, plus `_manifest.csv`. Existing files are overwritten; a query that
 #' fails leaves its file absent (see .write_report_input()).
+#' @param strategus_output_dir Strategus's own results folder (the
+#'   directory containing CohortGeneratorModule/, CharacterizationModule/,
+#'   etc.) -- differs by environment (dev-container:
+#'   file.path(outputLocation, databaseName, "strategusOutput"); PRCC
+#'   bundle: file.path(config$output_location, "strategusOutput")), so the
+#'   caller computes it, same as demog_age/discharge_types below. NULL
+#'   (default) skips the CONSORT-flow extraction gracefully -- this
+#'   parameter was added 2026-09-15, after config$output_folder, so no
+#'   existing caller breaks by omitting it.
+#' @param facility_exclusion Optional list(before, after, excluded) from
+#'   exclude_facility_admissions()'s return value -- the one post-execute
+#'   cohort step not covered by CohortGenerator's own inclusion-rule
+#'   attrition tracking. NULL (default) skips just that funnel stage.
 extract_report_inputs <- function(config,
                                   connection_details,
-                                  inputs_dir = file.path(config$output_folder, "report_inputs")) {
+                                  inputs_dir = file.path(config$output_folder, "report_inputs"),
+                                  strategus_output_dir = NULL,
+                                  facility_exclusion = NULL) {
 
   if (is.null(config))             stop("extract_report_inputs(): config is required")
   if (is.null(connection_details)) stop("extract_report_inputs(): connection_details is required")
@@ -928,6 +947,25 @@ extract_report_inputs <- function(config,
   # report's Supplemental Material section, not fetch_*_from_omop() helpers,
   # which is why they are easy to miss — see the section 4 header.
   written <- c(written, .extract_supplemental(config, connection_details, inputs_dir))
+
+  # ---- CONSORT patient-flow funnel --------------------------------------------
+  # Added 2026-09-15. Reads two files Strategus's own CohortGeneratorModule
+  # already writes (generateStats = TRUE is on, see
+  # CreateStrategusAnalysisSpecification.R) -- NOT a CDM query, a local file
+  # read, so this stays a first for this function without adding a new DB
+  # dependency. cg_cohort_attrition.csv already carries the correct
+  # CUMULATIVE funnel (base entry-criteria count, then one row per circe
+  # InclusionRule in order) computed by CohortGenerator itself as a side
+  # effect of generating the cohort -- not a hand re-derivation of circe's
+  # logic. cg_cohort_inclusion.csv supplies each rule's human-readable name
+  # (parsed by CohortGenerator directly from the cohort JSON), so stage
+  # labels don't need to be hardcoded here either. The one stage neither
+  # file has -- the post-execute facility-admission exclusion, which runs
+  # entirely outside CohortGenerator's own tracking -- comes from the
+  # facility_exclusion argument instead.
+  written <- c(written, .extract_consort_flow(
+    config, strategus_output_dir, facility_exclusion, inputs_dir, min_cell_count
+  ))
 
   # ---- Report config ----------------------------------------------------------
   # The narrative/parameter fields the render half actually reads — verified by
@@ -1247,6 +1285,104 @@ extract_report_inputs <- function(config,
 
   if (!is.null(conn)) try(DatabaseConnector::disconnect(conn), silent = TRUE)
   written
+}
+
+
+# =============================================================================
+# 4b. CONSORT PATIENT-FLOW FUNNEL
+#
+# Reads two files Strategus's own CohortGeneratorModule already writes
+# (generateStats = TRUE, see CreateStrategusAnalysisSpecification.R) plus
+# the one post-execute step outside its tracking, and turns them into
+# report_inputs/agg_consort_flow.csv -- a plain data.frame(stage, n, reason)
+# the report repo renders via omopReportToolkit::.save_consort_flow_plot().
+#
+# Deliberately a local file read, not a CDM query: cg_cohort_attrition.csv
+# and cg_cohort_inclusion.csv are already correct, already computed by
+# CohortGenerator itself as part of generating the cohort -- re-deriving
+# that logic here (e.g. re-running each circe rule's SQL by hand) would risk
+# a subtle mismatch with what the cohort actually contains, for no benefit.
+# =============================================================================
+
+#' Build the CONSORT funnel CSV from Strategus's own attrition output plus
+#' the facility-admission exclusion step.
+#'
+#' @param config                Study config.
+#' @param strategus_output_dir  Strategus's results folder (contains
+#'                              CohortGeneratorModule/). NULL skips
+#'                              gracefully (e.g. an older bundle, or a
+#'                              caller that hasn't been updated yet).
+#' @param facility_exclusion    list(before, after, excluded) from
+#'                              exclude_facility_admissions(), or NULL to
+#'                              skip just that final stage.
+#' @param inputs_dir            Destination directory for the CSV.
+#' @param min_cell_count        Small-cell suppression threshold.
+#' @return Character vector: "agg_consort_flow" if written, else character(0).
+.extract_consort_flow <- function(config, strategus_output_dir, facility_exclusion,
+                                  inputs_dir, min_cell_count) {
+  if (is.null(strategus_output_dir)) {
+    message("[extract] agg_consort_flow: no strategus_output_dir supplied — file not written")
+    return(character(0))
+  }
+
+  cg_dir <- file.path(strategus_output_dir, "CohortGeneratorModule")
+  attrition_path <- file.path(cg_dir, "cg_cohort_attrition.csv")
+  inclusion_path <- file.path(cg_dir, "cg_cohort_inclusion.csv")
+  if (!file.exists(attrition_path) || !file.exists(inclusion_path)) {
+    message("[extract] agg_consort_flow: cg_cohort_attrition.csv / cg_cohort_inclusion.csv ",
+            "not found under ", cg_dir, " — file not written")
+    return(character(0))
+  }
+
+  attrition <- tryCatch(utils::read.csv(attrition_path, stringsAsFactors = FALSE),
+                        error = function(e) NULL)
+  inclusion <- tryCatch(utils::read.csv(inclusion_path, stringsAsFactors = FALSE),
+                        error = function(e) NULL)
+  if (is.null(attrition) || is.null(inclusion)) {
+    message("[extract] agg_consort_flow: could not read attrition/inclusion CSVs — file not written")
+    return(character(0))
+  }
+
+  # mode_id 0 and 1 carry identical person_counts for this study (verified
+  # against a real Duke export) -- 0 is picked explicitly rather than relying
+  # on that always being true.
+  a <- attrition[attrition$cohort_definition_id == config$target_cohort_id &
+                  attrition$mode_id == 0, , drop = FALSE]
+  a <- a[order(a$rule_sequence), , drop = FALSE]
+  if (nrow(a) == 0) {
+    message("[extract] agg_consort_flow: no attrition rows for cohort ",
+            config$target_cohort_id, " — file not written")
+    return(character(0))
+  }
+
+  i <- inclusion[inclusion$cohort_definition_id == config$target_cohort_id, , drop = FALSE]
+  rule_name <- function(seq) {
+    nm <- i$name[i$rule_sequence == seq]
+    if (length(nm) == 0 || is.na(nm[1]) || !nzchar(nm[1])) NA_character_ else nm[1]
+  }
+
+  flow <- data.frame(
+    stage  = ifelse(a$rule_sequence == -1,
+                    "Major LE amputation, entry criteria met",
+                    vapply(a$rule_sequence, rule_name, character(1))),
+    n      = a$person_count,
+    reason = vapply(a$rule_sequence, function(s) if (s == -1) NA_character_ else rule_name(s),
+                    character(1)),
+    stringsAsFactors = FALSE
+  )
+
+  if (!is.null(facility_exclusion) && !is.null(facility_exclusion$after)) {
+    flow <- rbind(flow, data.frame(
+      stage  = "Admitted from home",
+      n      = facility_exclusion$after,
+      reason = "Admitted from hospital transfer or skilled nursing facility",
+      stringsAsFactors = FALSE
+    ))
+  }
+
+  flow <- .suppress_counts(flow, "n", min_cell_count)
+
+  if (.write_report_input(flow, inputs_dir, "agg_consort_flow")) "agg_consort_flow" else character(0)
 }
 
 
