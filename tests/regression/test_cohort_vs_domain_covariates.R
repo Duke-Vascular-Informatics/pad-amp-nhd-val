@@ -103,6 +103,18 @@ local({
   generate_nhd_cohort(connection = conn, cdmDatabaseSchema = cdmTwo,
                       cohortDatabaseSchema = workTwo,
                       cohortTable = config$cohort_table)
+
+  # Applied here too, same reason as generate_nhd_cohort() above: both
+  # StrategusCodeToRun.R and duke-prcc-deploy's run_analysis.R call this
+  # after generating 9100011, so PASS 1/PASS 2 below must run against the
+  # same (post-exclusion) population both real pipelines actually use --
+  # otherwise this test would silently keep comparing the domain-query
+  # oracle against an unfiltered cohort while every real run uses the
+  # filtered one.
+  source("R/exclude_facility_admissions.R")
+  exclude_facility_admissions(connection = conn, cdmDatabaseSchema = cdmTwo,
+                              cohortDatabaseSchema = workTwo,
+                              cohortTable = config$cohort_table)
 })
 
 message("\n########## PASS 1: domain-query path (oracle) ##########")

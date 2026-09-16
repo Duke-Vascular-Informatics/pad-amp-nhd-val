@@ -217,6 +217,16 @@ characterizationSpecs <- ch$createModuleSpecifications(
   riskWindowEnd                = timeAtRisks$riskWindowEnd,
   endAnchor                    = timeAtRisks$endAnchor,
   minCharacterizationMean      = 0.01,
+  # includeTargetBaseline = TRUE, KNOWN LIMITATION added 2026-09-15: this runs
+  # inside Strategus::execute(), before R/exclude_facility_admissions.R's
+  # post-execute row deletion (facility-admitted patients removed from
+  # cohort 9100011) ever runs -- so this baseline characterization describes
+  # the PRE-exclusion (larger) target population. Milder than the
+  # includeTimeToEvent concern below (a superset population, not meaningless
+  # data), so nothing is disabled here -- but its counts will not match the
+  # manuscript's Table 1 if reviewed directly from
+  # output/strategusOutput/CharacterizationModule/. See
+  # R/exclude_facility_admissions.R for the full rationale.
   includeTargetBaseline        = TRUE,
   # includeTimeToEvent = FALSE deliberately. Every outcome-dependent
   # Characterization analysis would run against the PLACEHOLDER version of

@@ -219,6 +219,24 @@ generate_nhd_cohort(
 )
 DatabaseConnector::disconnect(conn)
 
+# ---- Exclude facility-admitted patients from the target cohort ---------------
+# Order relative to generate_nhd_cohort() above does not matter (that
+# function computes NHD independently, with no dependency on 9100011
+# membership) -- this just has to run before the scoring step below, which
+# is the first thing that reads cohort 9100011's membership. See
+# R/exclude_facility_admissions.R for the full rationale, the verified
+# admission-source code mapping, and why this does not need the
+# 9100001-style placeholder-JSON escape-hatch machinery.
+source("R/exclude_facility_admissions.R")
+conn <- DatabaseConnector::connect(connectionDetails)
+exclude_facility_admissions(
+  connection           = conn,
+  cdmDatabaseSchema    = cdmDatabaseSchema,
+  cohortDatabaseSchema = workDatabaseSchema,
+  cohortTable          = cohortTableName
+)
+DatabaseConnector::disconnect(conn)
+
 # ---- Custom step: apply the three published integer risk scores --------------
 # Strategus has populated the cohort table; the scores are computed from it.
 source("config.R")
