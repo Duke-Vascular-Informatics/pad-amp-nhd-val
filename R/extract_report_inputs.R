@@ -1361,12 +1361,33 @@ extract_report_inputs <- function(config,
     if (length(nm) == 0 || is.na(nm[1]) || !nzchar(nm[1])) NA_character_ else nm[1]
   }
 
+  # Circe's own rule names describe the population that REMAINS after the
+  # rule (e.g. "No limb-trauma mechanism during the index admission"), not
+  # why the OTHER patients were dropped. Reusing that text verbatim under
+  # "Excluded: " reads as a confusing double negative -- "Excluded: No
+  # limb-trauma mechanism..." sounds like patients were excluded for NOT
+  # having trauma, the opposite of what happened. There is no reliable
+  # grammatical way to invert arbitrary rule-name wording, so the exclusion
+  # side of cohort 9100011's four rules is hand-curated here instead. If
+  # this cohort's rule set ever changes, the fallback below (NA) degrades
+  # gracefully to a bare "Excluded (n = ...)" label rather than erroring --
+  # but the mismatch is worth revisiting by hand at that point.
+  exclusion_reason <- function(seq) {
+    switch(as.character(seq),
+      "0" = "Age < 18 years",
+      "1" = "No PAD, diabetes, or wound diagnosis",
+      "2" = "Traumatic mechanism during the index admission",
+      "3" = "Lower-limb malignancy during the index admission",
+      NA_character_
+    )
+  }
+
   flow <- data.frame(
     stage  = ifelse(a$rule_sequence == -1,
                     "Major LE amputation, entry criteria met",
                     vapply(a$rule_sequence, rule_name, character(1))),
     n      = a$person_count,
-    reason = vapply(a$rule_sequence, function(s) if (s == -1) NA_character_ else rule_name(s),
+    reason = vapply(a$rule_sequence, function(s) if (s == -1) NA_character_ else exclusion_reason(s),
                     character(1)),
     stringsAsFactors = FALSE
   )
