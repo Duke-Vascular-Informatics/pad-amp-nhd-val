@@ -19,11 +19,40 @@ CRediT roles follow the [NISO CRediT taxonomy](https://credit.niso.org/).
 
 ---
 
-## Karthik Ragunathan, MD
+## Shoaib Siddiqui
 
 **Affiliations:**
-- Duke University School of Medicine, Department of Anesthesiology, Durham, NC, US
-- Durham VA Medical Center, Durham, NC, US
+- Lake Erie College of Osteopathic Medicine, Erie, PA, US
 
 
-**CRediT roles:** Conceptualization · Methodology · Writing – review & editing
+**CRediT roles:** Investigation
+
+---
+
+## Young Kim
+
+**Affiliations:**
+- Duke University School of Medicine, Durham, NC, US
+
+
+**CRediT roles:** Conceptualization · Methodology · Supervision · Writing – review & editing
+
+---
+
+## Joey Lew
+
+**Affiliations:**
+- Duke University School of Medicine, Durham, NC, US
+
+
+**CRediT roles:** Investigation · Writing – review & editing
+
+---
+
+## Mary Moya-Mendez
+
+**Affiliations:**
+- Duke University School of Medicine, Durham, NC, US
+
+
+**CRediT roles:** Investigation · Writing – review & editing
