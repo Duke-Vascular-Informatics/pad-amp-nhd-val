@@ -863,11 +863,16 @@ if (!exists("%||%", mode = "function")) `%||%` <- function(x, y) if (is.null(x))
 #'   exclude_facility_admissions()'s return value -- the one post-execute
 #'   cohort step not covered by CohortGenerator's own inclusion-rule
 #'   attrition tracking. NULL (default) skips just that funnel stage.
+#' @param study_period_exclusion Optional list(before, after, excluded) from
+#'   restrict_to_study_period()'s return value -- the other post-execute
+#'   cohort step not covered by CohortGenerator's own inclusion-rule
+#'   attrition tracking. NULL (default) skips just that funnel stage.
 extract_report_inputs <- function(config,
                                   connection_details,
                                   inputs_dir = file.path(config$output_folder, "report_inputs"),
                                   strategus_output_dir = NULL,
-                                  facility_exclusion = NULL) {
+                                  facility_exclusion = NULL,
+                                  study_period_exclusion = NULL) {
 
   if (is.null(config))             stop("extract_report_inputs(): config is required")
   if (is.null(connection_details)) stop("extract_report_inputs(): connection_details is required")
@@ -959,12 +964,14 @@ extract_report_inputs <- function(config,
   # effect of generating the cohort -- not a hand re-derivation of circe's
   # logic. cg_cohort_inclusion.csv supplies each rule's human-readable name
   # (parsed by CohortGenerator directly from the cohort JSON), so stage
-  # labels don't need to be hardcoded here either. The one stage neither
-  # file has -- the post-execute facility-admission exclusion, which runs
-  # entirely outside CohortGenerator's own tracking -- comes from the
-  # facility_exclusion argument instead.
+  # labels don't need to be hardcoded here either. The two stages neither
+  # file has -- the post-execute study-period restriction and facility-
+  # admission exclusion, which both run entirely outside CohortGenerator's
+  # own tracking -- come from the study_period_exclusion/facility_exclusion
+  # arguments instead.
   written <- c(written, .extract_consort_flow(
-    config, strategus_output_dir, facility_exclusion, inputs_dir, min_cell_count
+    config, strategus_output_dir, study_period_exclusion, facility_exclusion,
+    inputs_dir, min_cell_count
   ))
 
   # ---- Report config ----------------------------------------------------------
@@ -1305,21 +1312,26 @@ extract_report_inputs <- function(config,
 # =============================================================================
 
 #' Build the CONSORT funnel CSV from Strategus's own attrition output plus
-#' the facility-admission exclusion step.
+#' the study-period-restriction and facility-admission exclusion steps.
 #'
 #' @param config                Study config.
 #' @param strategus_output_dir  Strategus's results folder (contains
 #'                              CohortGeneratorModule/). NULL skips
 #'                              gracefully (e.g. an older bundle, or a
 #'                              caller that hasn't been updated yet).
+#' @param study_period_exclusion list(before, after, excluded) from
+#'                              restrict_to_study_period(), or NULL to skip
+#'                              just that stage. Runs before
+#'                              facility_exclusion in the actual pipeline,
+#'                              so its row is inserted before that one here.
 #' @param facility_exclusion    list(before, after, excluded) from
 #'                              exclude_facility_admissions(), or NULL to
 #'                              skip just that final stage.
 #' @param inputs_dir            Destination directory for the CSV.
 #' @param min_cell_count        Small-cell suppression threshold.
 #' @return Character vector: "agg_consort_flow" if written, else character(0).
-.extract_consort_flow <- function(config, strategus_output_dir, facility_exclusion,
-                                  inputs_dir, min_cell_count) {
+.extract_consort_flow <- function(config, strategus_output_dir, study_period_exclusion,
+                                  facility_exclusion, inputs_dir, min_cell_count) {
   if (is.null(strategus_output_dir)) {
     message("[extract] agg_consort_flow: no strategus_output_dir supplied — file not written")
     return(character(0))
@@ -1391,6 +1403,17 @@ extract_report_inputs <- function(config,
                     character(1)),
     stringsAsFactors = FALSE
   )
+
+  if (!is.null(study_period_exclusion) && !is.null(study_period_exclusion$after)) {
+    flow <- rbind(flow, data.frame(
+      stage  = sprintf("Index amputation %s to %s",
+                       config$study_start_date %||% "study start",
+                       config$study_end_date %||% "study end"),
+      n      = study_period_exclusion$after,
+      reason = "Index amputation outside the study period",
+      stringsAsFactors = FALSE
+    ))
+  }
 
   if (!is.null(facility_exclusion) && !is.null(facility_exclusion$after)) {
     flow <- rbind(flow, data.frame(
