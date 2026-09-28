@@ -198,6 +198,13 @@ Strategus::execute(
 message("Strategus execution complete -> ",
         file.path(outputLocation, databaseName, "strategusOutput"))
 
+# ---- Load study config ---------------------------------------------------------
+# Moved up from just before the scoring step below: restrict_to_study_period()
+# (right after the NHD-cohort repair) needs config$study_start_date /
+# config$study_end_date, so config must exist before that point now.
+source("config.R")
+config <- get_validation_config()
+
 # ---- Repair the NHD cohort ----------------------------------------------------
 # MUST run before scoring. Strategus does not execute
 # inst/sql/sql_server/9100001.sql — its specification stores only each cohort's
@@ -219,14 +226,42 @@ generate_nhd_cohort(
 )
 DatabaseConnector::disconnect(conn)
 
+# ---- Restrict the target cohort to the study period ---------------------------
+# study_start_date/study_end_date (study_params.yaml) have been configured since
+# this study's original synthea-omop-template incarnation, where R/cohorts.R
+# applied them as a literal cohort_start_date BETWEEN filter right after
+# CohortGenerator populated the cohort table. That SQL step was never carried
+# forward into the Strategus port -- circe's cohort JSON has no primary-event
+# date-range field (this cohort's CensorWindow is empty, and CensorWindow only
+# bounds cohort END dates via end-strategy calculations in any case), so
+# CohortGenerator applied no date bound at all. The two config fields were
+# silently reduced to report-narrative text only (see extract_report_inputs.R's
+# report_config$study_end_date) -- confirmed as a live problem, not theoretical,
+# by a real PRCC run whose agg_nhd_by_year.csv had a genuine 2026 row (24
+# patients) despite study_end_date being "2025-12-31": Duke's live CDM keeps
+# accruing amputation encounters past any date fixed at protocol-writing time,
+# and nothing was stopping them from entering this cohort. See
+# R/restrict_to_study_period.R for the full rationale and the exact SQL.
+source("R/restrict_to_study_period.R")
+conn <- DatabaseConnector::connect(connectionDetails)
+studyPeriodExclusion <- restrict_to_study_period(
+  connection           = conn,
+  cohortDatabaseSchema = workDatabaseSchema,
+  cohortTable          = cohortTableName,
+  studyStartDate       = config$study_start_date,
+  studyEndDate         = config$study_end_date
+)
+DatabaseConnector::disconnect(conn)
+
 # ---- Exclude facility-admitted patients from the target cohort ---------------
 # Order relative to generate_nhd_cohort() above does not matter (that
 # function computes NHD independently, with no dependency on 9100011
 # membership) -- this just has to run before the scoring step below, which
-# is the first thing that reads cohort 9100011's membership. See
-# R/exclude_facility_admissions.R for the full rationale, the verified
-# admission-source code mapping, and why this does not need the
-# 9100001-style placeholder-JSON escape-hatch machinery.
+# is the first thing that reads cohort 9100011's membership. Runs after the
+# study-period restriction above so the CONSORT funnel's stage order matches
+# the pipeline's actual execution order. See R/exclude_facility_admissions.R
+# for the full rationale, the verified admission-source code mapping, and why
+# this does not need the 9100001-style placeholder-JSON escape-hatch machinery.
 source("R/exclude_facility_admissions.R")
 conn <- DatabaseConnector::connect(connectionDetails)
 facilityExclusion <- exclude_facility_admissions(
@@ -239,8 +274,7 @@ DatabaseConnector::disconnect(conn)
 
 # ---- Custom step: apply the three published integer risk scores --------------
 # Strategus has populated the cohort table; the scores are computed from it.
-source("config.R")
-config <- get_validation_config()
+# (config was loaded earlier, right after Strategus::execute() -- see above.)
 
 # config.R carries the PHYSICAL cdm schema (the custom step issues its own SQL
 # and does not need the vocab union), but results_schema/cohort_table must match
@@ -263,10 +297,11 @@ run_integer_score_validation(connectionDetails, config)
 source("R/extract_report_inputs.R")
 message("Extracting report inputs from the CDM ...")
 extractResult <- extract_report_inputs(
-  config                = config,
-  connection_details    = connectionDetails,
-  strategus_output_dir  = file.path(outputLocation, databaseName, "strategusOutput"),
-  facility_exclusion    = facilityExclusion
+  config                    = config,
+  connection_details        = connectionDetails,
+  strategus_output_dir      = file.path(outputLocation, databaseName, "strategusOutput"),
+  facility_exclusion        = facilityExclusion,
+  study_period_exclusion    = studyPeriodExclusion
 )
 
 # ---- Aggregate report inputs ------------------------------------------------

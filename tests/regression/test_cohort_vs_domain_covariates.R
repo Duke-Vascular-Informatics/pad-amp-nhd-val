@@ -104,6 +104,20 @@ local({
                       cohortDatabaseSchema = workTwo,
                       cohortTable = config$cohort_table)
 
+  # Applied here too, same reason as generate_nhd_cohort() above and in the
+  # same order both real pipelines use it: StrategusCodeToRun.R and
+  # duke-prcc-deploy's run_analysis.R both restrict to the study period
+  # before excluding facility admissions, so PASS 1/PASS 2 below must run
+  # against that same (post-restriction) population -- otherwise this test
+  # would silently keep comparing the domain-query oracle against a cohort
+  # that still includes out-of-period patients while every real run uses
+  # the restricted one.
+  source("R/restrict_to_study_period.R")
+  restrict_to_study_period(connection = conn, cohortDatabaseSchema = workTwo,
+                           cohortTable = config$cohort_table,
+                           studyStartDate = config$study_start_date,
+                           studyEndDate = config$study_end_date)
+
   # Applied here too, same reason as generate_nhd_cohort() above: both
   # StrategusCodeToRun.R and duke-prcc-deploy's run_analysis.R call this
   # after generating 9100011, so PASS 1/PASS 2 below must run against the
