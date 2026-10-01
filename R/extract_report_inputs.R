@@ -1166,9 +1166,23 @@ extract_report_inputs <- function(config,
      LEFT JOIN @cdm_schema.procedure_occurrence po
        ON po.person_id IN (SELECT subject_id FROM target_population)
       AND EXISTS (
+            -- Matches cohort 9100011's own circe StartWindow (0 to +30 days
+            -- from the qualifying visit's start date -- see
+            -- inst/cohorts/9100011.json's PrimaryCriteria), NOT an exact-date
+            -- match against cohort_start_date. The cohort's index date is the
+            -- VISIT's start date; the amputation procedure itself is allowed
+            -- anywhere in the following 30 days, exactly as
+            -- R/risk_score_pipeline.R's operative-duration covariate already
+            -- accounts for -- surgery typically occurs on a day after the
+            -- admission start date. An exact-date join here silently
+            -- dropped every patient whose amputation was coded on a later
+            -- day of the same admission -- found 2026-10-01 via a real Duke
+            -- export where Supplemental Table S4's total matched patients
+            -- (~365) fell far short of the cohort size (587).
             SELECT 1 FROM target_population tp
             WHERE tp.subject_id = po.person_id
-              AND tp.index_date = CAST(po.procedure_date AS DATE)
+              AND CAST(po.procedure_date AS DATE) >= tp.index_date
+              AND CAST(po.procedure_date AS DATE) <= DATEADD(DAY, 30, tp.index_date)
           )
       AND (
             po.procedure_source_concept_id = combined.standard_concept_id
