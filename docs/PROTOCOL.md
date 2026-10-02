@@ -96,7 +96,7 @@ de novo risk score (see Section 11).
   encounters past any date fixed at protocol-writing time).
 - **Development and pipeline verification:** conducted first against the
   synthetic dataset `omop_synth_pad_amp_v2` (registered in
-  `../synthetic_data/registry.yaml`, id `pad_amp`) before any run against
+  the workspace's `synthetic_data/registry.yaml` (format: [charon's synthetic_data README](https://github.com/Duke-Vascular-Informatics/charon/blob/main/synthetic_data/README.md)), id `pad_amp`) before any run against
   real patient data.
 
 ---
@@ -294,7 +294,7 @@ ATLAS concept-set/cohort inventory, with standard-concept logic and source
 OMOP table(s) for every cohort/outcome/covariate definition, is reported in
 the manuscript's Supplemental Table S2. Cohort ids `9100001`–`9100011` are
 claimed in this workspace's reserved local block
-(`strategus-study-template/docs/STRATEGUS_CONVENTIONS.md` §6), outside the
+([`strategus-study-template/docs/STRATEGUS_CONVENTIONS.md`](https://github.com/Duke-Vascular-Informatics/strategus-study-template/blob/main/docs/STRATEGUS_CONVENTIONS.md) §6), outside the
 ATLAS-demo id range, and are shared with (byte-identical to, at fork time)
 `pad-amp-nhd-prog`'s own cohort definitions.
 

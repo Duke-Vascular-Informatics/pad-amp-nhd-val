@@ -2,9 +2,9 @@
 
 Environment bootstrap scripts for package/runtime readiness.
 
-For end-to-end setup order, use [docs/GETTING_STARTED.md](../docs/GETTING_STARTED.md).
+For end-to-end setup order, use [charon's docs/GETTING_STARTED.md](https://github.com/Duke-Vascular-Informatics/charon/blob/main/docs/GETTING_STARTED.md).
 For Docker, SQL Server, and vocabulary infrastructure details, use
-[docs/SETUP.md](../docs/SETUP.md).
+[charon's docs/SETUP.md](https://github.com/Duke-Vascular-Informatics/charon/blob/main/docs/SETUP.md).
 
 ## Files
 

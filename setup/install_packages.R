@@ -84,8 +84,8 @@ cran_packages <- c(
   "readr",               # Fast CSV reading / writing
   # Reporting and output
   # officer/flextable REMOVED 2026-08-11 — Word-report-only, and the Word
-  # report moved to pad-amp-nhd-val-report entirely (Phase 1,
-  # docs/MIGRATION_PLAN_REPO_SPLIT.md). This repo builds no Word document.
+  # report moved to pad-amp-nhd-val-report entirely (see charon's
+  # "Multi-Repo Analysis Pipeline" README section, https://github.com/Duke-Vascular-Informatics/charon#multi-repo-analysis-pipeline). This repo builds no Word document.
   # If you find yourself reaching for either here, the code you're writing
   # probably belongs in the report repo, not this one.
   "openxlsx",            # Excel (.xlsx) output

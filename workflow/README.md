@@ -1,7 +1,7 @@
 # workflow/
 
 Step 9 (Duke PRCC portable bundle) moved to
-[`duke-prcc-deploy`](https://gitlab.dhe.duke.edu/apj20/duke-prcc-deploy)
+[`duke-prcc-deploy`](https://gitlab.dhe.duke.edu/apj20/duke-prcc-deploy) (the "site-deploy" bucket of charon's [Multi-Repo Analysis Pipeline](https://github.com/Duke-Vascular-Informatics/charon#multi-repo-analysis-pipeline); Duke-internal, not public)
 (`studies/pad-amp-nhd-val/`) on 2026-08-11 — Duke GitLab only, VPN-gated, not
 mirrored to GitHub. The file previously here
 (`09_build_portable_analysis_bundle.sh`) was removed: it was an unmodified
