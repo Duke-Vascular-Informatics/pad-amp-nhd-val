@@ -11,16 +11,20 @@ authors:
   - given-names: "Adam P."
     family-names: "Johnson"
     name-suffix: "MD, MPH"
-    affiliation: "Duke University School of Medicine, Department of Surgery"
+    affiliation: "Duke University School of Medicine, Department of Surgery; Durham VA Medical Center"
     orcid: "https://orcid.org/0000-0002-3014-6372"
-  - given-names: "Sasank"
-    family-names: "Kalipatnapu"
-    name-suffix: "MD"
-    affiliation: "University of Massachusetts School of Medicine"
-  - given-names: "Ayman"
-    family-names: "Ali"
-    name-suffix: "MD"
-    affiliation: "Duke University School of Medicine, Department of Surgery"
+  - given-names: "Shoaib"
+    family-names: "Siddiqui"
+    affiliation: "Lake Erie College of Osteopathic Medicine"
+  - given-names: "Young"
+    family-names: "Kim"
+    affiliation: "Duke University School of Medicine"
+  - given-names: "Joey"
+    family-names: "Lew"
+    affiliation: "Duke University School of Medicine"
+  - given-names: "Mary"
+    family-names: "Moya-Mendez"
+    affiliation: "Duke University School of Medicine"
 
 version: "1.0.0"
 date-released: "2026-10-02"
@@ -28,7 +32,7 @@ date-released: "2026-10-02"
 repository-code: "https://github.com/Duke-Vascular-Informatics/pad-amp-nhd-val"
 url: "https://github.com/Duke-Vascular-Informatics/pad-amp-nhd-val"
 
-license: GPL-3.0
+license: GPL-2.0-only
 
 abstract: >
   A Strategus-based OMOP CDM v5.4 observational study externally validating

@@ -94,7 +94,7 @@ NIH/NCATS **K12TR005435**.
 
 ## License
 
-GPL-3.0. This is copyleft: redistributed or modified versions must remain GPL-3.0.
+Copyright 2026 Duke University. All Rights Reserved. The software is hereby licensed under the GNU GPL License v2 (see [LICENSE](LICENSE)). This is copyleft: redistributed or modified versions must remain GPL v2-licensed.
 
 ### Third-party vocabulary content
 
