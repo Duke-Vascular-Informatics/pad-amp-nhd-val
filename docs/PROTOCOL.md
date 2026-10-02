@@ -3,7 +3,7 @@
 **Study repository:** `pad-amp-nhd-val`
 **Report repository:** `pad-amp-nhd-val-report`
 **OSF project:** `hwgbe` (private)
-**Status:** DRAFT v0.1 — assembled from the finalized, already-executed analysis; not yet reviewed or approved by the study team
+**Status:** DRAFT v0.2 — assembled from the finalized, already-executed analysis; IRB confirmed, not yet otherwise reviewed or approved by the study team
 **Draft date:** 2026-10-01
 **Prepared by:** Adam Johnson, Duke Vascular Informatics
 **Funding:** NIH National Center for Advancing Translational Sciences, Award K12TR005435
@@ -13,9 +13,10 @@
 > cohort has been assembled against Duke's real OMOP CDM instance (ACE_DATA)
 > and the full analysis described below has been run to completion (n = 587,
 > see Section 5). It is drafted retrospectively, alongside manuscript
-> preparation, for methodological transparency and OSF registration. Items
-> marked **[CONFIRM]** require study-team sign-off before this protocol is
-> finalized — nothing below should be treated as approved or complete.
+> preparation, for methodological transparency and OSF registration. The
+> one open item from the initial draft (Section 11's IRB Pro-number) was
+> confirmed by the study team 2026-10-01 — nothing below should otherwise
+> be treated as approved or complete pending full study-team review.
 
 ---
 
@@ -322,21 +323,15 @@ ATLAS-demo id range, and are shared with (byte-identical to, at fork time)
 
 ## 11. Regulatory and Ethical Considerations
 
-- **IRB:** **[CONFIRM — exact Duke IRB protocol number]**. The umbrella
-  Duke IRB application on file for this study and its parent
-  `pad-amp-nhd-prog`
-  (`irbs-protocols/Duke-irb-pad-optimizaztion.pdf`, "Data Driven
+- **IRB:** Duke IRB protocol **Pro00119168** (confirmed by the study team,
+  2026-10-01) — the same blanket PAD-outcomes IRB cited by sibling studies
+  `pad-ler-ldl-desc` and `pad-oler-ssi-prog`, confirming the "Data Driven
   Optimization of Outcomes in Patient with Peripheral Artery Disease" /
-  short title "Optimization in PAD", PI Adam Johnson, DUHS-Vascular,
-  Application for Exemption from IRB Review) is attached to this study's
-  OSF project for reference, but that document is the raw application
-  packet, not a signed determination letter — it does not itself state an
-  assigned Pro-number. A related but distinct blanket PAD-outcomes IRB,
-  **Pro00119168**, is cited by sibling studies `pad-ler-ldl-desc` and
-  `pad-oler-ssi-prog`; whether that is the same umbrella approval covering
-  *this* study has not been independently verified and should not be
-  assumed. Confirm the correct Pro-number with the study team before this
-  protocol is finalized.
+  "Optimization in PAD" application on file
+  (`irbs-protocols/Duke-irb-pad-optimizaztion.pdf`, PI Adam Johnson,
+  DUHS-Vascular, Application for Exemption from IRB Review — the raw
+  application packet, attached to this study's OSF project for reference)
+  is this study's approval.
 - No PHI/PII is written to disk by this repository or its report
   counterpart; all analysis outputs are aggregate statistics only (Section
   8.6). The PHI-producing edge-case export (`edge_case_export.R`, MRN, age,
@@ -379,11 +374,11 @@ This is a first draft, assembled from the finalized manuscript report
 current as of the 2026-09-28 PRCC run) and this repository's own
 documentation (`CLAUDE.md`, `study_params.yaml`, `inst/Cohorts.csv`,
 `phenotype_library/catalog.yaml`). It is **not** ready for external
-release. The one outstanding item is Section 11's IRB Pro-number, marked
-**[CONFIRM]** — everything else describes the study as actually executed
-and should not require further revision absent a study-team correction.
-Once the IRB number is confirmed and the study team has reviewed this
-document, it can be flagged as ready for review; the study team can then
+release. Section 11's IRB Pro-number (Pro00119168) was confirmed by the
+study team 2026-10-01; everything in this protocol describes the study as
+actually executed and should not require further revision absent a
+study-team correction. Once the study team has reviewed this document in
+full, it can be flagged as ready for review; the study team can then
 decide on OSF visibility via the manual steps described in `osf/README.md`
 (making the project public, minting a DOI) — none of which are automated
 as part of drafting or uploading this document.
@@ -395,3 +390,4 @@ as part of drafting or uploading this document.
 | Version | Date | Change |
 |---|---|---|
 | v0.1 | 2026-10-01 | Initial draft, assembled from the finalized manuscript report and repository documentation |
+| v0.2 | 2026-10-01 | IRB confirmed as Pro00119168 (blanket PAD-outcomes IRB shared with `pad-ler-ldl-desc`/`pad-oler-ssi-prog`); Section 11 and status header updated |
