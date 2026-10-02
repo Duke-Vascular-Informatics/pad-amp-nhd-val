@@ -20,7 +20,8 @@
 #      v
 #     render   (needs ONLY files — no DB, no VPN, no credentials)
 #
-#   Motivation and full design: docs/MIGRATION_PLAN_REPO_SPLIT.md, Phase 0.
+#   Motivation and design: charon's "Multi-Repo Analysis Pipeline" README section,
+#   https://github.com/Duke-Vascular-Informatics/charon#multi-repo-analysis-pipeline.
 #   The render half is destined for the shared `omop-report-toolkit` repo; this
 #   half stays with the study, because the SQL is study-specific.
 #

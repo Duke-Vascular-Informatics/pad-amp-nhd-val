@@ -9,7 +9,7 @@
 # because circe has no admitted_from_concept_id/admitted_from_source_value
 # attribute on VisitOccurrence (confirmed by class inspection, same
 # limitation already documented for discharged_to_concept_id in
-# strategus-study-template/docs/CIRCE_ESCAPE_HATCH.md). CohortGenerator's
+# https://github.com/Duke-Vascular-Informatics/strategus-study-template/blob/main/docs/CIRCE_ESCAPE_HATCH.md). CohortGenerator's
 # native "cohort subset" feature does not help either -- its three operator
 # types (demographic, limit, cohort-in-cohort) do not reach a visit-level
 # admission-source predicate; building a helper cohort to subset against

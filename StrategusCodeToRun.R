@@ -5,8 +5,8 @@
 # pad_amp_dispo synthetic CDM: Strategus, the custom scoring step, and the
 # report-input extract. This repo is Strategus-faithful and stops here —
 # the Word manuscript is a SEPARATE repo, pad-amp-nhd-val-report, run as its
-# own step against this run's output/ directory. See docs/MIGRATION_PLAN_REPO_SPLIT.md
-# (Phase 1, 2026-08-11) for why the report was moved out entirely rather than
+# own step against this run's output/ directory. See charon's "Multi-Repo Analysis
+# Pipeline" README section (https://github.com/Duke-Vascular-Informatics/charon#multi-repo-analysis-pipeline; split made 2026-08-11) for why the report was moved out entirely rather than
 # just having its database access removed.
 #
 #   1  CreateStrategusAnalysisSpecification.R  (run this first)
@@ -288,8 +288,8 @@ source("scripts/analysis/integer_score_validation.R")
 run_integer_score_validation(connectionDetails, config)
 
 # ---- Extract report inputs -------------------------------------------------
-# This is where this repo's responsibility ENDS. docs/MIGRATION_PLAN_REPO_SPLIT.md
-# (Phase 1, 2026-08-11) moved the Word report out entirely, into its own repo
+# This is where this repo's responsibility ENDS. Per charon's "Multi-Repo Analysis
+# Pipeline" README section (https://github.com/Duke-Vascular-Informatics/charon#multi-repo-analysis-pipeline; split made 2026-08-11) the Word report moved out entirely, into its own repo
 # — pad-amp-nhd-val-report — so that this repo can stay Strategus-faithful:
 # cohorts, spec, the retained scoring step, and this extract layer, which turns
 # CDM queries into CSV artifacts. Nothing past this point imports ggplot2,

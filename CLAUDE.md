@@ -2,7 +2,7 @@
 
 Shared baseline (applies first):
 
-- `../CLAUDE.md`
+- [charon's `CLAUDE.md`](https://github.com/Duke-Vascular-Informatics/charon/blob/main/CLAUDE.md)
 
 ## Local Overrides
 
@@ -46,7 +46,7 @@ cohort), `tests/regression/test_cohort_vs_domain_covariates.R`.
 ### Data source
 
 Physical CDM `omop_synth_pad_amp_v2`, produced by **`pad-amp-dispo-synth`** and
-registered in `../synthetic_data/registry.yaml` as `pad_amp` (this study is pinned to
+registered in the workspace's `synthetic_data/registry.yaml` (format: [charon's synthetic_data README](https://github.com/Duke-Vascular-Informatics/charon/blob/main/synthetic_data/README.md)) as `pad_amp` (this study is pinned to
 version v2 as of the 2026-08-09 consolidation). Strategus itself reads a view-overlay
 (`pad_amp_nhd_val_cdm_test`) that unions the CDM with `omop_vocab`, because
 `Strategus::createCdmExecutionSettings` has no vocabulary-schema parameter. The runner
@@ -111,7 +111,7 @@ collide. **Shared with `pad-amp-nhd-prog`** — this repo is a frozen fork of it
 cohort definitions were byte-identical at fork time (2026-09-07), so the ledger
 records the range once against `pad-amp-nhd-prog` rather than claiming a duplicate
 range here. The block's bounds and the allocation ledger live in
-`strategus-study-template/docs/STRATEGUS_CONVENTIONS.md` §6 — do not restate them
+[`strategus-study-template/docs/STRATEGUS_CONVENTIONS.md`](https://github.com/Duke-Vascular-Informatics/strategus-study-template/blob/main/docs/STRATEGUS_CONVENTIONS.md) §6 — do not restate them
 here. (They used to be restated here and in every `logic_description` below, and
 all of it went stale at once when the block was widened on 2026-08-13.) All are named
 `[DVI] …` from the start so pushing them upstream is not a rename exercise. They are
@@ -134,6 +134,6 @@ git push origin "$BRANCH"   # then open a PR into main
 ```
 
 Duke GitLab deployment (Step 9) is handled entirely by the separate
-[`duke-prcc-deploy`](https://gitlab.dhe.duke.edu/apj20/duke-prcc-deploy) repo's
+[`duke-prcc-deploy`](https://gitlab.dhe.duke.edu/apj20/duke-prcc-deploy) repo's (the "site-deploy" bucket of charon's [Multi-Repo Analysis Pipeline](https://github.com/Duke-Vascular-Informatics/charon#multi-repo-analysis-pipeline); Duke-internal, not public)
 `studies/pad-amp-nhd-val/` config — not by anything in this repo. Never `git subtree
 push` or a bare `git push gitlab` from here.
