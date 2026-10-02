@@ -128,11 +128,11 @@ github_packages <- list(
   list(package = "DataQualityDashboard",   repo = "OHDSI/DataQualityDashboard",   ref = "main"),
   list(package = "CohortDiagnostics",      repo = "OHDSI/CohortDiagnostics",      ref = "main"),
   # Pinned to a commit, not a branch — see that repo's README before bumping.
-  # PRIVATE repo: this install requires GITHUB_PAT (or another token renv
-  # recognises) to be set in the environment this script runs in.
+  # Keep in sync with the omopReportToolkit entry in renv.lock. Public repo
+  # (GPL-2), so no GitHub token is needed for this install.
   list(package = "omopReportToolkit",
        repo = "Duke-Vascular-Informatics/omop-report-toolkit",
-       ref  = "4f6a3fb42d5417c7cc76ace1c20c5f032a1728a3")
+       ref  = "7c3250b48004df2133affb68c023052e11f99ac7")
 )
 
 available_cran <- tryCatch(rownames(available.packages()), error = function(e) character(0))
