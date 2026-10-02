@@ -29,7 +29,7 @@ Shared baseline (applies first):
   the report repo instead. The one exception is `R/risk_score_pipeline.R`'s own
   diagnostic calibration plot (via `omopReportToolkit`) — a QC artifact of the
   scoring step, independent of whether a report is ever generated from a run.
-- Repo is **private**.
+- Repo is **public** (made public 2026-10-02 ahead of publication; GPL-2.0, see `LICENSE`). Nothing patient-level or site-credentialed may ever be committed here.
 
 ### Pipeline
 
