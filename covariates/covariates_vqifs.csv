@@ -104,8 +104,10 @@
 #     definitions (updated 2026-07-26); underweight uses a real BMI < 18.5
 #     measurement threshold (see above).
 #
-# LOOKBACK: -3650 to -1 days (chronic frailty markers, strictly pre-index),
-#   matching the dominant mFI-5 convention in this repo.
+# LOOKBACK: -365 to -1 days (strictly pre-index) for every item. REVISED
+#   2026-10-05 from 10 years: the study-wide convention is a 365-day lookback
+#   unless the published definition states otherwise, and Kraiss 2022 states no
+#   per-item window, so none of these items is an exception.
 #
 # COLUMN DEFINITIONS:
 #   covariate_id        unique identifier (matches covariate_concepts_vqifs.csv)
@@ -123,13 +125,13 @@
 #   points              integer score points (1 per positive VQI-FS item)
 #   missing_is_negative TRUE = absent diagnosis → item not present (0 pts)
 covariate_id,covariate_name,domain,lookback_start_day,lookback_end_day,min_count,points,missing_is_negative
-htn,Hypertension,condition,-3650,-1,1,1,TRUE
-chf,Congestive heart failure,condition,-3650,-1,1,1,TRUE
-cad,Coronary artery disease,condition,-3650,-1,1,1,TRUE
-pvd,Peripheral vascular disease,condition,-3650,-1,1,1,TRUE
-dm,Diabetes mellitus (any type),condition,-3650,-1,1,1,TRUE
-copd,Chronic obstructive pulmonary disease,condition,-3650,-1,1,1,TRUE
-renal_impairment,Renal impairment (creatinine > 1.8 mg/dL or dialysis),condition,-3650,-1,1,1,TRUE
-anemia,Anemia (sex-specific Hgb threshold: <13 g/dL M / <12 g/dL F),condition,-3650,-1,1,1,FALSE
-underweight,Underweight (BMI < 18.5),measurement,-3650,-1,1,1,FALSE
-nonambulatory,Non-ambulatory / impaired ambulation status,auto,-3650,-1,1,1,TRUE
+htn,Hypertension,condition,-365,-1,1,1,TRUE
+chf,Congestive heart failure,condition,-365,-1,1,1,TRUE
+cad,Coronary artery disease,condition,-365,-1,1,1,TRUE
+pvd,Peripheral vascular disease,condition,-365,-1,1,1,TRUE
+dm,Diabetes mellitus (any type),condition,-365,-1,1,1,TRUE
+copd,Chronic obstructive pulmonary disease,condition,-365,-1,1,1,TRUE
+renal_impairment,Renal impairment (creatinine > 1.8 mg/dL or dialysis),condition,-365,-1,1,1,TRUE
+anemia,Anemia (sex-specific Hgb threshold: <13 g/dL M / <12 g/dL F),condition,-365,-1,1,1,FALSE
+underweight,Underweight (BMI < 18.5),measurement,-365,-1,1,1,FALSE
+nonambulatory,Non-ambulatory / impaired ambulation status,auto,-365,-1,1,1,TRUE

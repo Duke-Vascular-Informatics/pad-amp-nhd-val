@@ -34,7 +34,8 @@
 #                        excluded) — this study's own, forked 2026-08-12 from the
 #                        shared 1797941 rather than editing it (see below)
 #   outcome    9100001   [DVI] Non-Home Discharge                 (hand-authored SQL)
-#   covariates 1797949-1797952 reused VA-FI; 9100002-9100010 authored here
+#   covariates 9100002-9100004, 9100007-9100010, 9100021-9100027 authored here
+#              (the reused Limit=First VA-FI cohorts 1797949-1797952 were dropped 2026-10-05)
 ################################################################################
 library(dplyr)
 library(Strategus)
@@ -127,7 +128,7 @@ cohortGeneratorSpecs   <- cg$createModuleSpecifications(generateStats = TRUE)
 
 # ---- CohortDiagnostics -------------------------------------------------------
 # Scoped to the TARGET only.
-#   - The covariate cohorts (9100002-9100010, 1797949-1797952) are covariate
+#   - The covariate cohorts (9100002-9100027) are covariate
 #     DEFINITIONS, not phenotypes to diagnose. Running seven sub-analyses on
 #     each was ~88% of total diagnostics runtime in pad-amp-ed-desc for no
 #     manuscript value.

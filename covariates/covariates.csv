@@ -38,6 +38,15 @@
 #   every clinical-event domain table rather than trusting this column. See
 #   phenotype_library/catalog.yaml :: ambulatory_deficit for the full concept
 #   set and per-concept domain notes.
+#   REVISED 2026-10-05: the concept set itself was redefined (gait descriptors
+#   and the long-cane procedure dropped; walker / frame / crutch devices,
+#   bed-ridden, confined to chair and unable to walk added) -- see the
+#   'AMBULATORY STATUS' note in covariate_concepts.csv. The set now spans
+#   Observation and Device only.
+#
+# LOOKBACK: every Iannuzzi item is read over 365 days before index (-365..-1)
+#   EXCEPT tissue_loss, whose published definition includes the index date
+#   (-365..0). Demographics (age bands, sex, race) have no lookback meaning.
 #
 # COLUMN DEFINITIONS:
 #   covariate_id        unique identifier (matches covariate_concepts.csv)

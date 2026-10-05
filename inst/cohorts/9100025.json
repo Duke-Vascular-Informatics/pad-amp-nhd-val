@@ -1,0 +1,66 @@
+{
+  "cdmVersionRange": ">=5.0.0",
+  "_README": ["Pneumonia - the 'current pneumonia' arm of the Subramaniam mFI-5 'COPD or current pneumonia' item.", "Scored over a 30-day window (current pneumonia); the COPD arm (cohort 9100002) keeps 365 days. covariates/cohort_map.csv carries two rows for the pair (mfi5, copd) and the item is positive if EITHER arm hits.", "Concept set: 255848 Pneumonia + descendants (188 concepts, [vocab query] 2026-10-05).", "KNOWN, ACCEPTED LOOSENESS: the subtree includes two non-infectious interstitial concepts (4273378 Interstitial pneumonia, 1340380 Exacerbation of interstitial pneumonia) and congenital / neonatal pneumonia (irrelevant in an adult amputation cohort). Excluding the first two would put an isExcluded item in the cohort that the score CSV cannot express, breaking the cohort-vs-domain regression check; the effect on a 30-day window in this population is negligible.", "PrimaryCriteriaLimit / QualifiedLimit / ExpressionLimit are all \"All\" and EndStrategy is StartDate+0, unlike the [DVI] VA-FI cohorts (1797948-1797977) which are \"First\". A first-ever-only cohort cannot answer a lookback-window question."],
+  "ConceptSets": [
+    {
+      "id": 0,
+      "name": "[DVI] Pneumonia (mFI-5 current pneumonia)",
+      "expression": {
+        "items": [
+          {
+            "concept": {
+              "CONCEPT_ID": 255848,
+              "CONCEPT_NAME": "Pneumonia",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "233604007",
+              "DOMAIN_ID": "Condition",
+              "VOCABULARY_ID": "SNOMED",
+              "CONCEPT_CLASS_ID": "Disorder"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          }
+        ]
+      }
+    }
+  ],
+  "PrimaryCriteria": {
+    "CriteriaList": [
+      {
+        "ConditionOccurrence": {
+          "CodesetId": 0
+        }
+      }
+    ],
+    "ObservationWindow": {
+      "PriorDays": 0,
+      "PostDays": 0
+    },
+    "PrimaryCriteriaLimit": {
+      "Type": "All"
+    }
+  },
+  "QualifiedLimit": {
+    "Type": "All"
+  },
+  "ExpressionLimit": {
+    "Type": "All"
+  },
+  "InclusionRules": [],
+  "CensoringCriteria": [],
+  "CollapseSettings": {
+    "CollapseType": "ERA",
+    "EraPad": 0
+  },
+  "CensorWindow": {},
+  "EndStrategy": {
+    "DateOffset": {
+      "DateField": "StartDate",
+      "Offset": 0
+    }
+  }
+}

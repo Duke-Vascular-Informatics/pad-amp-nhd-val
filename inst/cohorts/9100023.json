@@ -1,0 +1,66 @@
+{
+  "cdmVersionRange": ">=5.0.0",
+  "_README": ["Heart failure - the mFI-5 chf item (30-day window per the original publication) and the Kraiss sVQI-FS chf item (365-day window).", "One cohort backs both; the window lives in covariates/cohort_map.csv, which is the whole point of Limit=All.", "Concept set is EXACTLY the score CSVs' chf concept (316139 + descendants).", "Replaces the reused Limit=First [DVI] VA-FI Heart failure cohort 1797950, whose Limit=First made the published 30-day mFI-5 window collapse to 'ever prior'.", "PrimaryCriteriaLimit / QualifiedLimit / ExpressionLimit are all \"All\" and EndStrategy is StartDate+0, unlike the [DVI] VA-FI cohorts (1797948-1797977) which are \"First\". A first-ever-only cohort cannot answer a lookback-window question."],
+  "ConceptSets": [
+    {
+      "id": 0,
+      "name": "[DVI] Heart failure (risk score item)",
+      "expression": {
+        "items": [
+          {
+            "concept": {
+              "CONCEPT_ID": 316139,
+              "CONCEPT_NAME": "Heart failure",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "84114007",
+              "DOMAIN_ID": "Condition",
+              "VOCABULARY_ID": "SNOMED",
+              "CONCEPT_CLASS_ID": "Disorder"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          }
+        ]
+      }
+    }
+  ],
+  "PrimaryCriteria": {
+    "CriteriaList": [
+      {
+        "ConditionOccurrence": {
+          "CodesetId": 0
+        }
+      }
+    ],
+    "ObservationWindow": {
+      "PriorDays": 0,
+      "PostDays": 0
+    },
+    "PrimaryCriteriaLimit": {
+      "Type": "All"
+    }
+  },
+  "QualifiedLimit": {
+    "Type": "All"
+  },
+  "ExpressionLimit": {
+    "Type": "All"
+  },
+  "InclusionRules": [],
+  "CensoringCriteria": [],
+  "CollapseSettings": {
+    "CollapseType": "ERA",
+    "EraPad": 0
+  },
+  "CensorWindow": {},
+  "EndStrategy": {
+    "DateOffset": {
+      "DateField": "StartDate",
+      "Offset": 0
+    }
+  }
+}

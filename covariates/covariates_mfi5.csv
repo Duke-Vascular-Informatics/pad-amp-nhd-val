@@ -23,19 +23,19 @@
 #
 # COMPONENT NOTES:
 #   fs_dep — Dependent functional status. NSQIP defines as partial or total
-#     dependence for ADLs at intake. Operationalised here using the
-#     phenotype_library `modified_frailty_index` entry's frailty / impaired
-#     mobility concepts (SNOMED 4086506 Frailty + 4306934 Impaired mobility,
-#     include_descendants = TRUE). The catalog's ambulatory_deficit concepts
-#     are intentionally NOT reused here so that the Iannuzzi ambu_deficit
-#     score remains a distinct, mobility-specific signal.
+#     dependence for ADLs at intake. Operationalised as ADL-dependence findings
+#     + bed-ridden + confined to chair + severe frailty (REVISED 2026-10-05 --
+#     see covariate_concepts_mfi5.csv :: FS_DEP; the previous Frailty + Impaired
+#     mobility set measured mobility, not ADL dependence). domain = "auto"
+#     because the set spans Condition (Severe frailty) and Observation.
 #   dm — All-cause diabetes mellitus (SNOMED 201820 + descendants). Broader
 #     than Iannuzzi's insulin-dependent DM (drug-domain insulin exposure).
-#   copd — Chronic obstructive pulmonary disease (SNOMED 255573 + descendants).
-#     Subramaniam's "COPD or current pneumonia" combined component — current
-#     pneumonia is intentionally omitted here: it would require an acute /
-#     30-day pneumonia query which is rare in synthetic data and noisy in
-#     real-world EHR.
+#   copd — Subramaniam's combined 'COPD or current pneumonia' component.
+#     COPD (SNOMED 255573 + descendants) over the default 365-day window OR
+#     pneumonia (SNOMED 255848 + descendants) over a 30-day window ('current
+#     pneumonia'). The pneumonia arm was omitted until 2026-10-05; it is now
+#     expressed with a per-row lookback override in covariate_concepts_mfi5.csv
+#     (and as a second (mfi5, copd) row in cohort_map.csv).
 #   chf — Congestive heart failure within 30 days prior to surgery
 #     (SNOMED 316139 + descendants). The 30-day lookback follows Subramaniam.
 #   htn — Hypertension requiring medication (SNOMED 316866 + descendants).
@@ -47,14 +47,16 @@
 #   covariate_id        unique identifier (matches covariate_concepts_mfi5.csv)
 #   covariate_name      human-readable label
 #   domain              OMOP CDM domain
-#   lookback_start_day  days before index (negative) for lookback window start
+#   lookback_start_day  days before index (negative) for lookback window start.
+#                       DEFAULT 365 for every item (2026-10-05) unless the published
+#                       definition states otherwise (here: chf = 30 days).
 #   lookback_end_day    days relative to index for lookback window end
 #   min_count           qualifying events needed to flag this covariate
 #   points              integer score points (1 for every mFI-5 component)
 #   missing_is_negative TRUE = absent record → component not present (0 pts)
 covariate_id,covariate_name,domain,lookback_start_day,lookback_end_day,min_count,points,missing_is_negative
-fs_dep,Dependent functional status (frailty / impaired mobility),observation,-3650,-1,1,1,TRUE
-dm,Diabetes mellitus (any type),condition,-3650,-1,1,1,TRUE
-copd,Chronic obstructive pulmonary disease,condition,-3650,-1,1,1,TRUE
+fs_dep,Dependent functional status (ADL dependence),auto,-365,-1,1,1,TRUE
+dm,Diabetes mellitus (any type),condition,-365,-1,1,1,TRUE
+copd,COPD (365 d) or current pneumonia (30 d; per-row window in covariate_concepts_mfi5.csv),condition,-365,-1,1,1,TRUE
 chf,Congestive heart failure (within 30 days prior),condition,-30,-1,1,1,TRUE
-htn,Hypertension,condition,-3650,-1,1,1,TRUE
+htn,Hypertension,condition,-365,-1,1,1,TRUE

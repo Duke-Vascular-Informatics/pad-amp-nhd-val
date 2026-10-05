@@ -1,9 +1,10 @@
 {
   "cdmVersionRange": ">=5.0.0",
+  "_README": ["Diabetes mellitus (any type) - the mFI-5 dm item (1 point).", "Concept set is EXACTLY covariates/covariate_concepts_mfi5.csv :: dm (201820 + descendants).", "Replaces the reused Limit=First [DVI] VA-FI Diabetes cohort 1797952, which was also broader than the CSV (adds 4034964).", "PrimaryCriteriaLimit / QualifiedLimit / ExpressionLimit are all \"All\" and EndStrategy is StartDate+0, unlike the [DVI] VA-FI cohorts (1797948-1797977) which are \"First\". A first-ever-only cohort cannot answer a lookback-window question."],
   "ConceptSets": [
     {
       "id": 0,
-      "name": "[DVI] Diabetes mellitus (VA-FI)",
+      "name": "[DVI] Diabetes mellitus (risk score item)",
       "expression": {
         "items": [
           {
@@ -11,23 +12,10 @@
               "CONCEPT_ID": 201820,
               "CONCEPT_NAME": "Diabetes mellitus",
               "STANDARD_CONCEPT": "S",
-              "INVALID_REASON": "NA",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
               "CONCEPT_CODE": "73211009",
-              "DOMAIN_ID": "Condition",
-              "VOCABULARY_ID": "SNOMED",
-              "CONCEPT_CLASS_ID": "Disorder"
-            },
-            "isExcluded": false,
-            "includeDescendants": true,
-            "includeMapped": false
-          },
-          {
-            "concept": {
-              "CONCEPT_ID": 4034964,
-              "CONCEPT_NAME": "Abnormal metabolic state due to diabetes mellitus",
-              "STANDARD_CONCEPT": "S",
-              "INVALID_REASON": "NA",
-              "CONCEPT_CODE": "237620003",
               "DOMAIN_ID": "Condition",
               "VOCABULARY_ID": "SNOMED",
               "CONCEPT_CLASS_ID": "Disorder"
@@ -53,26 +41,26 @@
       "PostDays": 0
     },
     "PrimaryCriteriaLimit": {
-      "Type": "First"
+      "Type": "All"
     }
   },
   "QualifiedLimit": {
-    "Type": "First"
+    "Type": "All"
   },
   "ExpressionLimit": {
-    "Type": "First"
+    "Type": "All"
   },
   "InclusionRules": [],
-  "EndStrategy": {
-    "DateOffset": {
-      "DateField": "StartDate",
-      "Offset": 0
-    }
-  },
   "CensoringCriteria": [],
   "CollapseSettings": {
     "CollapseType": "ERA",
     "EraPad": 0
   },
-  "CensorWindow": {}
+  "CensorWindow": {},
+  "EndStrategy": {
+    "DateOffset": {
+      "DateField": "StartDate",
+      "Offset": 0
+    }
+  }
 }

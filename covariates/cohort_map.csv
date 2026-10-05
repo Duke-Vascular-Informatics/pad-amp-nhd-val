@@ -10,8 +10,8 @@
 # traceability back to the publication, but it is never the cohort's identity.
 # Three concrete problems this dissolves:
 #
-#   * ambu_deficit (Iannuzzi) and nonambulatory (Kraiss) are the SAME 7-concept
-#     set under two names. One cohort (9100006) backs both.
+#   * ambu_deficit (Iannuzzi) and nonambulatory (Kraiss) are the SAME concept
+#     set under two names. One cohort (9100027) backs both.
 #   * anemia was ONE covariate_id carrying TWO different thresholds. In
 #     pad-amp-nhd-val the threshold was chosen by testing whether the covariate
 #     file PATH contained the substring "vqifs" -- a test that also matched an
@@ -19,6 +19,8 @@
 #     two thresholds are two distinctly-named cohorts, keyed by
 #     (score_id, score_item_id). The bug is structurally impossible.
 #   * chf is one concept read over two different windows by two scores.
+#   * the mFI-5 'COPD or current pneumonia' item is TWO cohorts OR'd together
+#     over two different windows (see MULTI-ROW ITEMS below).
 #
 # HOW IT IS READ
 # --------------
@@ -39,21 +41,30 @@
 #   points              integer points this item contributes
 #   notes               why this row is what it is
 #
-# LOOKBACK SEMANTICS AND A KNOWN LIMITATION
-# -----------------------------------------
-# The lookback columns are honoured for cohorts authored in this repo
-# (9100002-9100010), which are Limit=All. The REUSED [DVI] VA-FI cohorts
-# (1797949-1797952) are Limit=First -- one row per person at their first-ever
-# qualifying record -- so for those rows the window CANNOT bind and the covariate
-# is effectively "ever prior to index". The windows are still recorded below as
-# the published intent, and tests/regression/ quantifies the resulting delta
-# against the domain-query path.
+# LOOKBACK WINDOWS (revised 2026-10-05)
+# -------------------------------------
+# Every score item is read over 365 days before index (lookback_end_day = -1,
+# i.e. up to the day before) UNLESS the published definition says otherwise:
+#   * mFI-5 chf          30 days  -- Subramaniam 2018 defines CHF as 'within 30
+#                                    days prior to surgery'
+#   * mFI-5 pneumonia    30 days  -- 'current pneumonia' arm of the COPD item
+#   * Iannuzzi tissue_loss  -365..0 -- the published item includes the index date
+#   * demographics (age bands, sex, race) have no lookback meaning; the female
+#     row keeps its legacy -3650 and is irrelevant to the result.
+# Before 2026-10-05 most items used 10 years, and four items (dm, htn, chf, cad)
+# were resolved by REUSED [DVI] VA-FI cohorts that are Limit=First -- one row per
+# person at their first-ever record -- so their windows could not bind at all and
+# the published 30-day mFI-5 CHF window silently collapsed into 'ever prior'.
+# Those four were replaced by Limit=All cohorts 9100021-9100024, so EVERY window in
+# this file now binds, and the regression test no longer carries an EXPECTED_DIFF.
 #
-# The most substantive consequence: mFI-5's published 30-day CHF window collapses
-# into the same "ever prior" definition as the sVQI-FS's 10-year window, so the
-# two scores stop differing on that item. The underlying dataset does carry a
-# 30-day CHF signal, so authoring a Limit=All CHF cohort later recovers the
-# distinction without regenerating any data.
+# MULTI-ROW ITEMS
+# ---------------
+# (score_id, score_item_id) may appear on more than one row. The item is POSITIVE
+# if ANY of its rows hits (logical OR), and each row carries its own cohort and
+# window. Only mfi5/copd does this today: COPD over 365 days OR pneumonia over 30
+# days. The domain-query oracle expresses the same thing with optional
+# lookback_start_day / lookback_end_day columns on covariate_concepts_mfi5.csv.
 # =============================================================================
 score_id,score_item_id,cohort_id,cohort_name,mechanism,lookback_start_day,lookback_end_day,points,notes
 iannuzzi,age_60_69,,,computed_r,0,0,2,"Derived from person.year_of_birth by query_age_covariate_counts(); no cohort adds fidelity."
@@ -61,22 +72,23 @@ iannuzzi,age_70_79,,,computed_r,0,0,4,"Derived from person.year_of_birth."
 iannuzzi,age_ge80,,,computed_r,0,0,6,"Derived from person.year_of_birth. Largest single Iannuzzi weight."
 iannuzzi,female,,,computed_r,-3650,0,1,"person.gender_concept_id = 8532; a cohort would add indirection, not fidelity."
 iannuzzi,nonwhite,,,computed_r,0,0,2,"EXCLUDE semantics: race_concept_id non-null, non-zero, NOT IN the White set. Circe DemographicCriteria has a Race attribute but no exclude operator, so this stays in R."
-iannuzzi,ambu_deficit,9100006,[DVI] Ambulatory Deficit,cohort,-365,-1,3,"Same cohort as vqifs/nonambulatory. Three OMOP domains; replaces domain='auto'."
+iannuzzi,ambu_deficit,9100027,[DVI] Ambulatory Status (aid use / impaired ambulation),cohort,-365,-1,3,"Same cohort as vqifs/nonambulatory. Observation + Device domains; replaces domain='auto'. Gait descriptors and the long-cane procedure were dropped 2026-10-05."
 iannuzzi,tissue_loss,9100004,[DVI] Ischemic Tissue Loss,cohort,-365,0,3,"lookback_end_day is 0, not -1: the Iannuzzi CSV includes the index date for this item."
 iannuzzi,anemia,9100008,[DVI] Anemia (Hemoglobin <10 g/dL),cohort,-365,-1,2,"Threshold lives in the cohort definition. missing_is_negative=FALSE, so an unmeasured patient is UNKNOWN, not negative -- see the caveat below."
 iannuzzi,insulin_dep,9100007,[DVI] Insulin-Treated Diabetes,cohort,-365,-1,2,"ATC 21600713 + descendants."
-mfi5,fs_dep,9100005,[DVI] Dependent Functional Status,cohort,-3650,-1,1,"Two OMOP domains (Condition + Observation); a single-domain query would see half the definition."
-mfi5,dm,1797952,[DVI] VA-FI Diabetes mellitus (VA-FI),cohort,-3650,-1,1,"REUSED. Slightly broader than the CSV (adds 4034964). Limit=First -> effectively ever-prior."
-mfi5,copd,9100002,[DVI] COPD (risk score item),cohort,-3650,-1,1,"NEW rather than reusing VA-FI 1797958, which spans asthma/ILD/bronchiectasis as one VA-FI deficit."
-mfi5,chf,1797950,[DVI] VA-FI Heart failure (VA-FI),cohort,-30,-1,1,"REUSED. Concept matches exactly, but Limit=First means the published 30-day window CANNOT bind -- this collapses to the same definition as the vqifs chf item. Most substantive deviation in this study."
-mfi5,htn,1797951,[DVI] VA-FI Hypertension (VA-FI),cohort,-3650,-1,1,"REUSED. Broader than the CSV (adds hypertensive heart/renal disease). Limit=First -> ever-prior."
-vqifs,htn,1797951,[DVI] VA-FI Hypertension (VA-FI),cohort,-3650,-1,1,"REUSED; same cohort as the mFI-5 htn item."
-vqifs,chf,1797950,[DVI] VA-FI Heart failure (VA-FI),cohort,-3650,-1,1,"REUSED. This score's own window is 10 years, so Limit=First costs less here than it does for mFI-5."
-vqifs,cad,1797949,[DVI] VA-FI Coronary artery disease (VA-FI),cohort,-3650,-1,1,"REUSED. Concept set is an EXACT match to the CSV (4185932). Limit=First -> ever-prior."
-vqifs,pvd,9100003,[DVI] Peripheral Arterial Occlusive Disease (risk score item),cohort,-3650,-1,1,"NEW rather than reusing VA-FI 1797955, which also spans aortic aneurysm and venous thrombosis -- not peripheral ARTERIAL occlusive disease."
-vqifs,dm,1797952,[DVI] VA-FI Diabetes mellitus (VA-FI),cohort,-3650,-1,1,"REUSED; same cohort as the mFI-5 dm item."
-vqifs,copd,9100002,[DVI] COPD (risk score item),cohort,-3650,-1,1,"Same new cohort as the mFI-5 copd item."
-vqifs,renal_impairment,9100010,[DVI] Renal Impairment (Creatinine >1.8 mg/dL or Dialysis),cohort,-3650,-1,1,"Three OR'd arms: creatinine value, dialysis procedure, dialysis diagnosis."
-vqifs,anemia,9100009,[DVI] Anemia (Sex-Specific Hemoglobin Threshold),cohort,-3650,-1,1,"Distinct cohort from the Iannuzzi anemia item. Sex-specific thresholds live in the cohort definition."
-vqifs,underweight,,,computed_r,-3650,-1,1,"HARD CIRCE GAP -- stays in R. query_bmi_covariate_counts() resolves BMI in three tiers (direct reading, else computed from weight/height with unit conversion, then ROW_NUMBER to pick the most recent). Circe has ValueAsNumber but no arithmetic, so a cohort could only express tier 1 and would silently miss patients who have weight and height but no direct BMI."
-vqifs,nonambulatory,9100006,[DVI] Ambulatory Deficit,cohort,-3650,-1,1,"Same cohort as iannuzzi/ambu_deficit -- identical concept set, different score-item name and window."
+mfi5,fs_dep,9100026,[DVI] Dependent Functional Status (ADL dependence),cohort,-365,-1,1,"ADL-dependence findings + bed-ridden + confined to chair + severe frailty; Condition + Observation domains. Replaces the mobility/frailty set of 9100005 (2026-10-05)."
+mfi5,dm,9100021,[DVI] Diabetes mellitus (risk score item),cohort,-365,-1,1,"Limit=All; concept set equals the CSV exactly. Replaces VA-FI 1797952."
+mfi5,copd,9100002,[DVI] COPD (risk score item),cohort,-365,-1,1,"COPD arm of the mFI-5 'COPD or current pneumonia' item. NEW rather than reusing VA-FI 1797958, which spans asthma/ILD/bronchiectasis as one VA-FI deficit. OR'd with the pneumonia row below."
+mfi5,copd,9100025,[DVI] Pneumonia (mFI-5 current pneumonia),cohort,-30,-1,1,"Pneumonia arm of the same item: 'current pneumonia' = 30 days. Item is positive if EITHER this row or the COPD row hits."
+mfi5,chf,9100023,[DVI] Heart failure (risk score item),cohort,-30,-1,1,"30 days per the published mFI-5 definition. Limit=All, so the window now binds (it could not against Limit=First VA-FI 1797950)."
+mfi5,htn,9100022,[DVI] Hypertension (risk score item),cohort,-365,-1,1,"Limit=All; concept set equals the CSV exactly. Replaces VA-FI 1797951."
+vqifs,htn,9100022,[DVI] Hypertension (risk score item),cohort,-365,-1,1,"Same cohort as the mFI-5 htn item."
+vqifs,chf,9100023,[DVI] Heart failure (risk score item),cohort,-365,-1,1,"Same cohort as the mFI-5 chf item, read over 365 days instead of 30."
+vqifs,cad,9100024,[DVI] Coronary artery disease (risk score item),cohort,-365,-1,1,"Limit=All; concept set equals the CSV exactly (4185932). Replaces VA-FI 1797949."
+vqifs,pvd,9100003,[DVI] Peripheral Arterial Occlusive Disease (risk score item),cohort,-365,-1,1,"NEW rather than reusing VA-FI 1797955, which also spans aortic aneurysm and venous thrombosis -- not peripheral ARTERIAL occlusive disease."
+vqifs,dm,9100021,[DVI] Diabetes mellitus (risk score item),cohort,-365,-1,1,"Same cohort as the mFI-5 dm item."
+vqifs,copd,9100002,[DVI] COPD (risk score item),cohort,-365,-1,1,"Same new cohort as the mFI-5 copd item."
+vqifs,renal_impairment,9100010,[DVI] Renal Impairment (Creatinine >1.8 mg/dL or Dialysis),cohort,-365,-1,1,"Three OR'd arms: creatinine value, dialysis procedure, dialysis diagnosis."
+vqifs,anemia,9100009,[DVI] Anemia (Sex-Specific Hemoglobin Threshold),cohort,-365,-1,1,"Distinct cohort from the Iannuzzi anemia item. Sex-specific thresholds live in the cohort definition."
+vqifs,underweight,,,computed_r,-365,-1,1,"HARD CIRCE GAP -- stays in R. query_bmi_covariate_counts() resolves BMI in three tiers (direct reading, else computed from weight/height with unit conversion, then ROW_NUMBER to pick the most recent). Circe has ValueAsNumber but no arithmetic, so a cohort could only express tier 1 and would silently miss patients who have weight and height but no direct BMI."
+vqifs,nonambulatory,9100027,[DVI] Ambulatory Status (aid use / impaired ambulation),cohort,-365,-1,1,"Same cohort as iannuzzi/ambu_deficit -- identical concept set, different score-item name and points."

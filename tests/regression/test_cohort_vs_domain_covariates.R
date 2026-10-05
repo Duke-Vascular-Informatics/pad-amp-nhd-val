@@ -6,24 +6,21 @@
 # resolving covariates from the Strategus cohort table, once by querying the CDM
 # domain tables directly — and reports the per-covariate difference.
 #
-# WHY THIS IS A CHARACTERISATION TEST, NOT AN EQUALITY TEST
-# ---------------------------------------------------------
-# Four covariates are resolved by REUSED [DVI] VA-FI cohorts (1797949-1797952),
-# which are PrimaryCriteriaLimit = "First": one row per person at their
-# first-ever qualifying record. A lookback window cannot bind against that, so
-# those covariates are effectively "ever prior to index" in cohort mode and
-# windowed in domain mode. They are EXPECTED to differ, and the size of that
-# difference is a study finding worth reporting, not a failure.
+# WHAT THIS ASSERTS
+# -----------------
+# Every covariate cohort in this repo is Limit=All with EndStrategy StartDate+0
+# (cohorts 9100002-9100027), so a lookback window binds identically in both
+# paths and the two must agree PERSON FOR PERSON. Until 2026-10-05 this was a
+# characterisation test: four covariates (dm, htn, chf, cad) were resolved by
+# REUSED [DVI] VA-FI cohorts (1797949-1797952) that are PrimaryCriteriaLimit =
+# "First", so their windows could not bind and they were EXPECTED to differ. Those
+# four were replaced by Limit=All cohorts 9100021-9100024, EXPECTED_DIFF is now
+# empty, and ANY delta is a failure. A loose tolerance would hide exactly the
+# class of bug this file exists to catch.
 #
-# So the assertions are split:
-#
-#   STRICT  — covariates whose semantics are genuinely identical across the two
-#             paths must match EXACTLY, person for person. That is every
-#             purpose-authored cohort (9100002-9100010) and everything computed
-#             in R. A loose tolerance here would hide exactly the class of bug
-#             this file exists to catch.
-#   REPORTED — the four reused VA-FI covariates. Difference is printed and
-#             written to disk; the test does not fail on it.
+# Includes the one multi-arm item: mFI-5 copd = COPD (9100002, 365 d) OR
+# pneumonia (9100025, 30 d), which the domain path expresses with per-row window
+# overrides in covariate_concepts_mfi5.csv.
 #
 # A third assertion is unconditional: each authored cohort's concept set must
 # still equal the score CSV's concepts, so a future ATLAS re-author cannot drift
@@ -63,11 +60,9 @@ config$cohort_table   <- "pad_amp_nhd_val"
 outRoot <- file.path(getwd(), "output", "regression")
 dir.create(outRoot, recursive = TRUE, showWarnings = FALSE)
 
-# Covariates expected to differ, and why. Keyed "<score_id>:<covariate_id>".
-EXPECTED_DIFF <- c(
-  "mfi5:dm", "mfi5:chf", "mfi5:htn",
-  "vqifs:htn", "vqifs:chf", "vqifs:cad", "vqifs:dm"
-)
+# Covariates expected to differ, keyed "<score_id>:<covariate_id>". Empty since
+# 2026-10-05, when the Limit=First VA-FI cohorts were replaced; see the header.
+EXPECTED_DIFF <- character(0)
 
 # ---------------------------------------------------------------------------
 # Regenerate every cohort from the definitions currently on disk, so both passes
@@ -170,7 +165,7 @@ for (score in config$scores) {
               "covariate", "domain", "cohort", "delta", "verdict"))
   for (i in seq_len(nrow(m))) with(m[i, ], {
     verdict <- if (delta == 0) "match"
-               else if (expected) "EXPECTED (reused Limit=First VA-FI cohort)"
+               else if (expected) "EXPECTED"
                else "*** UNEXPECTED ***"
     cat(sprintf("  %-20s %8d %8d %+8d   %s\n",
                 covariate_id, n_positive_domain, n_positive_cohort, delta, verdict))
@@ -199,24 +194,42 @@ extractConcepts <- function(path) {
   walk(j$ConceptSets)
   sort(unique(ids))
 }
-# authored cohort -> (csv file, covariate_id)
+# One entry per (cohort, score-CSV covariate) it must match. window = "default"
+# compares the covariate's rows WITHOUT a per-row window override; "override"
+# compares the rows that carry one (mFI-5's pneumonia arm). Files without those
+# columns are treated as all-default.
 DRIFT <- list(
-  "9100002" = list("covariates/covariate_concepts_vqifs.csv", "copd"),
-  "9100003" = list("covariates/covariate_concepts_vqifs.csv", "pvd"),
-  "9100004" = list("covariates/covariate_concepts.csv",       "tissue_loss"),
-  "9100005" = list("covariates/covariate_concepts_mfi5.csv",  "fs_dep"),
-  "9100007" = list("covariates/covariate_concepts.csv",       "insulin_dep")
+  list(cid = "9100002", csv = "covariates/covariate_concepts_vqifs.csv", cov = "copd",             window = "default"),
+  list(cid = "9100002", csv = "covariates/covariate_concepts_mfi5.csv",  cov = "copd",             window = "default"),
+  list(cid = "9100003", csv = "covariates/covariate_concepts_vqifs.csv", cov = "pvd",              window = "default"),
+  list(cid = "9100004", csv = "covariates/covariate_concepts.csv",       cov = "tissue_loss",      window = "default"),
+  list(cid = "9100007", csv = "covariates/covariate_concepts.csv",       cov = "insulin_dep",      window = "default"),
+  list(cid = "9100021", csv = "covariates/covariate_concepts_mfi5.csv",  cov = "dm",               window = "default"),
+  list(cid = "9100021", csv = "covariates/covariate_concepts_vqifs.csv", cov = "dm",               window = "default"),
+  list(cid = "9100022", csv = "covariates/covariate_concepts_mfi5.csv",  cov = "htn",              window = "default"),
+  list(cid = "9100022", csv = "covariates/covariate_concepts_vqifs.csv", cov = "htn",              window = "default"),
+  list(cid = "9100023", csv = "covariates/covariate_concepts_mfi5.csv",  cov = "chf",              window = "default"),
+  list(cid = "9100023", csv = "covariates/covariate_concepts_vqifs.csv", cov = "chf",              window = "default"),
+  list(cid = "9100024", csv = "covariates/covariate_concepts_vqifs.csv", cov = "cad",              window = "default"),
+  list(cid = "9100025", csv = "covariates/covariate_concepts_mfi5.csv",  cov = "copd",             window = "override"),
+  list(cid = "9100026", csv = "covariates/covariate_concepts_mfi5.csv",  cov = "fs_dep",           window = "default"),
+  list(cid = "9100027", csv = "covariates/covariate_concepts.csv",       cov = "ambu_deficit",     window = "default"),
+  list(cid = "9100027", csv = "covariates/covariate_concepts_vqifs.csv", cov = "nonambulatory",    window = "default")
 )
-for (cid in names(DRIFT)) {
-  spec <- DRIFT[[cid]]
-  csv  <- read.csv(spec[[1]], comment.char = "#", stringsAsFactors = FALSE)
-  want <- sort(unique(as.integer(csv$concept_id[csv$covariate_id == spec[[2]]])))
-  got  <- extractConcepts(file.path("inst", "cohorts", paste0(cid, ".json")))
+for (spec in DRIFT) {
+  csv  <- read.csv(spec$csv, comment.char = "#", stringsAsFactors = FALSE)
+  rows <- csv[csv$covariate_id == spec$cov, , drop = FALSE]
+  if ("lookback_start_day" %in% names(rows)) {
+    has_override <- !is.na(suppressWarnings(as.integer(rows$lookback_start_day)))
+    rows <- rows[if (spec$window == "override") has_override else !has_override, , drop = FALSE]
+  }
+  want <- sort(unique(as.integer(rows$concept_id)))
+  got  <- extractConcepts(file.path("inst", "cohorts", paste0(spec$cid, ".json")))
   ok   <- identical(want, got)
-  cat(sprintf("  %-9s %-14s csv=[%s] cohort=[%s]  %s\n", cid, spec[[2]],
+  cat(sprintf("  %-9s %-14s %-8s csv=[%s] cohort=[%s]  %s\n", spec$cid, spec$cov, spec$window,
               paste(want, collapse = ","), paste(got, collapse = ","),
               if (ok) "match" else "*** DRIFT ***"))
-  if (!ok) failures <- c(failures, sprintf("concept drift in cohort %s (%s)", cid, spec[[2]]))
+  if (!ok) failures <- c(failures, sprintf("concept drift in cohort %s (%s, %s)", spec$cid, spec$cov, spec$csv))
 }
 
 # ---------------------------------------------------------------------------
@@ -230,7 +243,7 @@ write.csv(allRows[, c("score_id", "covariate_id", "n_positive_domain",
 
 nExpected <- sum(allRows$delta != 0 &  allRows$expected)
 nMatch    <- sum(allRows$delta == 0)
-cat(sprintf("\n%d covariates match exactly; %d differ as expected (reused Limit=First cohorts).\n",
+cat(sprintf("\n%d covariates match exactly; %d differ as expected.\n",
             nMatch, nExpected))
 cat("Per-covariate deltas written to ", outCsv, "\n", sep = "")
 

@@ -20,21 +20,27 @@
 #   (also NOT NULL and <> 0). concept_role = "white_race" signals the pipeline
 #   that 8527 is the concept to EXCLUDE, not include.
 #
-# AMBU_DEFICIT:
-#   catalog entry: ambulatory_deficit
-#   Seven concepts across four OMOP domains, used as OR logic. domain = "auto"
-#   in covariates.csv (CHANGED 2026-07-26 from "observation" — see that file's
-#   header note): query_auto_domain_covariate_counts() unions across every
-#   domain table rather than trusting a single hardcoded column, because three
-#   of these seven concepts do NOT resolve to the observation domain in this
-#   vocabulary build. The original four (SNOMED Observation/Clinical Finding):
-#   4012645 Walking aid use (the Synthea module's most specific concept),
-#   437643 Abnormal gait, 439405 Walking disability, 36714126 Difficulty
-#   walking. Added 2026-07-26 after this component activated in 0/225 patients:
-#   4085915 Provision of long cane (Procedure domain), 4044714 Using
-#   wheelchair (Observation domain), 4240470 Wheelchair (Device domain —
-#   queried via device_exposure, unreachable by any of the other six
-#   concepts' domain tables).
+# AMBULATORY STATUS — shared by Iannuzzi ambu_deficit and Kraiss sVQI-FS
+#   nonambulatory. REVISED 2026-10-05 (cohort 9100027; was the 7-concept set
+#   backing 9100006). All IDs [vocab query] verified 2026-10-05.
+#   DROPPED  437643 Abnormal gait and 36714126 Difficulty walking (94 + 18
+#            descendants of gait DESCRIPTORS -- antalgic, ataxic, 'buttocks
+#            prominent when walking' -- not an aid and not a deficit in
+#            ambulation) and 4085915 Provision of long cane (a PROCEDURE:
+#            providing a cane is not using one).
+#   KEPT     4012645 Walking aid use, 4044714 Using wheelchair, 439405 Walking
+#            disability, 4240470 Wheelchair (+ descendants, 2026-08-03 decision).
+#   ADDED    Observation: 4086548 Unable to walk, 4058155 Bed-ridden, 4058154
+#            Confined to chair, 4052477 Needs walking aid in home, 4052045
+#            Mobile outside with aid, 4032531 Impaired wheelchair mobility,
+#            619446 / 619444 Does mobilize using walker / crutch, 1450204 Needs
+#            help with walking, 4146424 Dependent for walking.
+#            Device: 37165652 Wheeled walker, 4141765 Walking frame, 4251933
+#            Crutch (each + descendants) -- the old set had NO walker, frame or
+#            crutch, the commonest ambulatory aids.
+#   domain = "auto" in covariates*.csv: the set spans Observation and Device
+#   (query_auto_domain_covariate_counts() unions every domain table); cohort
+#   9100027 reproduces that with one primary criterion per domain.
 #
 # TISSUE_LOSS:
 #   catalog entry: pad_indication_tissue_loss
@@ -65,12 +71,22 @@ covariate_id,concept_id,include_descendants,concept_role,value_concept_ids
 female,8532,FALSE,,
 nonwhite,8527,FALSE,white_race,
 ambu_deficit,4012645,TRUE,,
-ambu_deficit,437643,TRUE,,
-ambu_deficit,439405,TRUE,,
-ambu_deficit,36714126,TRUE,,
-ambu_deficit,4085915,FALSE,,
 ambu_deficit,4044714,FALSE,,
+ambu_deficit,439405,FALSE,,
+ambu_deficit,4086548,FALSE,,
+ambu_deficit,4058155,FALSE,,
+ambu_deficit,4058154,FALSE,,
+ambu_deficit,4052477,FALSE,,
+ambu_deficit,4052045,FALSE,,
+ambu_deficit,4032531,FALSE,,
+ambu_deficit,619446,FALSE,,
+ambu_deficit,619444,FALSE,,
+ambu_deficit,1450204,FALSE,,
+ambu_deficit,4146424,FALSE,,
 ambu_deficit,4240470,TRUE,,
+ambu_deficit,37165652,TRUE,,
+ambu_deficit,4141765,TRUE,,
+ambu_deficit,4251933,TRUE,,
 tissue_loss,4029926,TRUE,,
 tissue_loss,4291464,TRUE,,
 anemia,3000963,FALSE,,

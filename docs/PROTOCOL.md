@@ -158,7 +158,12 @@ NHD rate: 344/587 = 58.6%.**
 | Kraiss 2022 sVQI-FS | 0–10 points as implemented | No |
 
 Every component is ascertained from clinical documentation on or before the
-index date using a component-specific lookback window; a patient meeting a
+index date over a **365-day lookback window** (index date excluded), unless
+the score's own publication defines the item differently: the mFI-5
+congestive-heart-failure item and the pneumonia arm of its "COPD or current
+pneumonia" item use 30 days, and the Iannuzzi tissue-loss item includes the
+index date. The mFI-5 "COPD or current pneumonia" item is positive when
+either COPD (365 days) or pneumonia (30 days) is recorded. A patient meeting a
 component's evidence threshold receives its full published point value,
 and an absent record is treated as zero evidence (two exceptions — Iannuzzi
 anemia and sVQI-FS underweight/anemia — treat an absent measurement as
@@ -195,9 +200,10 @@ standard HADES modules (`CohortGenerator`, `CohortDiagnostics`,
 (`inst/padAmpNhdValAnalysisSpecification.json`), so the same code executes
 unmodified at any OMOP CDM v5 site with no site-specific SQL editing,
 credentials, or institution-specific identifiers embedded. Predictor
-ascertainment is cohort-based: every score component resolves to a named,
-ATLAS-registered cohort definition, reused from the investigators' shared
-phenotype library where an equivalent definition already existed.
+ascertainment is cohort-based: every score component resolves to a named
+`[DVI]` cohort definition authored from the score's own concept set (all
+`Limit: All`, so a lookback window binds); one cohort may back several
+score items, with the window held in `covariates/cohort_map.csv`.
 
 Three elements fall outside what Strategus/circe can express and are
 implemented as documented extensions:
@@ -213,9 +219,8 @@ implemented as documented extensions:
 To verify that cohort-based ascertainment measures the same thing as a
 direct CDM query, both routes are retained and an automated regression test
 (`tests/regression/test_cohort_vs_domain_covariates.R`) compares every
-predictor's per-patient values between them; expected differences (a
-reused definition that cannot carry a lookback window — see Section 10)
-are quantified rather than suppressed.
+predictor's per-patient values between them and requires exact agreement,
+person for person, including the pneumonia-or-COPD item.
 
 ---
 
@@ -296,7 +301,11 @@ the manuscript's Supplemental Table S2. Cohort ids `9100001`–`9100011` are
 claimed in this workspace's reserved local block
 ([`strategus-study-template/docs/STRATEGUS_CONVENTIONS.md`](https://github.com/Duke-Vascular-Informatics/strategus-study-template/blob/main/docs/STRATEGUS_CONVENTIONS.md) §6), outside the
 ATLAS-demo id range, and are shared with (byte-identical to, at fork time)
-`pad-amp-nhd-prog`'s own cohort definitions.
+`pad-amp-nhd-prog`'s own cohort definitions. Cohorts `9100021`–`9100027`
+(DM, HTN, HF, CAD, pneumonia, ADL-dependent functional status, ambulatory
+status) were added on 2026-10-05 in this repository's own sub-range; the
+dependent-functional-status and ambulatory-status cohorts replace `9100005`
+and `9100006`, which are left unchanged in `pad-amp-nhd-prog`.
 
 ---
 
@@ -307,11 +316,18 @@ ATLAS-demo id range, and are shared with (byte-identical to, at fork time)
   NHD events.
 - **Hospice granularity**: home hospice and facility-based hospice are not
   distinguished (both classified as non-home).
-- **mFI-5/sVQI-FS item windows**: four comorbidity covariates reused from
-  shared `[DVI]` VA-Frailty-Index cohorts are `Limit: First` (cannot carry
-  a lookback window), collapsing the mFI-5's published 30-day CHF window
-  into the sVQI-FS's 10-year one — quantified by the regression test in
-  Section 7.
+- **Item definitions are operationalisations, not the source instruments'
+  own coding**: the mFI-5 "dependent functional status" item is mapped to
+  ADL-dependence findings, bed-ridden, confined-to-chair and severe frailty;
+  the Iannuzzi/sVQI-FS ambulatory items are mapped to walking-aid, wheelchair,
+  walker/frame/crutch, bed-ridden and unable-to-walk findings (gait
+  descriptors are excluded). The mFI-5 pneumonia arm includes two
+  non-infectious interstitial-pneumonia concepts. Observation concepts are
+  sparsely recorded in routine EHR data, so both items likely under-count.
+- **365-day lookback**: a uniform window is applied to every score item
+  rather than each source paper's own look-back convention, except where the
+  paper states one (above); chronic conditions recorded earlier than a year
+  before surgery are not counted.
 - **sVQI-FS deviations**: eleventh item omitted, equally weighted form
   evaluated instead of the authors' differentially weighted variant (see
   Section 6).

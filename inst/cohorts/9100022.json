@@ -1,0 +1,66 @@
+{
+  "cdmVersionRange": ">=5.0.0",
+  "_README": ["Hypertension - the mFI-5 and Kraiss sVQI-FS htn items (1 point each).", "Concept set is EXACTLY the score CSVs' htn concept (316866 + descendants).", "Replaces the reused Limit=First [DVI] VA-FI Hypertension cohort 1797951, which was broader than the CSV (adds hypertensive heart / renal disease).", "PrimaryCriteriaLimit / QualifiedLimit / ExpressionLimit are all \"All\" and EndStrategy is StartDate+0, unlike the [DVI] VA-FI cohorts (1797948-1797977) which are \"First\". A first-ever-only cohort cannot answer a lookback-window question."],
+  "ConceptSets": [
+    {
+      "id": 0,
+      "name": "[DVI] Hypertension (risk score item)",
+      "expression": {
+        "items": [
+          {
+            "concept": {
+              "CONCEPT_ID": 316866,
+              "CONCEPT_NAME": "Hypertensive disorder",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "38341003",
+              "DOMAIN_ID": "Condition",
+              "VOCABULARY_ID": "SNOMED",
+              "CONCEPT_CLASS_ID": "Disorder"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          }
+        ]
+      }
+    }
+  ],
+  "PrimaryCriteria": {
+    "CriteriaList": [
+      {
+        "ConditionOccurrence": {
+          "CodesetId": 0
+        }
+      }
+    ],
+    "ObservationWindow": {
+      "PriorDays": 0,
+      "PostDays": 0
+    },
+    "PrimaryCriteriaLimit": {
+      "Type": "All"
+    }
+  },
+  "QualifiedLimit": {
+    "Type": "All"
+  },
+  "ExpressionLimit": {
+    "Type": "All"
+  },
+  "InclusionRules": [],
+  "CensoringCriteria": [],
+  "CollapseSettings": {
+    "CollapseType": "ERA",
+    "EraPad": 0
+  },
+  "CensorWindow": {},
+  "EndStrategy": {
+    "DateOffset": {
+      "DateField": "StartDate",
+      "Offset": 0
+    }
+  }
+}
