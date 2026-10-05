@@ -57,6 +57,6 @@
 covariate_id,covariate_name,domain,lookback_start_day,lookback_end_day,min_count,points,missing_is_negative
 fs_dep,Dependent functional status (ADL dependence),auto,-365,-1,1,1,TRUE
 dm,Diabetes mellitus (any type),condition,-365,-1,1,1,TRUE
-copd,COPD (365 d) or current pneumonia (30 d; per-row window in covariate_concepts_mfi5.csv),condition,-365,-1,1,1,TRUE
+copd,COPD or current pneumonia,condition,-365,-1,1,1,TRUE
 chf,Congestive heart failure (within 30 days prior),condition,-30,-1,1,1,TRUE
 htn,Hypertension,condition,-365,-1,1,1,TRUE
