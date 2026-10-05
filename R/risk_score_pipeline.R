@@ -249,6 +249,24 @@ read_score_specs <- function(config, lookup_file = NULL) {
   concepts$value_concept_ids <- trimws(as.character(concepts$value_concept_ids))
   concepts$value_concept_ids[concepts$value_concept_ids %in% c("", "NA")] <- NA_character_
 
+  # lookback_start_day / lookback_end_day: optional PER-ROW window override.
+  # Blank (NA) = use the covariate's own window from covariates*.csv. Added
+  # 2026-10-05 for the mFI-5 'COPD or current pneumonia' item, whose two arms are
+  # read over different windows (COPD 365 days, pneumonia 30 days). Both must be
+  # given together; a half-specified override is an authoring error, not a
+  # request to default one end.
+  for (win_col in c("lookback_start_day", "lookback_end_day")) {
+    if (!win_col %in% names(concepts)) concepts[[win_col]] <- NA_integer_
+    concepts[[win_col]] <- suppressWarnings(as.integer(concepts[[win_col]]))
+  }
+  half_specified <- xor(is.na(concepts$lookback_start_day), is.na(concepts$lookback_end_day))
+  if (any(half_specified)) {
+    stop("covariate_concepts.csv has a row with only one of lookback_start_day / ",
+         "lookback_end_day set (covariate_id: ",
+         paste(unique(concepts$covariate_id[half_specified]), collapse = ", "),
+         "). Set both or neither.")
+  }
+
   if (any(is.na(concepts$concept_id))) {
     stop("covariate_concepts.csv contains non-integer concept_id values.")
   }
@@ -1509,22 +1527,26 @@ query_nonwhite_covariate_counts <- function(connection, config, covariate_concep
 # -----------------------------------------------------------------------------
 # lookup_cohort_map()
 #
-# Resolve one score item to its cohort assignment, keyed by the PAIR
+# Resolve one score item to its cohort assignment(s), keyed by the PAIR
 # (config$score_id, covariate_id).
 #
 # The pair is the point. Three score items are ambiguous on covariate_id alone:
 #   anemia          Iannuzzi uses a 10 g/dL threshold, sVQI-FS a sex-specific one
-#   chf             mFI-5 reads a 30-day window, sVQI-FS a 10-year one
+#   chf             mFI-5 reads a 30-day window, sVQI-FS a 365-day one
 #   ambu_deficit /
 #   nonambulatory   different names for one identical concept set
 #
-# Returns a one-row list (mechanism, cohort_id, lookback_start_day,
-# lookback_end_day, cohort_name), or NULL when the item is not mapped — in which
+# MULTI-ROW ITEMS (2026-10-05): a pair may map to MORE THAN ONE row, each with its
+# own cohort and window; the item is positive when ANY row hits. mFI-5's 'COPD or
+# current pneumonia' item is the only case: COPD (9100002) over 365 days OR
+# pneumonia (9100025) over 30 days. All rows of a pair must share one mechanism.
+#
+# Returns a LIST of one-row lists, each (mechanism, cohort_id, lookback_start_day,
+# lookback_end_day, cohort_name), or NULL when the item is not mapped -- in which
 # case the caller falls through to the domain-query path.
 #
-# The parsed map is memoised on `config` misses by being re-read per call; the
-# file is ~24 rows, so this is not worth caching against the risk of a stale
-# copy surviving a mid-session edit.
+# The map is re-read per call rather than cached; the file is ~30 rows, so a
+# cache is not worth the risk of a stale copy surviving a mid-session edit.
 # -----------------------------------------------------------------------------
 lookup_cohort_map <- function(config, covariate_id) {
   map_file <- config$cohort_map_file
@@ -1543,24 +1565,51 @@ lookup_cohort_map <- function(config, covariate_id) {
   hit <- map[map$score_id == config$score_id & map$score_item_id == covariate_id, , drop = FALSE]
 
   if (nrow(hit) == 0L) return(NULL)
-  if (nrow(hit) > 1L) {
-    stop("cohort_map.csv has ", nrow(hit), " rows for (score_id='", config$score_id,
-         "', score_item_id='", covariate_id, "'); it must be unique on that pair.")
+
+  if (length(unique(hit$mechanism)) > 1L) {
+    stop("cohort_map.csv rows for (score_id='", config$score_id, "', score_item_id='",
+         covariate_id, "') mix mechanisms (", paste(unique(hit$mechanism), collapse = ", "),
+         "); an OR'd item must use one mechanism.")
+  }
+  if (anyDuplicated(hit[, c("cohort_id", "lookback_start_day", "lookback_end_day")]) > 0L) {
+    stop("cohort_map.csv has duplicate (cohort_id, window) rows for (score_id='",
+         config$score_id, "', score_item_id='", covariate_id, "').")
   }
 
-  if (identical(hit$mechanism[[1]], "cohort") &&
-      (is.na(hit$cohort_id[[1]]) || !nzchar(as.character(hit$cohort_id[[1]])))) {
-    stop("cohort_map.csv row (", config$score_id, ", ", covariate_id,
-         ") has mechanism='cohort' but no cohort_id.")
-  }
+  lapply(seq_len(nrow(hit)), function(i) {
+    if (identical(hit$mechanism[[i]], "cohort") &&
+        (is.na(hit$cohort_id[[i]]) || !nzchar(as.character(hit$cohort_id[[i]])))) {
+      stop("cohort_map.csv row (", config$score_id, ", ", covariate_id,
+           ") has mechanism='cohort' but no cohort_id.")
+    }
+    list(
+      mechanism          = hit$mechanism[[i]],
+      cohort_id          = suppressWarnings(as.integer(hit$cohort_id[[i]])),
+      cohort_name        = hit$cohort_name[[i]],
+      lookback_start_day = as.integer(hit$lookback_start_day[[i]]),
+      lookback_end_day   = as.integer(hit$lookback_end_day[[i]])
+    )
+  })
+}
 
-  list(
-    mechanism          = hit$mechanism[[1]],
-    cohort_id          = suppressWarnings(as.integer(hit$cohort_id[[1]])),
-    cohort_name        = hit$cohort_name[[1]],
-    lookback_start_day = as.integer(hit$lookback_start_day[[1]]),
-    lookback_end_day   = as.integer(hit$lookback_end_day[[1]])
-  )
+# -----------------------------------------------------------------------------
+# or_combine_counts()
+#
+# Logical-OR several per-arm count frames into one. Each input is the
+# (SUBJECT_ID, EVENT_COUNT) frame a query_* function returns; the result has one
+# row per subject with the arms' event counts summed, so a subject who hits any
+# arm is positive and calculate_scores() needs no change. A single input is
+# returned untouched, so single-arm items are byte-for-byte what they were.
+#
+# Names are lower-cased first: querySql() returns upper-case columns, and
+# calculate_scores() normalises case itself.
+# -----------------------------------------------------------------------------
+or_combine_counts <- function(arms) {
+  if (length(arms) == 1L) return(arms[[1L]])
+  arms <- lapply(arms, function(a) { names(a) <- tolower(names(a)); a[, c("subject_id", "event_count"), drop = FALSE] })
+  all_rows <- do.call(rbind, arms)
+  if (nrow(all_rows) == 0L) return(all_rows)
+  stats::aggregate(event_count ~ subject_id, data = all_rows, FUN = sum)
 }
 
 # -----------------------------------------------------------------------------
@@ -1677,10 +1726,40 @@ query_covariate_counts <- function(connection, config, covariate, covariate_conc
   # deliberately fall through to the functions below.
   # ---------------------------------------------------------------------------
   if (isTRUE(config$use_cohort_covariates)) {
-    mapping <- lookup_cohort_map(config, covariate$covariate_id)
-    if (!is.null(mapping) && identical(mapping$mechanism, "cohort")) {
-      return(query_cohort_covariate_counts(connection, config, covariate, mapping))
+    mappings <- lookup_cohort_map(config, covariate$covariate_id)
+    if (!is.null(mappings) && identical(mappings[[1L]]$mechanism, "cohort")) {
+      # One call per arm; arms are OR'd (see lookup_cohort_map()).
+      arms <- lapply(mappings, function(m)
+        query_cohort_covariate_counts(connection, config, covariate, m))
+      return(or_combine_counts(arms))
     }
+  }
+
+  # ---------------------------------------------------------------------------
+  # Domain-query path: per-row window overrides (the oracle's equivalent of a
+  # multi-row cohort_map item). Rows of one covariate_id that carry their own
+  # lookback_start_day / lookback_end_day are queried separately over that window
+  # and OR'd with the rows that use the covariate's default window. The recursive
+  # call receives the concept rows WITHOUT the override columns, so it cannot
+  # re-enter this block.
+  # ---------------------------------------------------------------------------
+  win_cols <- c("lookback_start_day", "lookback_end_day")
+  if (all(win_cols %in% names(covariate_concepts)) &&
+      any(!is.na(covariate_concepts$lookback_start_day))) {
+    win_key <- ifelse(is.na(covariate_concepts$lookback_start_day), "default",
+                      paste(covariate_concepts$lookback_start_day,
+                            covariate_concepts$lookback_end_day))
+    arms <- lapply(unique(win_key), function(k) {
+      idx <- which(win_key == k)
+      arm_cov <- covariate
+      if (k != "default") {
+        arm_cov$lookback_start_day <- covariate_concepts$lookback_start_day[idx[[1L]]]
+        arm_cov$lookback_end_day   <- covariate_concepts$lookback_end_day[idx[[1L]]]
+      }
+      query_covariate_counts(connection, config, arm_cov,
+                             covariate_concepts[idx, setdiff(names(covariate_concepts), win_cols), drop = FALSE])
+    })
+    return(or_combine_counts(arms))
   }
 
   if (grepl("^age_", covariate$covariate_id)) {

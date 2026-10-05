@@ -1,9 +1,10 @@
 {
   "cdmVersionRange": ">=5.0.0",
+  "_README": ["Coronary artery disease - the Kraiss sVQI-FS cad item (1 point).", "Concept set is EXACTLY covariates/covariate_concepts_vqifs.csv :: cad (4185932 Ischemic heart disease + descendants).", "Replaces the reused Limit=First [DVI] VA-FI Coronary artery disease cohort 1797949.", "PrimaryCriteriaLimit / QualifiedLimit / ExpressionLimit are all \"All\" and EndStrategy is StartDate+0, unlike the [DVI] VA-FI cohorts (1797948-1797977) which are \"First\". A first-ever-only cohort cannot answer a lookback-window question."],
   "ConceptSets": [
     {
       "id": 0,
-      "name": "[DVI] Coronary artery disease (VA-FI)",
+      "name": "[DVI] Coronary artery disease (risk score item)",
       "expression": {
         "items": [
           {
@@ -11,7 +12,9 @@
               "CONCEPT_ID": 4185932,
               "CONCEPT_NAME": "Ischemic heart disease",
               "STANDARD_CONCEPT": "S",
-              "INVALID_REASON": "NA",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
               "CONCEPT_CODE": "414545008",
               "DOMAIN_ID": "Condition",
               "VOCABULARY_ID": "SNOMED",
@@ -38,26 +41,26 @@
       "PostDays": 0
     },
     "PrimaryCriteriaLimit": {
-      "Type": "First"
+      "Type": "All"
     }
   },
   "QualifiedLimit": {
-    "Type": "First"
+    "Type": "All"
   },
   "ExpressionLimit": {
-    "Type": "First"
+    "Type": "All"
   },
   "InclusionRules": [],
-  "EndStrategy": {
-    "DateOffset": {
-      "DateField": "StartDate",
-      "Offset": 0
-    }
-  },
   "CensoringCriteria": [],
   "CollapseSettings": {
     "CollapseType": "ERA",
     "EraPad": 0
   },
-  "CensorWindow": {}
+  "CensorWindow": {},
+  "EndStrategy": {
+    "DateOffset": {
+      "DateField": "StartDate",
+      "Offset": 0
+    }
+  }
 }

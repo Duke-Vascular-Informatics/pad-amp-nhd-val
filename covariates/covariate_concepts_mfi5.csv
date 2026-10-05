@@ -7,24 +7,47 @@
 #
 # FS_DEP — Dependent functional status:
 #   catalog entry: modified_frailty_index
-#   Two SNOMED ancestors used as OR logic (include_descendants = TRUE):
-#     4086506  Frailty                    (SNOMED 248279007; 5 descendants)
-#     4306934  Impaired mobility          (SNOMED 82971005;  9 descendants
-#                                          incl. Bed-ridden, Confined to chair,
-#                                          Mobility poor, Needs walking aid)
-#   The catalog's full mFI multi-concept OR composite (including Barthel
-#   index value-coded queries) is intentionally simplified here to two
-#   ancestors. Barthel queries require value_as_concept_id filtering which
-#   is not supported by the integer_risk_score pipeline's default condition
-#   / observation count path.
+#   REVISED 2026-10-05 (cohort 9100026; was Frailty 4086506 + Impaired mobility
+#   4306934, both with descendants). NSQIP defines the item as partial or total
+#   dependence for ADLs; the old set measured MOBILITY (Mobility poor, Needs
+#   walking aid, Impaired bed mobility, ...) and mild/moderate frailty, so it
+#   duplicated the ambulatory item and under-captured ADL dependence.
+#   New set, all include_descendants = FALSE ([vocab query] 2026-10-05):
+#     ADL dependence  Dependent for bathing / dressing / feeding / drinking /
+#                     personal grooming / personal hygiene / rising to feet /
+#                     sitting / sitting down / standing / walking; Needs help
+#                     with dressing / feeding / personal grooming / walking /
+#                     washing self / mouthcare; Needs assistance with shaving;
+#                     Requires assistance with all daily activities / personal
+#                     care; Requires continuous supervision for ADLs
+#     Immobility      4058155 Bed-ridden, 4058154 Confined to chair
+#     Frailty         45770280 Severe frailty (Clinical Frailty Scale 7 =
+#                     completely dependent for personal care). Mild / moderate
+#                     frailty, 'Frailty', 'Frail elderly' and the deprecated
+#                     quality-measure concept 40217254 are deliberately dropped.
+#   IADL concepts (housework, shopping, cooking, medications) are NOT included.
+#   Overlap with the ambulatory set (walking dependence, bed-ridden, confined to
+#   chair) is intentional: those are both ADL dependence and an ambulatory deficit.
+#   domain = "auto": the set spans Condition (Severe frailty) and Observation.
+#   Barthel-index value-coded queries from the catalog's full composite remain
+#   out of scope (they need value_as_concept_id filtering).
 #
 # DM — Diabetes mellitus (all types):
 #   catalog entry: diabetes_mellitus
 #     201820   Diabetes mellitus           (SNOMED 73211009 + descendants)
 #
-# COPD:
+# COPD (item = 'COPD or current pneumonia', Subramaniam 2018):
 #   catalog entry: copd
 #     255573   Chronic obstructive pulmonary disease (SNOMED 13645005 + descendants)
+#              read over the item's default window (365 days)
+#   catalog entry: pneumonia
+#     255848   Pneumonia (SNOMED 233604007 + descendants, 188 concepts)
+#              read over a 30-DAY window ('current pneumonia'). ADDED 2026-10-05.
+#   The item is positive if EITHER arm hits. The pneumonia row carries its own
+#   lookback_start_day / lookback_end_day (see COLUMN DEFINITIONS); the cohort
+#   path expresses the same thing as two rows for (mfi5, copd) in
+#   cohort_map.csv. Known looseness: the pneumonia subtree includes two
+#   non-infectious interstitial concepts and congenital/neonatal pneumonia.
 #
 # CHF:
 #   catalog entry: heart_failure
@@ -40,10 +63,39 @@
 #   include_descendants  TRUE = expand via concept_ancestor rollup
 #   concept_role         blank (no special role for mFI-5 components)
 #   value_concept_ids    blank (no value-coded observations in this minimal set)
-covariate_id,concept_id,include_descendants,concept_role,value_concept_ids
-fs_dep,4086506,TRUE,,
-fs_dep,4306934,TRUE,,
-dm,201820,TRUE,,
-copd,255573,TRUE,,
-chf,316139,TRUE,,
-htn,316866,TRUE,,
+#   lookback_start_day / lookback_end_day   OPTIONAL per-row window override.
+#                        Blank = use the covariate's own window in
+#                        covariates_mfi5.csv. Rows of one covariate_id that share a
+#                        window are queried together; each distinct window is queried
+#                        separately and the results are OR'd
+#                        (query_covariate_counts() in R/risk_score_pipeline.R).
+covariate_id,concept_id,include_descendants,concept_role,value_concept_ids,lookback_start_day,lookback_end_day
+fs_dep,4044722,FALSE,,,,
+fs_dep,4043532,FALSE,,,,
+fs_dep,4012662,FALSE,,,,
+fs_dep,36717538,FALSE,,,,
+fs_dep,45767125,FALSE,,,,
+fs_dep,36716238,FALSE,,,,
+fs_dep,36716241,FALSE,,,,
+fs_dep,36716239,FALSE,,,,
+fs_dep,37206158,FALSE,,,,
+fs_dep,36716240,FALSE,,,,
+fs_dep,4146424,FALSE,,,,
+fs_dep,4043370,FALSE,,,,
+fs_dep,4012838,FALSE,,,,
+fs_dep,1450437,FALSE,,,,
+fs_dep,1450204,FALSE,,,,
+fs_dep,1450205,FALSE,,,,
+fs_dep,1450206,FALSE,,,,
+fs_dep,44791682,FALSE,,,,
+fs_dep,40481489,FALSE,,,,
+fs_dep,35610195,FALSE,,,,
+fs_dep,42537792,FALSE,,,,
+fs_dep,4058155,FALSE,,,,
+fs_dep,4058154,FALSE,,,,
+fs_dep,45770280,FALSE,,,,
+dm,201820,TRUE,,,,
+copd,255573,TRUE,,,,
+copd,255848,TRUE,,,-30,-1
+chf,316139,TRUE,,,,
+htn,316866,TRUE,,,,

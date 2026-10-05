@@ -18,16 +18,10 @@
 #                 — from phenotype_library/catalog.yaml :: peripheral_arterial_disease
 #                 (verified 2026-05-14; 190 descendants). Proxy for the paper's
 #                 "ABI <0.7 or arterial intervention/amputation" PVD item.
-#   nonambulatory  shares its full 7-concept set with covariates.csv's
-#                 Iannuzzi ambu_deficit component (see that file's
-#                 AMBU_DEFICIT note): 4012645/437643/439405/36714126
-#                 (Observation/Clinical Finding, original set) plus 4085915
-#                 Provision of long cane (Procedure), 4044714 Using
-#                 wheelchair (Observation), 4240470 Wheelchair (Device) —
-#                 added 2026-07-26 alongside covariates_vqifs.csv's
-#                 domain = "auto" change, after this component activated in
-#                 0/225 patients under domain = "observation" alone. Proxy
-#                 for the paper's impaired preadmission ambulation status
+#   nonambulatory  shares its concept set with covariates.csv's Iannuzzi
+#                 ambu_deficit component -- see the 'AMBULATORY STATUS' note in
+#                 covariate_concepts.csv (REVISED 2026-10-05; cohort 9100027).
+#                 Proxy for the paper's impaired preadmission ambulation status
 #                 (ambulatory w/ assistance, wheelchair, bedridden).
 #   cad   4185932  Ischemic heart disease (SNOMED 414545008)
 #                 — from phenotype_library/catalog.yaml :: ischemic_heart_disease
@@ -106,9 +100,19 @@ underweight,3036277,FALSE,height,
 underweight,3023540,FALSE,height,
 underweight,3015514,FALSE,height,
 nonambulatory,4012645,TRUE,,
-nonambulatory,437643,TRUE,,
-nonambulatory,439405,TRUE,,
-nonambulatory,36714126,TRUE,,
-nonambulatory,4085915,FALSE,,
 nonambulatory,4044714,FALSE,,
+nonambulatory,439405,FALSE,,
+nonambulatory,4086548,FALSE,,
+nonambulatory,4058155,FALSE,,
+nonambulatory,4058154,FALSE,,
+nonambulatory,4052477,FALSE,,
+nonambulatory,4052045,FALSE,,
+nonambulatory,4032531,FALSE,,
+nonambulatory,619446,FALSE,,
+nonambulatory,619444,FALSE,,
+nonambulatory,1450204,FALSE,,
+nonambulatory,4146424,FALSE,,
 nonambulatory,4240470,TRUE,,
+nonambulatory,37165652,TRUE,,
+nonambulatory,4141765,TRUE,,
+nonambulatory,4251933,TRUE,,

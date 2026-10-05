@@ -7,12 +7,23 @@ CREATE TABLE #Codesets (
 INSERT INTO #Codesets (codeset_id, concept_id)
 SELECT 0 as codeset_id, c.concept_id FROM (select distinct I.concept_id FROM
 ( 
-  select concept_id from @vocabulary_database_schema.CONCEPT where (concept_id in (316139))
+  select concept_id from @vocabulary_database_schema.CONCEPT where (concept_id in (4012645,4044714,439405,4086548,4058155,4058154,4052477,4052045,4032531,619446,619444,1450204,4146424))
 UNION  select c.concept_id
   from @vocabulary_database_schema.CONCEPT c
   join @vocabulary_database_schema.CONCEPT_ANCESTOR ca on c.concept_id = ca.descendant_concept_id
   WHERE c.invalid_reason is null
-  and (ca.ancestor_concept_id in (316139))
+  and (ca.ancestor_concept_id in (4012645))
+
+) I
+) C UNION ALL 
+SELECT 1 as codeset_id, c.concept_id FROM (select distinct I.concept_id FROM
+( 
+  select concept_id from @vocabulary_database_schema.CONCEPT where (concept_id in (4240470,37165652,4141765,4251933))
+UNION  select c.concept_id
+  from @vocabulary_database_schema.CONCEPT c
+  join @vocabulary_database_schema.CONCEPT_ANCESTOR ca on c.concept_id = ca.descendant_concept_id
+  WHERE c.invalid_reason is null
+  and (ca.ancestor_concept_id in (4240470,37165652,4141765,4251933))
 
 ) I
 ) C;
@@ -34,24 +45,38 @@ FROM
          OP.observation_period_start_date as op_start_date, OP.observation_period_end_date as op_end_date, cast(E.visit_occurrence_id as bigint) as visit_occurrence_id
   FROM 
   (
-  -- Begin Condition Occurrence Criteria
-SELECT C.person_id, C.condition_occurrence_id as event_id, C.start_date, C.end_date,
-  C.visit_occurrence_id, C.start_date as sort_date
-FROM 
+  -- Begin Observation Criteria
+select C.person_id, C.observation_id as event_id, C.start_date, C.END_DATE,
+       C.visit_occurrence_id, C.start_date as sort_date
+from 
 (
-  SELECT co.person_id,co.condition_occurrence_id,co.condition_concept_id,co.visit_occurrence_id,co.condition_start_date as start_date, COALESCE(co.condition_end_date, DATEADD(day,1,co.condition_start_date)) as end_date 
-  FROM @cdm_database_schema.CONDITION_OCCURRENCE co
-  JOIN #Codesets cs on (co.condition_concept_id = cs.concept_id and cs.codeset_id = 0)
+  select o.person_id,o.observation_id,o.observation_concept_id,o.visit_occurrence_id,o.value_as_number,o.observation_date as start_date, DATEADD(day,1,o.observation_date) as end_date 
+  FROM @cdm_database_schema.OBSERVATION o
+JOIN #Codesets cs on (o.observation_concept_id = cs.concept_id and cs.codeset_id = 0)
 ) C
 
 
--- End Condition Occurrence Criteria
+-- End Observation Criteria
+
+UNION ALL
+-- Begin Device Exposure Criteria
+select C.person_id, C.device_exposure_id as event_id, C.start_date, C.end_date,
+        C.visit_occurrence_id, C.start_date as sort_date
+from 
+(
+  select de.person_id,de.device_exposure_id,de.device_concept_id,de.visit_occurrence_id,de.quantity,de.device_exposure_start_date as start_date, COALESCE(de.device_exposure_end_date, DATEADD(day,1,de.device_exposure_start_date)) as end_date 
+  FROM @cdm_database_schema.DEVICE_EXPOSURE de
+JOIN #Codesets cs on (de.device_concept_id = cs.concept_id and cs.codeset_id = 1)
+) C
+
+
+-- End Device Exposure Criteria
 
   ) E
 	JOIN @cdm_database_schema.observation_period OP on E.person_id = OP.person_id and E.start_date >=  OP.observation_period_start_date and E.start_date <= op.observation_period_end_date
   WHERE DATEADD(day,0,OP.OBSERVATION_PERIOD_START_DATE) <= E.START_DATE AND DATEADD(day,0,E.START_DATE) <= OP.OBSERVATION_PERIOD_END_DATE
 ) P
-WHERE P.ordinal = 1
+
 -- End Primary Events
 ) pe
   
@@ -82,7 +107,7 @@ FROM (
   WHERE (MG.inclusion_rule_mask = POWER(cast(2 as bigint),0)-1)
 }
 ) Results
-WHERE Results.ordinal = 1
+
 ;
 
 -- date offset strategy
