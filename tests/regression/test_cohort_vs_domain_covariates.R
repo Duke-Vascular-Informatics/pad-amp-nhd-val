@@ -182,12 +182,16 @@ for (score in config$scores) {
 # Concept-set drift guard: each authored cohort must still match its CSV.
 # ---------------------------------------------------------------------------
 message("\n########## CONCEPT-SET DRIFT CHECK ##########")
-extractConcepts <- function(path) {
+# Concept ids of a cohort's concept sets, split by circe's isExcluded flag so an
+# exclusion in the cohort must be matched by an exclusion in the CSV (and vice versa).
+extractConcepts <- function(path, excluded = FALSE) {
   j <- jsonlite::fromJSON(path, simplifyVector = FALSE)
-  ids <- c()
+  ids <- integer(0)  # not c(): an empty result must be integer(0), not NULL, or identical() against an empty CSV side is FALSE
   walk <- function(x) {
     if (is.list(x)) {
-      if (!is.null(x$CONCEPT_ID)) ids <<- c(ids, as.integer(x$CONCEPT_ID))
+      if (!is.null(x$concept$CONCEPT_ID) && identical(isTRUE(x$isExcluded), excluded)) {
+        ids <<- c(ids, as.integer(x$concept$CONCEPT_ID))
+      }
       for (el in x) walk(el)
     }
   }
@@ -223,11 +227,18 @@ for (spec in DRIFT) {
     has_override <- !is.na(suppressWarnings(as.integer(rows$lookback_start_day)))
     rows <- rows[if (spec$window == "override") has_override else !has_override, , drop = FALSE]
   }
-  want <- sort(unique(as.integer(rows$concept_id)))
-  got  <- extractConcepts(file.path("inst", "cohorts", paste0(spec$cid, ".json")))
-  ok   <- identical(want, got)
-  cat(sprintf("  %-9s %-14s %-8s csv=[%s] cohort=[%s]  %s\n", spec$cid, spec$cov, spec$window,
-              paste(want, collapse = ","), paste(got, collapse = ","),
+  is_excl_row <- !is.na(rows$concept_role) & tolower(trimws(rows$concept_role)) == "exclude"
+  want     <- sort(unique(as.integer(rows$concept_id[!is_excl_row])))
+  want_exc <- sort(unique(as.integer(rows$concept_id[is_excl_row])))
+  cj       <- file.path("inst", "cohorts", paste0(spec$cid, ".json"))
+  got      <- extractConcepts(cj)
+  got_exc  <- extractConcepts(cj, excluded = TRUE)
+  ok   <- identical(want, got) && identical(want_exc, got_exc)
+  cat(sprintf("  %-9s %-14s %-8s csv=[%s]%s cohort=[%s]%s  %s\n", spec$cid, spec$cov, spec$window,
+              paste(want, collapse = ","),
+              if (length(want_exc)) sprintf(" excl=[%s]", paste(want_exc, collapse = ",")) else "",
+              paste(got, collapse = ","),
+              if (length(got_exc)) sprintf(" excl=[%s]", paste(got_exc, collapse = ",")) else "",
               if (ok) "match" else "*** DRIFT ***"))
   if (!ok) failures <- c(failures, sprintf("concept drift in cohort %s (%s, %s)", spec$cid, spec$cov, spec$csv))
 }

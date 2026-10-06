@@ -46,8 +46,12 @@
 #   The item is positive if EITHER arm hits. The pneumonia row carries its own
 #   lookback_start_day / lookback_end_day (see COLUMN DEFINITIONS); the cohort
 #   path expresses the same thing as two rows for (mfi5, copd) in
-#   cohort_map.csv. Known looseness: the pneumonia subtree includes two
-#   non-infectious interstitial concepts and congenital/neonatal pneumonia.
+#   cohort_map.csv. Two non-infectious concepts are EXCLUDED from the pneumonia
+#   arm (concept_role = "exclude"): 4273378 Interstitial pneumonia and 1340380
+#   Exacerbation of interstitial pneumonia. include_descendants is FALSE on
+#   them ON PURPOSE: 4294404 Pittsburgh pneumonia (Legionella, infectious) is a
+#   descendant of 4273378 and must stay in. Exclude rows must carry the SAME
+#   per-row window as the arm they belong to.
 #
 # CHF:
 #   catalog entry: heart_failure
@@ -61,7 +65,8 @@
 #   covariate_id         matches covariate_id in covariates_mfi5.csv
 #   concept_id           OMOP standard concept_id (verified [vocab query])
 #   include_descendants  TRUE = expand via concept_ancestor rollup
-#   concept_role         blank (no special role for mFI-5 components)
+#   concept_role         blank, or "exclude" = remove this concept (and its
+#                        descendants if include_descendants) from the set it sits in
 #   value_concept_ids    blank (no value-coded observations in this minimal set)
 #   lookback_start_day / lookback_end_day   OPTIONAL per-row window override.
 #                        Blank = use the covariate's own window in
@@ -97,5 +102,7 @@ fs_dep,45770280,FALSE,,,,
 dm,201820,TRUE,,,,
 copd,255573,TRUE,,,,
 copd,255848,TRUE,,,-30,-1
+copd,4273378,FALSE,exclude,,-30,-1
+copd,1340380,FALSE,exclude,,-30,-1
 chf,316139,TRUE,,,,
 htn,316866,TRUE,,,,
