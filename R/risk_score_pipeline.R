@@ -1825,11 +1825,31 @@ query_covariate_counts <- function(connection, config, covariate, covariate_conc
     return(query_renal_impairment_covariate_counts(connection, config, covariate, covariate_concepts))
   }
 
+  # concept_role = "exclude" rows REMOVE a concept (and its descendants, if its
+  # include_descendants flag is set) from the set. Added 2026-10-06 for the mFI-5
+  # pneumonia arm, which must drop two non-infectious interstitial concepts but keep
+  # their infectious sibling 4294404 Pittsburgh pneumonia. Only the generic path
+  # below implements it; the auto-domain path would otherwise IGNORE the rows and
+  # silently count the excluded concepts, so it refuses instead.
+  is_excl <- !is.na(covariate_concepts$concept_role) & covariate_concepts$concept_role == "exclude"
+
   if (identical(tolower(trimws(covariate$domain)), "auto")) {
+    if (any(is_excl)) {
+      stop("Covariate '", covariate$covariate_id, "' has concept_role = 'exclude' rows but ",
+           "domain = 'auto'; exclusion is only implemented in the single-domain generic path.")
+    }
     return(query_auto_domain_covariate_counts(connection, config, covariate, covariate_concepts))
   }
 
   map <- get_domain_mapping(covariate$domain)
+
+  excl_concepts     <- covariate_concepts[is_excl, , drop = FALSE]
+  covariate_concepts <- covariate_concepts[!is_excl, , drop = FALSE]
+  # string_split() needs a valid list even when nothing is excluded; -1 matches no concept.
+  excl_ids          <- if (nrow(excl_concepts)) unique(excl_concepts$concept_id) else -1L
+  excl_expand_ids   <- if (any(excl_concepts$include_descendants)) {
+                         unique(excl_concepts$concept_id[excl_concepts$include_descendants])
+                       } else -1L
 
   concept_ids <- unique(covariate_concepts$concept_id)
   concept_id_string <- paste(concept_ids, collapse = ",")
@@ -1854,6 +1874,23 @@ query_covariate_counts <- function(connection, config, covariate, covariate_conc
              JOIN concept_ids i
                ON ca.ancestor_concept_id = i.concept_id
              WHERE @include_descendants = 1
+           ),
+           -- concept_role = 'exclude' rows; descendants only where THAT row's own flag is set.
+           excluded_roots AS (
+             SELECT CAST(id AS BIGINT) AS concept_id
+             FROM (SELECT value AS id FROM string_split('@exclude_concept_ids', ',')) s
+           ),
+           excluded_expandable AS (
+             SELECT CAST(id AS BIGINT) AS concept_id
+             FROM (SELECT value AS id FROM string_split('@exclude_expand_ids', ',')) s
+           ),
+           excluded_concepts AS (
+             SELECT concept_id FROM excluded_roots
+             UNION
+             SELECT ca.descendant_concept_id AS concept_id
+             FROM @cdm_schema.concept_ancestor ca
+             JOIN excluded_expandable x
+               ON ca.ancestor_concept_id = x.concept_id
            )
            SELECT t.subject_id,
                   COUNT(*) AS event_count
@@ -1862,6 +1899,7 @@ query_covariate_counts <- function(connection, config, covariate, covariate_conc
              ON d.person_id = t.subject_id
            JOIN expanded_concepts ec
              ON d.@domain_concept_col = ec.concept_id
+            AND ec.concept_id NOT IN (SELECT concept_id FROM excluded_concepts)
            WHERE d.@domain_date_col >= DATEADD(DAY, @lookback_start, t.index_date)
              AND d.@domain_date_col <= DATEADD(DAY, @lookback_end, t.index_date)
            GROUP BY t.subject_id",
@@ -1873,6 +1911,8 @@ query_covariate_counts <- function(connection, config, covariate, covariate_conc
     domain_concept_col = map$concept_col,
     domain_date_col = map$date_col,
     concept_ids = concept_id_string,
+    exclude_concept_ids = paste(excl_ids, collapse = ","),
+    exclude_expand_ids  = paste(excl_expand_ids, collapse = ","),
     include_descendants = ifelse(include_desc, 1, 0),
     lookback_start = as.integer(covariate$lookback_start_day),
     lookback_end = as.integer(covariate$lookback_end_day)

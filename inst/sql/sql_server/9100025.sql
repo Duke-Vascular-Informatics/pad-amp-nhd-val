@@ -15,6 +15,12 @@ UNION  select c.concept_id
   and (ca.ancestor_concept_id in (255848))
 
 ) I
+LEFT JOIN
+(
+  select concept_id from @vocabulary_database_schema.CONCEPT where (concept_id in (4273378,1340380))
+
+) E ON I.concept_id = E.concept_id
+WHERE E.concept_id is null
 ) C;
 
 UPDATE STATISTICS #Codesets;

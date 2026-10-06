@@ -103,10 +103,15 @@ cohorts <- list(
     readme = c(
       "Pneumonia - the 'current pneumonia' arm of the Subramaniam mFI-5 'COPD or current pneumonia' item.",
       "Scored over a 30-day window (current pneumonia); the COPD arm (cohort 9100002) keeps 365 days. covariates/cohort_map.csv carries two rows for the pair (mfi5, copd) and the item is positive if EITHER arm hits.",
-      "Concept set: 255848 Pneumonia + descendants (188 concepts, [vocab query] 2026-10-05).",
-      "KNOWN, ACCEPTED LOOSENESS: the subtree includes two non-infectious interstitial concepts (4273378 Interstitial pneumonia, 1340380 Exacerbation of interstitial pneumonia) and congenital / neonatal pneumonia (irrelevant in an adult amputation cohort). Excluding the first two would put an isExcluded item in the cohort that the score CSV cannot express, breaking the cohort-vs-domain regression check; the effect on a 30-day window in this population is negligible."),
+      "Concept set: 255848 Pneumonia + descendants (188 concepts, [vocab query] 2026-10-05), MINUS two EXCLUDED non-infectious concepts: 4273378 Interstitial pneumonia and 1340380 Exacerbation of interstitial pneumonia (an ILD diagnosis, not acute pneumonia).",
+      "THE EXCLUSIONS CARRY includeDescendants=FALSE ON PURPOSE. 4294404 Pittsburgh pneumonia (Legionella - infectious) is a DESCENDANT of 4273378, so excluding 4273378 with descendants would silently drop a real pneumonia. 1340380 is itself a descendant of 4273378, hence listed separately. Verified 2026-10-05.",
+      "The score CSV expresses the same exclusion with concept_role = 'exclude' on those two rows (covariate_concepts_mfi5.csv), implemented in query_covariate_counts()'s generic domain path; the regression test compares included and excluded concept sets separately.",
+      "Congenital / neonatal pneumonia stays in (irrelevant in an adult amputation cohort, harmless)."),
     sets = list(list(name = "[DVI] Pneumonia (mFI-5 current pneumonia)", criterion = "ConditionOccurrence",
-                     items = list(list(255848L, TRUE, FALSE))))  # [vocab query] SNOMED: Pneumonia
+                     items = list(
+                       list(255848L, TRUE,  FALSE),  # [vocab query] SNOMED: Pneumonia (+ descendants)
+                       list(4273378L, FALSE, TRUE),  # [vocab query] SNOMED: Interstitial pneumonia -- EXCLUDED, no descendants (Pittsburgh pneumonia is one)
+                       list(1340380L, FALSE, TRUE))))  # [vocab query] Exacerbation of interstitial pneumonia -- EXCLUDED
   ),
 
   `9100026` = list(

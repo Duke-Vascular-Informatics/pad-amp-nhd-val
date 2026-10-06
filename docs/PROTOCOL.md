@@ -321,8 +321,7 @@ and `9100006`, which are left unchanged in `pad-amp-nhd-prog`.
   ADL-dependence findings, bed-ridden, confined-to-chair and severe frailty;
   the Iannuzzi/sVQI-FS ambulatory items are mapped to walking-aid, wheelchair,
   walker/frame/crutch, bed-ridden and unable-to-walk findings (gait
-  descriptors are excluded). The mFI-5 pneumonia arm includes two
-  non-infectious interstitial-pneumonia concepts. Observation concepts are
+  descriptors are excluded). Observation concepts are
   sparsely recorded in routine EHR data, so both items likely under-count.
 - **365-day lookback**: a uniform window is applied to every score item
   rather than each source paper's own look-back convention, except where the
