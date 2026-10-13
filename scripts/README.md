@@ -18,6 +18,6 @@ study. Not part of a numbered workflow — run manually as needed.
 | `hooks/` | Local git-hook installer and hook documentation for analyst guardrails |
 
 Cohort generation, ETL, and vocabulary loading live outside this repo now:
-the synthetic CDM is built by the companion `pad-amp-dispo-synth` repo, and
+the synthetic CDM is built by the companion `pad-amp-synth` repo, and
 cohort instantiation is owned by Strategus (`inst/`,
 `CreateStrategusAnalysisSpecification.R`).

@@ -95,7 +95,7 @@ de novo risk score (see Section 11).
   outside the intended window (Duke's live CDM continues to accrue
   encounters past any date fixed at protocol-writing time).
 - **Development and pipeline verification:** conducted first against the
-  synthetic dataset `omop_synth_pad_amp_v2` (registered in
+  synthetic dataset `omop_synth_pad_amp_v3` (v2 until 2026-10-11; registered in
   the workspace's `synthetic_data/registry.yaml` (format: [charon's synthetic_data README](https://github.com/Duke-Vascular-Informatics/charon/blob/main/synthetic_data/README.md)), id `pad_amp`) before any run against
   real patient data.
 
@@ -360,7 +360,7 @@ and `9100006`, which are left unchanged in `pad-amp-nhd-prog`.
 
 | Repo | Relationship |
 |---|---|
-| `pad-amp-dispo-synth` | Produces the synthetic development/verification dataset (`omop_synth_pad_amp_v2`) |
+| `pad-amp-synth` | Produces the synthetic development/verification dataset (`omop_synth_pad_amp_v3`; v2 until 2026-10-11) |
 | `pad-amp-nhd-prog` | Parent study; this repo is a frozen, validation-only fork (forked 2026-09-07) made to keep this analysis stable for publication while `pad-amp-nhd-prog` continues toward a de novo risk score |
 | `pad-amp-nhd-val-report` | Manuscript/report repo, rendering the Word document from this study's `report_inputs/*.csv` artifacts only — no database, no VPN, no credentials |
 | `duke-prcc-deploy` (`studies/pad-amp-nhd-val/`) | Duke GitLab-only PRCC deployment bundle; mirrors this repo's analysis code via a synced manifest plus a hand-maintained PRCC runner, checked for drift by an automated registry (`common/check_bundle_drift.sh`) |
