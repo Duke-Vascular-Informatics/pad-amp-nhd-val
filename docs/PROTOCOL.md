@@ -165,10 +165,11 @@ pneumonia" item use 30 days, and the Iannuzzi tissue-loss item includes the
 index date. The mFI-5 "COPD or current pneumonia" item is positive when
 either COPD (365 days) or pneumonia (30 days) is recorded. A patient meeting a
 component's evidence threshold receives its full published point value,
-and an absent record is treated as zero evidence (two exceptions — Iannuzzi
-anemia and sVQI-FS underweight/anemia — treat an absent measurement as
-unknown rather than a true negative; see each table's own footnote in the
-manuscript report). Component definitions, point values, and observed
+and an absent record is treated as zero evidence, without exception. That
+includes the measurement-based components (Iannuzzi anemia; sVQI-FS anemia
+and underweight): a patient with no hemoglobin or BMI measurement in the
+lookback window is null-imputed as not meeting the component and cannot be
+distinguished from one whose measurement was normal. Component definitions, point values, and observed
 activation rates are reported in the manuscript's Tables 3a–c; the full
 ATLAS concept-set/cohort inventory is in Supplemental Table S2.
 
@@ -323,6 +324,11 @@ and `9100006`, which are left unchanged in `pad-amp-nhd-prog`.
   walker/frame/crutch, bed-ridden and unable-to-walk findings (gait
   descriptors are excluded). Observation concepts are
   sparsely recorded in routine EHR data, so both items likely under-count.
+- **Null imputation of measurement-based components**: anemia and
+  underweight are scored from recorded hemoglobin and BMI values only. A
+  patient with no measurement is scored as not meeting the component, the
+  same as one with a normal value, so ascertainment depends on measurement
+  having been recorded and prevalence is reported against the full cohort.
 - **365-day lookback**: a uniform window is applied to every score item
   rather than each source paper's own look-back convention, except where the
   paper states one (above); chronic conditions recorded earlier than a year
