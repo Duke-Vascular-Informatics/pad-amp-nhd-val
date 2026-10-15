@@ -9,7 +9,7 @@
 # WHAT THIS ASSERTS
 # -----------------
 # Every covariate cohort in this repo is Limit=All with EndStrategy StartDate+0
-# (cohorts 9100002-9100027), so a lookback window binds identically in both
+# (cohorts 9100002-9100028), so a lookback window binds identically in both
 # paths and the two must agree PERSON FOR PERSON. Until 2026-10-05 this was a
 # characterisation test: four covariates (dm, htn, chf, cad) were resolved by
 # REUSED [DVI] VA-FI cohorts (1797949-1797952) that are PrimaryCriteriaLimit =
@@ -218,7 +218,7 @@ DRIFT <- list(
   list(cid = "9100025", csv = "covariates/covariate_concepts_mfi5.csv",  cov = "copd",             window = "override"),
   list(cid = "9100026", csv = "covariates/covariate_concepts_mfi5.csv",  cov = "fs_dep",           window = "default"),
   list(cid = "9100027", csv = "covariates/covariate_concepts.csv",       cov = "ambu_deficit",     window = "default"),
-  list(cid = "9100027", csv = "covariates/covariate_concepts_vqifs.csv", cov = "nonambulatory",    window = "default")
+  list(cid = "9100028", csv = "covariates/covariate_concepts_vqifs.csv", cov = "nonambulatory",    window = "default")
 )
 for (spec in DRIFT) {
   csv  <- read.csv(spec$csv, comment.char = "#", stringsAsFactors = FALSE)

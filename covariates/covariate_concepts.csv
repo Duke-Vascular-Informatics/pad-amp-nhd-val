@@ -20,27 +20,24 @@
 #   (also NOT NULL and <> 0). concept_role = "white_race" signals the pipeline
 #   that 8527 is the concept to EXCLUDE, not include.
 #
-# AMBULATORY STATUS — shared by Iannuzzi ambu_deficit and Kraiss sVQI-FS
-#   nonambulatory. REVISED 2026-10-05 (cohort 9100027; was the 7-concept set
-#   backing 9100006). All IDs [vocab query] verified 2026-10-05.
-#   DROPPED  437643 Abnormal gait and 36714126 Difficulty walking (94 + 18
-#            descendants of gait DESCRIPTORS -- antalgic, ataxic, 'buttocks
-#            prominent when walking' -- not an aid and not a deficit in
-#            ambulation) and 4085915 Provision of long cane (a PROCEDURE:
-#            providing a cane is not using one).
-#   KEPT     4012645 Walking aid use, 4044714 Using wheelchair, 439405 Walking
-#            disability, 4240470 Wheelchair (+ descendants, 2026-08-03 decision).
-#   ADDED    Observation: 4086548 Unable to walk, 4058155 Bed-ridden, 4058154
-#            Confined to chair, 4052477 Needs walking aid in home, 4052045
-#            Mobile outside with aid, 4032531 Impaired wheelchair mobility,
-#            619446 / 619444 Does mobilize using walker / crutch, 1450204 Needs
-#            help with walking, 4146424 Dependent for walking.
-#            Device: 37165652 Wheeled walker, 4141765 Walking frame, 4251933
-#            Crutch (each + descendants) -- the old set had NO walker, frame or
-#            crutch, the commonest ambulatory aids.
-#   domain = "auto" in covariates*.csv: the set spans Observation and Device
-#   (query_auto_domain_covariate_counts() unions every domain table); cohort
-#   9100027 reproduces that with one primary criterion per domain.
+# AMBU_DEFICIT — Ambulatory deficit (Iannuzzi item: use of an ambulatory aid). STRICT set,
+#   cohort 9100027. SPLIT 2026-10-15: before that, this item and the sVQI-FS nonambulatory item
+#   shared one concept set (cohort 9100006, then 9100027); the broad impaired-ambulation set the
+#   sVQI-FS item uses is now cohort 9100028 -- see covariate_concepts_vqifs.csv. All IDs
+#   [vocab query] verified 2026-10-15.
+#   Observation (8): 4012645 Walking aid use (+desc), 4044714 Using wheelchair, 4022073 Dependence
+#     on wheelchair (NEW), 4052477 Needs walking aid in home, 4052045 Mobile outside with aid,
+#     4032531 Impaired wheelchair mobility, 619446 / 619444 Does mobilize using walker / crutch.
+#   Device (92): SNOMED 4240470 Wheelchair, 37165652 Wheeled walker, 4141765 Walking frame,
+#     4251933 Crutch (each +descendants) and 88 HCPCS device codes -- E0100-E0118 canes/crutches
+#     (10), E0130-E0149 walkers (12), E1050-E1298 wheelchairs and related (66). Duke records aids
+#     as HCPCS device_exposure rows, which the SNOMED concepts do not reach. The HCPCS block is
+#     generated from the vocabulary by scripts/author_covariate_cohorts.R; the regression test
+#     fails if these rows and the cohort ever differ.
+#   Status findings (Walking disability, Unable to walk, Bed-ridden, Confined to chair, Needs help
+#   with walking, Dependent for walking) are NOT here -- they are not aid use -- and Difficulty
+#   walking / Abnormal gait / Impaired mobility are in the broad set only.
+#   domain = "auto" in covariates.csv: the set spans Observation and Device.
 #
 # TISSUE_LOSS:
 #   catalog entry: pad_indication_tissue_loss
@@ -72,21 +69,104 @@ female,8532,FALSE,,
 nonwhite,8527,FALSE,white_race,
 ambu_deficit,4012645,TRUE,,
 ambu_deficit,4044714,FALSE,,
-ambu_deficit,439405,FALSE,,
-ambu_deficit,4086548,FALSE,,
-ambu_deficit,4058155,FALSE,,
-ambu_deficit,4058154,FALSE,,
+ambu_deficit,4022073,FALSE,,
 ambu_deficit,4052477,FALSE,,
 ambu_deficit,4052045,FALSE,,
 ambu_deficit,4032531,FALSE,,
 ambu_deficit,619446,FALSE,,
 ambu_deficit,619444,FALSE,,
-ambu_deficit,1450204,FALSE,,
-ambu_deficit,4146424,FALSE,,
 ambu_deficit,4240470,TRUE,,
 ambu_deficit,37165652,TRUE,,
 ambu_deficit,4141765,TRUE,,
 ambu_deficit,4251933,TRUE,,
+ambu_deficit,2616476,FALSE,,
+ambu_deficit,2616477,FALSE,,
+ambu_deficit,2616478,FALSE,,
+ambu_deficit,2616479,FALSE,,
+ambu_deficit,2616480,FALSE,,
+ambu_deficit,2616481,FALSE,,
+ambu_deficit,2616482,FALSE,,
+ambu_deficit,2616483,FALSE,,
+ambu_deficit,2616484,FALSE,,
+ambu_deficit,2616485,FALSE,,
+ambu_deficit,2616486,FALSE,,
+ambu_deficit,2616487,FALSE,,
+ambu_deficit,2616488,FALSE,,
+ambu_deficit,2616489,FALSE,,
+ambu_deficit,40217378,FALSE,,
+ambu_deficit,2616491,FALSE,,
+ambu_deficit,2616492,FALSE,,
+ambu_deficit,40217379,FALSE,,
+ambu_deficit,40217380,FALSE,,
+ambu_deficit,2616495,FALSE,,
+ambu_deficit,2616496,FALSE,,
+ambu_deficit,2616497,FALSE,,
+ambu_deficit,2616866,FALSE,,
+ambu_deficit,2616867,FALSE,,
+ambu_deficit,40217407,FALSE,,
+ambu_deficit,40217408,FALSE,,
+ambu_deficit,40217133,FALSE,,
+ambu_deficit,2616871,FALSE,,
+ambu_deficit,2616872,FALSE,,
+ambu_deficit,2616873,FALSE,,
+ambu_deficit,2616874,FALSE,,
+ambu_deficit,2616875,FALSE,,
+ambu_deficit,2616876,FALSE,,
+ambu_deficit,2616877,FALSE,,
+ambu_deficit,2616878,FALSE,,
+ambu_deficit,2616879,FALSE,,
+ambu_deficit,40217879,FALSE,,
+ambu_deficit,2616881,FALSE,,
+ambu_deficit,2616882,FALSE,,
+ambu_deficit,2616883,FALSE,,
+ambu_deficit,2616884,FALSE,,
+ambu_deficit,2616885,FALSE,,
+ambu_deficit,2616886,FALSE,,
+ambu_deficit,2616887,FALSE,,
+ambu_deficit,2616888,FALSE,,
+ambu_deficit,2616889,FALSE,,
+ambu_deficit,2616890,FALSE,,
+ambu_deficit,2616891,FALSE,,
+ambu_deficit,2616892,FALSE,,
+ambu_deficit,2616893,FALSE,,
+ambu_deficit,2616894,FALSE,,
+ambu_deficit,2616895,FALSE,,
+ambu_deficit,2616896,FALSE,,
+ambu_deficit,44782053,FALSE,,
+ambu_deficit,44782054,FALSE,,
+ambu_deficit,44782055,FALSE,,
+ambu_deficit,44782056,FALSE,,
+ambu_deficit,2616901,FALSE,,
+ambu_deficit,2616902,FALSE,,
+ambu_deficit,2616903,FALSE,,
+ambu_deficit,2616904,FALSE,,
+ambu_deficit,2616905,FALSE,,
+ambu_deficit,2616906,FALSE,,
+ambu_deficit,2616907,FALSE,,
+ambu_deficit,2616908,FALSE,,
+ambu_deficit,2616909,FALSE,,
+ambu_deficit,2616910,FALSE,,
+ambu_deficit,2616911,FALSE,,
+ambu_deficit,2616912,FALSE,,
+ambu_deficit,2616913,FALSE,,
+ambu_deficit,2616914,FALSE,,
+ambu_deficit,2616915,FALSE,,
+ambu_deficit,2616916,FALSE,,
+ambu_deficit,2616917,FALSE,,
+ambu_deficit,2616918,FALSE,,
+ambu_deficit,2616919,FALSE,,
+ambu_deficit,2616920,FALSE,,
+ambu_deficit,2616921,FALSE,,
+ambu_deficit,2616922,FALSE,,
+ambu_deficit,2616923,FALSE,,
+ambu_deficit,2616924,FALSE,,
+ambu_deficit,2616925,FALSE,,
+ambu_deficit,2616926,FALSE,,
+ambu_deficit,2616927,FALSE,,
+ambu_deficit,2616928,FALSE,,
+ambu_deficit,2616929,FALSE,,
+ambu_deficit,2616930,FALSE,,
+ambu_deficit,2616931,FALSE,,
 tissue_loss,4029926,TRUE,,
 tissue_loss,4291464,TRUE,,
 anemia,3000963,FALSE,,

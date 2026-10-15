@@ -83,12 +83,14 @@
 #   concept set and pad-oler-amp-desc's fallback concept list verbatim.
 #
 #   nonambulatory: domain = "auto" (CHANGED 2026-07-26 from "observation" —
-#   see phenotype_library/catalog.yaml :: ambulatory_deficit). Shares its
-#   concept set with covariates.csv's Iannuzzi ambu_deficit component, which
-#   activated in 0/225 patients under a single hardcoded domain because three
-#   of its seven concepts resolve to Procedure/Device rather than Observation
-#   in this vocabulary build. query_auto_domain_covariate_counts() unions
-#   across every domain table instead of trusting this column.
+#   see phenotype_library/catalog.yaml :: ambulatory_deficit). The set spans
+#   Observation and Device (including HCPCS device codes), so a single hardcoded
+#   domain activated in 0/225 patients. query_auto_domain_covariate_counts()
+#   unions across every domain table instead of trusting this column.
+#   SPLIT 2026-10-15: this item no longer shares its concept set with
+#   covariates.csv's Iannuzzi ambu_deficit -- it uses the BROAD impaired-ambulation
+#   set (cohort 9100028), the Iannuzzi item the STRICT aid-use set (9100027).
+#   See covariate_concepts_vqifs.csv.
 #
 # DELIBERATE DEVIATIONS FROM THE 11-ITEM PAPER SET
 #   - Non-home residence (preadmission living in a care facility) is OMITTED.

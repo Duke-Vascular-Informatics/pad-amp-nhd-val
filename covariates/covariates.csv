@@ -69,7 +69,7 @@ age_70_79,Age 70-79 years at index,observation,0,0,1,4,FALSE
 age_ge80,Age 80 or more years at index,observation,0,0,1,6,FALSE
 female,Female sex,observation,-3650,0,1,1,TRUE
 nonwhite,Non-White race,observation,0,0,1,2,TRUE
-ambu_deficit,Ambulatory deficit (aid use or impaired ambulation),auto,-365,-1,1,3,TRUE
+ambu_deficit,Ambulatory deficit (ambulatory aid use),auto,-365,-1,1,3,TRUE
 tissue_loss,Tissue loss (CLI indication — wound ulcer or gangrene),condition,-365,0,1,3,TRUE
 anemia,Anemia (Hgb less than 10 g/dL),measurement,-365,-1,1,2,FALSE
 insulin_dep,Insulin-dependent diabetes mellitus,drug,-365,-1,1,2,TRUE
