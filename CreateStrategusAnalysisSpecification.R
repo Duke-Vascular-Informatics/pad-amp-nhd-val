@@ -162,14 +162,22 @@ cohortGeneratorSpecs   <- cg$createModuleSpecifications(generateStats = TRUE)
 #     CohortGenerator, and the covariate cohorts' relationships to each other
 #     are a modelling detail the score definitions already fix.
 #
-# DELIBERATELY LEFT ON:
-#   runIncludedSourceConcepts = TRUE
-#     Also a large-CDM scan, but it answers a question that is genuinely open
-#     on a database this study has not run against before: does Duke's source
-#     coding actually map into these concept sets, or are the cohorts quietly
-#     under-capturing? Keep it for at least the first Duke run; it is a
-#     reasonable thing to disable on subsequent re-runs of the SAME database
-#     once that has been confirmed.
+# runIncludedSourceConcepts = FALSE   (turned off 2026-10-15)
+#     It was kept on for the first Duke runs to answer one open question: does Duke's
+#     source coding actually map into these concept sets, or are the cohorts quietly
+#     under-capturing? Two real Duke runs have produced that output; nothing in the report
+#     or the pipeline reads it (no code consumes the cd_included_source_concept files), and
+#     a third run was cut short on 2026-10-15 when SQL Server killed the session during the
+#     whole-CDM concept-counts scan this diagnostic needs. Turn it back on if a cohort
+#     definition is edited here or the database is changed, and that question reopens.
+#
+# STILL TRIGGERS THAT SAME WHOLE-CDM SCAN: runBreakdownIndexEvents = TRUE.
+#     CohortDiagnostics 3.4.2 builds the internal concept-counts table
+#     (executeDiagnostics: "if (runIncludedSourceConcepts || runOrphanConcepts ||
+#     runBreakdownIndexEvents)") when ANY of those three is on, so switching off only
+#     included source concepts does not remove the scan that was killed (about 3.7 + 4.5
+#     minutes on the Oct 15 run). Index-event breakdown (which concepts triggered cohort
+#     entry) is also unread by the report. Disable it as well to drop the scan entirely.
 #
 # These only take effect after re-running this script -- Strategus reads the
 # spec JSON, not this file (see the staleness guard in StrategusCodeToRun.R).
@@ -177,7 +185,7 @@ cd <- CohortDiagnosticsModule$new()
 cohortDiagnosticsSpecs <- cd$createModuleSpecifications(
   cohortIds                         = c(targetId),
   runInclusionStatistics            = FALSE,
-  runIncludedSourceConcepts         = TRUE,
+  runIncludedSourceConcepts         = FALSE,
   runOrphanConcepts                 = FALSE,
   runBreakdownIndexEvents           = TRUE,
   runVisitContext                   = TRUE,

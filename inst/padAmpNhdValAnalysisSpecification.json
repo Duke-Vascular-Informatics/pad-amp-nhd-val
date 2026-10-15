@@ -109,7 +109,7 @@
       "settings": {
         "cohortIds": 9100011,
         "runInclusionStatistics": false,
-        "runIncludedSourceConcepts": true,
+        "runIncludedSourceConcepts": false,
         "runOrphanConcepts": false,
         "runTimeSeries": false,
         "runVisitContext": true,
