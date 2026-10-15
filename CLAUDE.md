@@ -45,9 +45,9 @@ cohort), `tests/regression/test_cohort_vs_domain_covariates.R`.
 
 ### Data source
 
-Physical CDM `omop_synth_pad_amp_v2`, produced by **`pad-amp-dispo-synth`** and
+Physical CDM `omop_synth_pad_amp_v3`, produced by **`pad-amp-synth`** and
 registered in the workspace's `synthetic_data/registry.yaml` (format: [charon's synthetic_data README](https://github.com/Duke-Vascular-Informatics/charon/blob/main/synthetic_data/README.md)) as `pad_amp` (this study is pinned to
-version v2 as of the 2026-08-09 consolidation). Strategus itself reads a view-overlay
+version v3 as of 2026-10-11; it was v2 before). Strategus itself reads a view-overlay
 (`pad_amp_nhd_val_cdm_test`) that unions the CDM with `omop_vocab`, because
 `Strategus::createCdmExecutionSettings` has no vocabulary-schema parameter. The runner
 builds that overlay automatically if it is missing. The custom step and report query

@@ -2,7 +2,7 @@
 # StrategusCodeToRun.R  —  PIPELINE STEP 2
 #
 # Runs the pad-amp-nhd-val analysis in the devcontainer against the
-# pad_amp_dispo synthetic CDM: Strategus, the custom scoring step, and the
+# pad_amp synthetic CDM: Strategus, the custom scoring step, and the
 # report-input extract. This repo is Strategus-faithful and stops here —
 # the Word manuscript is a SEPARATE repo, pad-amp-nhd-val-report, run as its
 # own step against this run's output/ directory. See charon's "Multi-Repo Analysis
@@ -24,9 +24,9 @@
 #                            to consume (R/extract_report_inputs.R)
 #
 # DATA SOURCE
-#   Physical CDM  : omop_synth_pad_amp_v2   (built by pad-amp-dispo-synth,
-#                   registry id pad_amp, version v2 as of the 2026-08-09
-#                   consolidation). MUST match the physical schema the
+#   Physical CDM  : omop_synth_pad_amp_v3   (built by pad-amp-synth,
+#                   registry id pad_amp, version v3, moved from v2 on
+#                   2026-10-11). MUST match the physical schema the
 #                   overlay below was actually built from -- these drifting
 #                   apart is a silent cross-schema person_id join, not an
 #                   error. Found out of sync 2026-08-11: this default (and
@@ -66,9 +66,9 @@ Sys.setenv(DATABASECONNECTOR_JAR_FOLDER = "/workspace/synthea-omop-template/driv
 omopDatabase       <- Sys.getenv("OMOP_DATABASE", unset = "omop_synth")
 overlaySchemaBare  <- Sys.getenv("OMOP_CDM_SCHEMA_OVERRIDE",     unset = "pad_amp_nhd_val_cdm_test")
 resultsSchemaBare  <- Sys.getenv("OMOP_RESULTS_SCHEMA_OVERRIDE", unset = "pad_amp_nhd_val_results")
-physicalCdmSchema  <- Sys.getenv("OMOP_PHYSICAL_CDM_SCHEMA",     unset = "omop_synth_pad_amp_v2")
+physicalCdmSchema  <- Sys.getenv("OMOP_PHYSICAL_CDM_SCHEMA",     unset = "omop_synth_pad_amp_v3")
 vocabSchemaBare    <- Sys.getenv("OMOP_VOCAB_SCHEMA",            unset = "omop_vocab")
-overlayRegistryId  <- "pad_amp_dispo"   # synthetic_data/registry.yaml id (former_ids -> pad_amp)
+overlayRegistryId  <- "pad_amp"   # synthetic_data/registry.yaml id
 
 cdmDatabaseSchema  <- paste0(omopDatabase, ".", overlaySchemaBare)
 workDatabaseSchema <- paste0(omopDatabase, ".", resultsSchemaBare)
