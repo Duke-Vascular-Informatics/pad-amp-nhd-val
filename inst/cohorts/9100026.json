@@ -1,6 +1,6 @@
 {
   "cdmVersionRange": ">=5.0.0",
-  "_README": ["Dependent functional status - the Subramaniam mFI-5 fs_dep item (1 point): partial or total dependence for activities of daily living.", "REVISED 2026-10-05 (replaces 9100005, which is shared with pad-amp-nhd-prog). The old set (Frailty + Impaired mobility, both with descendants) measured MOBILITY and mild frailty, not ADL dependence, and overlapped the ambulatory item.", "New set = ADL-dependence findings (Dependent for bathing/dressing/feeding/grooming/hygiene/drinking/rising/sitting/standing/walking; Needs help with ...; Requires assistance with ...) + Bed-ridden + Confined to chair + Severe frailty (CFS 7: completely dependent for personal care). Mild / moderate frailty and the deprecated quality-measure concept are deliberately dropped. IADL concepts (housework, shopping, cooking, medications) are NOT included: the mFI-5 item is ADL dependence.", "TWO primary criteria because the set spans two OMOP domains: Severe frailty is Condition, the rest are Observation.", "Overlap with the ambulatory cohort 9100027 is deliberate and clinically meaningful: Dependent for walking, Needs help with walking, Bed-ridden and Confined to chair are both ADL dependence and an ambulatory deficit.", "PrimaryCriteriaLimit / QualifiedLimit / ExpressionLimit are all \"All\" and EndStrategy is StartDate+0, unlike the [DVI] VA-FI cohorts (1797948-1797977) which are \"First\". A first-ever-only cohort cannot answer a lookback-window question."],
+  "_README": ["Dependent functional status - the Subramaniam mFI-5 fs_dep item (1 point): partial or total dependence for activities of daily living.", "REVISED 2026-10-05 (replaces 9100005, which is shared with pad-amp-nhd-prog). The old set (Frailty + Impaired mobility, both with descendants) measured MOBILITY and mild frailty, not ADL dependence, and overlapped the ambulatory item.", "New set = ADL-dependence findings (Dependent for bathing/dressing/feeding/grooming/hygiene/drinking/rising/sitting/standing/walking; Needs help with ...; Requires assistance with ...) + Bed-ridden + Confined to chair + Severe frailty (CFS 7: completely dependent for personal care). Mild / moderate frailty and the deprecated quality-measure concept are deliberately dropped. IADL concepts (housework, shopping, cooking, medications) are NOT included: the mFI-5 item is ADL dependence.", "TWO primary criteria because the set spans two OMOP domains: Severe frailty is Condition, the rest are Observation.", "Overlap with the ambulatory cohorts 9100027/9100028 is deliberate and clinically meaningful: Dependent for walking, Needs help with walking, Bed-ridden and Confined to chair are both ADL dependence and an ambulatory deficit.", "ADDED 2026-10-15 after the Duke export showed this item at 3.4% (20 of 587): 4022073 Dependence on wheelchair (55 patients at Duke, never in any earlier set) and the three HCPCS 'Self care functional limitation' PT-reporting codes (current / projected goal / discharge status; about 56 patients; DEPRECATED codes, severity modifier not retained in OMOP, so presence means a PT reported a self-care limitation of any severity). Broad on purpose: the study team wants anyone with a functional limitation regardless of etiology, because these patients are likely undercounted.", "PrimaryCriteriaLimit / QualifiedLimit / ExpressionLimit are all \"All\" and EndStrategy is StartDate+0, unlike the [DVI] VA-FI cohorts (1797948-1797977) which are \"First\". A first-ever-only cohort cannot answer a lookback-window question."],
   "ConceptSets": [
     {
       "id": 0,
@@ -418,6 +418,74 @@
               "DOMAIN_ID": "Observation",
               "VOCABULARY_ID": "SNOMED",
               "CONCEPT_CLASS_ID": "Clinical Finding"
+            },
+            "isExcluded": false,
+            "includeDescendants": false,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 4022073,
+              "CONCEPT_NAME": "Dependence on wheelchair",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "105503008",
+              "DOMAIN_ID": "Observation",
+              "VOCABULARY_ID": "SNOMED",
+              "CONCEPT_CLASS_ID": "Clinical Finding"
+            },
+            "isExcluded": false,
+            "includeDescendants": false,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 43533317,
+              "CONCEPT_NAME": "Self care functional limitation, current status, at therapy episode outset and at reporting intervals (Deprecated)",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "G8987",
+              "DOMAIN_ID": "Observation",
+              "VOCABULARY_ID": "HCPCS",
+              "CONCEPT_CLASS_ID": "HCPCS"
+            },
+            "isExcluded": false,
+            "includeDescendants": false,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 43533284,
+              "CONCEPT_NAME": "Self care functional limitation, projected goal status, at therapy episode outset, at reporting intervals, and at discharge or to end reporting (Deprecated)",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "G8988",
+              "DOMAIN_ID": "Observation",
+              "VOCABULARY_ID": "HCPCS",
+              "CONCEPT_CLASS_ID": "HCPCS"
+            },
+            "isExcluded": false,
+            "includeDescendants": false,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 43533210,
+              "CONCEPT_NAME": "Self care functional limitation, discharge status, at discharge from therapy or to end reporting (Deprecated)",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "G8989",
+              "DOMAIN_ID": "Observation",
+              "VOCABULARY_ID": "HCPCS",
+              "CONCEPT_CLASS_ID": "HCPCS"
             },
             "isExcluded": false,
             "includeDescendants": false,

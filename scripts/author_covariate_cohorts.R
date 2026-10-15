@@ -3,7 +3,7 @@
 # scripts/author_covariate_cohorts.R
 #
 # Purpose : Author the seven Limit=All covariate cohorts added on 2026-10-05
-#           (ids 9100021-9100027) as circe cohort JSON under inst/cohorts/.
+#           (ids 9100021-9100028) as circe cohort JSON under inst/cohorts/.
 #           This repo is R-only, so the JSON is generated here from a single
 #           declarative table rather than hand-edited.
 # Inputs  : A live connection to the omop_vocab schema (concept metadata for the
@@ -49,6 +49,68 @@ suppressMessages({
 })
 
 Sys.setenv(DATABASECONNECTOR_JAR_FOLDER = "/workspace/synthea-omop-template/drivers/jdbc-runtime")
+
+# -----------------------------------------------------------------------------
+# Connect (the HCPCS device list below and the concept-metadata fetch both need it).
+# -----------------------------------------------------------------------------
+cd <- createConnectionDetails(
+  dbms = "sql server",
+  server   = Sys.getenv("MSSQL_HOST", unset = "mssql_dev"),
+  user     = Sys.getenv("MSSQL_USER", unset = "sa"),
+  password = Sys.getenv("MSSQL_SA_PASSWORD"),
+  extraSettings = paste0("database=omop_synth;trustServerCertificate=true;portNumber=",
+                         Sys.getenv("MSSQL_PORT", unset = "1433"))
+)
+con <- connect(cd)
+on.exit(disconnect(con), add = TRUE)
+
+
+# -----------------------------------------------------------------------------
+# HCPCS ambulatory-aid DEVICE concepts, selected by HCPCS code range.
+#
+# Duke records canes, crutches, walkers and wheelchairs as HCPCS device_exposure rows
+# (Characterization of the 2026-10-15 export), NOT as the SNOMED Device concepts, so the
+# SNOMED walker/frame/crutch concepts alone capture almost nothing. All three ranges are
+# Device-domain, standard and valid in this vocabulary ([vocab query] 2026-10-15):
+#   E0100-E0118  canes and crutches        (10 concepts)
+#   E0130-E0149  walkers                    (12 concepts)
+#   E1050-E1298  wheelchairs and related    (66 concepts; includes attachments and seat
+#                modifications -- accepted for the same reason as SNOMED Wheelchair's
+#                accessories: a parts record still implies wheelchair use)
+# Selected by range at author time so a re-run tracks the vocabulary; the covariate CSVs
+# carry the same ids and the regression test fails if the two ever differ.
+# -----------------------------------------------------------------------------
+hcpcs_aid_ids <- querySql(con, "
+  SELECT concept_id FROM omop_vocab.concept
+  WHERE vocabulary_id = 'HCPCS' AND standard_concept = 'S' AND invalid_reason IS NULL
+    AND domain_id = 'Device'
+    AND ((concept_code BETWEEN 'E0100' AND 'E0118') OR (concept_code BETWEEN 'E0130' AND 'E0149')
+      OR (concept_code BETWEEN 'E1050' AND 'E1298'))
+  ORDER BY concept_code")[[1]]
+if (length(hcpcs_aid_ids) != 88L)
+  stop("Expected 88 HCPCS aid device concepts, found ", length(hcpcs_aid_ids),
+       " -- the vocabulary changed; re-verify the E-code ranges before authoring.")
+hcpcs_aid_items <- lapply(as.integer(hcpcs_aid_ids), function(i) list(i, FALSE, FALSE))
+
+# Device concepts shared by the strict and broad ambulatory cohorts.
+aid_device_items <- c(
+  list(list(4240470L,  TRUE, FALSE),   # [vocab query] SNOMED: Wheelchair (+ descendants, 2026-08-03 decision)
+       list(37165652L, TRUE, FALSE),   # [vocab query] Wheeled walker
+       list(4141765L,  TRUE, FALSE),   # [vocab query] SNOMED: Walking frame
+       list(4251933L,  TRUE, FALSE)),  # [vocab query] SNOMED: Crutch
+  hcpcs_aid_items)                     # [vocab query] HCPCS canes / crutches / walkers / wheelchairs (88)
+
+# Observation concepts that mean "uses an ambulatory aid" -- the STRICT (Iannuzzi) set.
+aid_obs_items <- list(
+  list(4012645L, TRUE,  FALSE),  # [vocab query] SNOMED: Walking aid use
+  list(4044714L, FALSE, FALSE),  # [vocab query] SNOMED: Using wheelchair
+  list(4022073L, FALSE, FALSE),  # [vocab query] SNOMED: Dependence on wheelchair (NEW 2026-10-15; 55 of 587 at Duke)
+  list(4052477L, FALSE, FALSE),  # [vocab query] SNOMED: Needs walking aid in home
+  list(4052045L, FALSE, FALSE),  # [vocab query] SNOMED: Mobile outside with aid
+  list(4032531L, FALSE, FALSE),  # [vocab query] SNOMED: Impaired wheelchair mobility
+  list(619446L,  FALSE, FALSE),  # [vocab query] Does mobilize using walker
+  list(619444L,  FALSE, FALSE)   # [vocab query] Does mobilize using crutch
+)
 
 # -----------------------------------------------------------------------------
 # Declarative cohort table.
@@ -120,7 +182,8 @@ cohorts <- list(
       "REVISED 2026-10-05 (replaces 9100005, which is shared with pad-amp-nhd-prog). The old set (Frailty + Impaired mobility, both with descendants) measured MOBILITY and mild frailty, not ADL dependence, and overlapped the ambulatory item.",
       "New set = ADL-dependence findings (Dependent for bathing/dressing/feeding/grooming/hygiene/drinking/rising/sitting/standing/walking; Needs help with ...; Requires assistance with ...) + Bed-ridden + Confined to chair + Severe frailty (CFS 7: completely dependent for personal care). Mild / moderate frailty and the deprecated quality-measure concept are deliberately dropped. IADL concepts (housework, shopping, cooking, medications) are NOT included: the mFI-5 item is ADL dependence.",
       "TWO primary criteria because the set spans two OMOP domains: Severe frailty is Condition, the rest are Observation.",
-      "Overlap with the ambulatory cohort 9100027 is deliberate and clinically meaningful: Dependent for walking, Needs help with walking, Bed-ridden and Confined to chair are both ADL dependence and an ambulatory deficit."),
+      "Overlap with the ambulatory cohorts 9100027/9100028 is deliberate and clinically meaningful: Dependent for walking, Needs help with walking, Bed-ridden and Confined to chair are both ADL dependence and an ambulatory deficit.",
+      "ADDED 2026-10-15 after the Duke export showed this item at 3.4% (20 of 587): 4022073 Dependence on wheelchair (55 patients at Duke, never in any earlier set) and the three HCPCS 'Self care functional limitation' PT-reporting codes (current / projected goal / discharge status; about 56 patients; DEPRECATED codes, severity modifier not retained in OMOP, so presence means a PT reported a self-care limitation of any severity). Broad on purpose: the study team wants anyone with a functional limitation regardless of etiology, because these patients are likely undercounted."),
     sets = list(
       list(name = "[DVI] Dependent Functional Status - Condition domain", criterion = "ConditionOccurrence",
            items = list(list(45770280L, FALSE, FALSE))),   # [vocab query] SNOMED: Severe frailty
@@ -148,58 +211,60 @@ cohorts <- list(
              list(35610195L, FALSE, FALSE),  # [vocab query] SNOMED: Requires assistance with personal care activities
              list(42537792L, FALSE, FALSE),  # [vocab query] SNOMED: Requires continuous supervision for activities of daily living
              list(4058155L,  FALSE, FALSE),  # [vocab query] SNOMED: Bed-ridden
-             list(4058154L,  FALSE, FALSE)   # [vocab query] SNOMED: Confined to chair
+             list(4058154L,  FALSE, FALSE),  # [vocab query] SNOMED: Confined to chair
+             list(4022073L,  FALSE, FALSE),  # [vocab query] SNOMED: Dependence on wheelchair (added 2026-10-15)
+             list(43533317L, FALSE, FALSE),  # [vocab query] HCPCS: Self care functional limitation, current status (Deprecated) (added 2026-10-15)
+             list(43533284L, FALSE, FALSE),  # [vocab query] HCPCS: Self care functional limitation, projected goal status (Deprecated)
+             list(43533210L, FALSE, FALSE)   # [vocab query] HCPCS: Self care functional limitation, discharge status (Deprecated)
            )))
   ),
 
   `9100027` = list(
     readme = c(
-      "Ambulatory status - serves BOTH the Iannuzzi ambu_deficit item (3 points; use of an ambulatory aid) and the Kraiss sVQI-FS nonambulatory item (1 point; impaired preadmission ambulation). One cohort backs both; covariates/cohort_map.csv maps both items here.",
-      "REVISED 2026-10-05 (replaces 9100006, which is shared with pad-amp-nhd-prog).",
-      "DROPPED from the old set: 437643 Abnormal gait (94 descendants - 'Antalgic gait', 'Ataxic gait', 'Buttocks prominent when walking'... gait DESCRIPTORS, not an aid or a deficit in ambulation), 36714126 Difficulty walking (18 descendants of the same kind) and 4085915 Provision of long cane (a PROCEDURE - provision is not use).",
-      "KEPT: 4012645 Walking aid use, 4044714 Using wheelchair, 439405 Walking disability, 4240470 Wheelchair (includeDescendants=true per the 2026-08-03 clinical decision; the subtree also contains parts/accessories, accepted because a parts record still implies wheelchair use).",
-      "ADDED: walker / walking frame / crutch DEVICES (which the old set missed entirely), 'Does mobilize using walker / crutch', Bed-ridden, Confined to chair, Needs walking aid in home, Mobile outside with aid, Impaired wheelchair mobility, Unable to walk, Needs help with walking, Dependent for walking.",
-      "Two primary criteria (Observation, Device) - the declarative replacement for the pipeline's domain='auto' union. HIGHEST-RISK translation in this repo: querying a single domain once returned 0 of 225 patients. The regression test compares this cohort against query_auto_domain_covariate_counts() person for person."),
+      "Ambulatory AID USE (STRICT) - the Iannuzzi ambu_deficit item (3 points): use of an ambulatory aid.",
+      "SPLIT 2026-10-15. Until then one cohort (this id) backed BOTH the Iannuzzi item and the Kraiss sVQI-FS nonambulatory item. The two items measure different things -- Iannuzzi's published item is use of an aid; sVQI-FS's is impaired preadmission ambulation -- so the broad ambulation set now lives in 9100028 and this one keeps only aids and wheelchair dependence.",
+      "Observation: Walking aid use, Using wheelchair, Dependence on wheelchair (NEW; 55 of 587 at Duke), Needs walking aid in home, Mobile outside with aid, Impaired wheelchair mobility, Does mobilize using walker / crutch.",
+      "Device: SNOMED Wheelchair / Wheeled walker / Walking frame / Crutch (each + descendants) AND 88 HCPCS cane, crutch, walker and wheelchair device codes -- Duke records aids as HCPCS device_exposure, which the SNOMED concepts do not reach.",
+      "REMOVED vs the 2026-10-05 set: Walking disability, Unable to walk, Bed-ridden, Confined to chair, Needs help with walking, Dependent for walking (status findings, not aid use); they remain in 9100028.",
+      "Two primary criteria (Observation, Device). The regression test compares this cohort against query_auto_domain_covariate_counts() person for person."),
     sets = list(
-      list(name = "[DVI] Ambulatory Status - Observation domain", criterion = "Observation",
-           items = list(
-             list(4012645L, TRUE,  FALSE),  # [vocab query] SNOMED: Walking aid use
-             list(4044714L, FALSE, FALSE),  # [vocab query] SNOMED: Using wheelchair
-             list(439405L,  FALSE, FALSE),  # [vocab query] SNOMED: Walking disability
-             list(4086548L, FALSE, FALSE),  # [vocab query] SNOMED: Unable to walk
-             list(4058155L, FALSE, FALSE),  # [vocab query] SNOMED: Bed-ridden
-             list(4058154L, FALSE, FALSE),  # [vocab query] SNOMED: Confined to chair
-             list(4052477L, FALSE, FALSE),  # [vocab query] SNOMED: Needs walking aid in home
-             list(4052045L, FALSE, FALSE),  # [vocab query] SNOMED: Mobile outside with aid
-             list(4032531L, FALSE, FALSE),  # [vocab query] SNOMED: Impaired wheelchair mobility
-             list(619446L,  FALSE, FALSE),  # [vocab query] Does mobilize using walker
-             list(619444L,  FALSE, FALSE),  # [vocab query] Does mobilize using crutch
-             list(1450204L, FALSE, FALSE),  # [vocab query] SNOMED: Needs help with walking
-             list(4146424L, FALSE, FALSE)   # [vocab query] SNOMED: Dependent for walking
-           )),
-      list(name = "[DVI] Ambulatory Status - Device domain", criterion = "DeviceExposure",
-           items = list(
-             list(4240470L,  TRUE, FALSE),  # [vocab query] SNOMED: Wheelchair (+ descendants, 2026-08-03 decision)
-             list(37165652L, TRUE, FALSE),  # [vocab query] Wheeled walker
-             list(4141765L,  TRUE, FALSE),  # [vocab query] SNOMED: Walking frame
-             list(4251933L,  TRUE, FALSE)   # [vocab query] SNOMED: Crutch
-           )))
+      list(name = "[DVI] Ambulatory Aid Use - Observation domain", criterion = "Observation", items = aid_obs_items),
+      list(name = "[DVI] Ambulatory Aid Use - Device domain", criterion = "DeviceExposure", items = aid_device_items))
+  ),
+
+  `9100028` = list(
+    readme = c(
+      "Impaired ambulation (BROAD) - the Kraiss sVQI-FS nonambulatory item (1 point): any documented limitation of ambulation, regardless of etiology.",
+      "Added 2026-10-15 after the Duke export showed the previous (narrow) ambulatory set at 3.4% (20 of 587). The study team's rationale: these patients are likely undercounted, so the definition is deliberately broad.",
+      "= everything in 9100027 (aid use) PLUS: Impaired mobility WITH descendants (Bed-ridden, Confined to chair, Impaired bed mobility, Reduced mobility, Mobility poor, Mobility very poor, plus three aid-related members); Walking disability; Unable to walk; Needs help with walking; Dependent for walking; Difficulty walking and Abnormal gait WITH descendants (these were dropped on 2026-10-05 as 'gait descriptors' and carried most of the old signal -- 92 and 56 of 587 at Duke; the etiology-specific descendants such as 'Abnormal gait due to muscle weakness' are kept on purpose); and the three HCPCS 'Mobility: walking & moving around functional limitation' PT-reporting codes (current / projected goal / discharge status; about 78 patients; DEPRECATED codes, severity not retained, so presence means a PT reported a mobility limitation of any severity).",
+      "NOT included: PT/OT SERVICES (ADL training, gait training, PT evaluation) -- they record care delivered, not a status.",
+      "THREE primary criteria (Observation, Device, Condition): five descendants of Impaired mobility / Difficulty walking / Abnormal gait are Condition-domain concepts, so the Condition criterion repeats those three roots."),
+    sets = list(
+      list(name = "[DVI] Impaired Ambulation - Observation domain", criterion = "Observation",
+           items = c(aid_obs_items, list(
+             list(4306934L,  TRUE,  FALSE),  # [vocab query] SNOMED: Impaired mobility (+ descendants: Bed-ridden, Confined to chair, Reduced mobility, ...)
+             list(439405L,   FALSE, FALSE),  # [vocab query] SNOMED: Walking disability
+             list(4086548L,  FALSE, FALSE),  # [vocab query] SNOMED: Unable to walk
+             list(1450204L,  FALSE, FALSE),  # [vocab query] SNOMED: Needs help with walking
+             list(4146424L,  FALSE, FALSE),  # [vocab query] SNOMED: Dependent for walking
+             list(36714126L, TRUE,  FALSE),  # [vocab query] SNOMED: Difficulty walking (+ descendants; 92 of 587 at Duke)
+             list(437643L,   TRUE,  FALSE),  # [vocab query] SNOMED: Abnormal gait (+ descendants; 56 of 587 at Duke)
+             list(43533361L, FALSE, FALSE),  # [vocab query] HCPCS: Mobility: walking & moving around functional limitation, current status (Deprecated)
+             list(43533324L, FALSE, FALSE),  # [vocab query] HCPCS: Mobility ... projected goal status (Deprecated)
+             list(43533180L, FALSE, FALSE)   # [vocab query] HCPCS: Mobility ... discharge status (Deprecated)
+           ))),
+      list(name = "[DVI] Impaired Ambulation - Device domain", criterion = "DeviceExposure", items = aid_device_items),
+      # Five descendants of the restored roots are CONDITION-domain concepts (found by the
+      # domain-placement check 2026-10-15). An Observation criterion cannot see them, but the
+      # domain-query path would count them, so the cohort needs its own Condition criterion over
+      # the same roots. circe applies the concept set to condition_occurrence only, so this adds
+      # exactly the Condition-domain members and nothing else.
+      list(name = "[DVI] Impaired Ambulation - Condition domain", criterion = "ConditionOccurrence",
+           items = list(list(4306934L,  TRUE, FALSE),   # [vocab query] SNOMED: Impaired mobility (+ descendants)
+                        list(36714126L, TRUE, FALSE),   # [vocab query] SNOMED: Difficulty walking (+ descendants)
+                        list(437643L,   TRUE, FALSE)))) # [vocab query] SNOMED: Abnormal gait (+ descendants)
   )
 )
-
-# -----------------------------------------------------------------------------
-# Connect and fetch circe concept metadata for every id above.
-# -----------------------------------------------------------------------------
-cd <- createConnectionDetails(
-  dbms = "sql server",
-  server   = Sys.getenv("MSSQL_HOST", unset = "mssql_dev"),
-  user     = Sys.getenv("MSSQL_USER", unset = "sa"),
-  password = Sys.getenv("MSSQL_SA_PASSWORD"),
-  extraSettings = paste0("database=omop_synth;trustServerCertificate=true;portNumber=",
-                         Sys.getenv("MSSQL_PORT", unset = "1433"))
-)
-con <- connect(cd)
-on.exit(disconnect(con), add = TRUE)
 
 all_ids <- unique(unlist(lapply(cohorts, function(co)
   unlist(lapply(co$sets, function(s) vapply(s$items, `[[`, integer(1), 1))))))
@@ -216,6 +281,22 @@ if (length(missing) > 0) stop("Concept id(s) not in omop_vocab: ", paste(missing
 bad <- meta[is.na(meta$standard_concept) | meta$standard_concept != "S" |
             !is.na(meta$invalid_reason), ]
 if (nrow(bad) > 0) stop("Non-standard / invalid concept(s): ", paste(bad$concept_id, collapse = ", "))
+
+# Guard: the ids added 2026-10-15 were resolved by name; confirm each id still carries the name
+# it was verified under, so a transposed digit cannot slip into a cohort.
+expected_names <- c(`4022073` = "Dependence on wheelchair", `4310235` = "Reduced mobility",
+  `43533361` = "Mobility: walking & moving around functional limitation, current status",
+  `43533324` = "Mobility: walking & moving around functional limitation, projected goal status",
+  `43533180` = "Mobility: walking & moving around functional limitation, discharge status",
+  `43533317` = "Self care functional limitation, current status",
+  `43533284` = "Self care functional limitation, projected goal status",
+  `43533210` = "Self care functional limitation, discharge status",
+  `4306934` = "Impaired mobility", `36714126` = "Difficulty walking", `437643` = "Abnormal gait")
+for (id in names(expected_names)) {
+  got <- meta$concept_name[meta$concept_id == as.integer(id)]
+  if (length(got) == 1L && !startsWith(got, expected_names[[id]]))
+    stop("Concept ", id, " is '", got, "' but was verified as '", expected_names[[id]], "'.")
+}
 
 # circe's expression JSON labels a valid concept INVALID_REASON "V".
 concept_obj <- function(id) {

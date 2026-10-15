@@ -25,6 +25,11 @@
 #                     completely dependent for personal care). Mild / moderate
 #                     frailty, 'Frailty', 'Frail elderly' and the deprecated
 #                     quality-measure concept 40217254 are deliberately dropped.
+#   ADDED 2026-10-15 (the item read 3.4%, 20/587, at Duke; broad on purpose -- anyone with a
+#   functional limitation regardless of etiology): 4022073 Dependence on wheelchair (55 patients;
+#   never in any earlier set) and the three HCPCS 'Self care functional limitation' PT-reporting
+#   codes 43533317 / 43533284 / 43533210 (current / projected goal / discharge status; DEPRECATED
+#   codes, severity not retained, so presence means a PT reported a self-care limitation).
 #   IADL concepts (housework, shopping, cooking, medications) are NOT included.
 #   Overlap with the ambulatory set (walking dependence, bed-ridden, confined to
 #   chair) is intentional: those are both ADL dependence and an ambulatory deficit.
@@ -98,6 +103,10 @@ fs_dep,35610195,FALSE,,,,
 fs_dep,42537792,FALSE,,,,
 fs_dep,4058155,FALSE,,,,
 fs_dep,4058154,FALSE,,,,
+fs_dep,4022073,FALSE,,,,
+fs_dep,43533317,FALSE,,,,
+fs_dep,43533284,FALSE,,,,
+fs_dep,43533210,FALSE,,,,
 fs_dep,45770280,FALSE,,,,
 dm,201820,TRUE,,,,
 copd,255573,TRUE,,,,

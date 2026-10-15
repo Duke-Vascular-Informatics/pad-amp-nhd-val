@@ -302,11 +302,12 @@ the manuscript's Supplemental Table S2. Cohort ids `9100001`–`9100011` are
 claimed in this workspace's reserved local block
 ([`strategus-study-template/docs/STRATEGUS_CONVENTIONS.md`](https://github.com/Duke-Vascular-Informatics/strategus-study-template/blob/main/docs/STRATEGUS_CONVENTIONS.md) §6), outside the
 ATLAS-demo id range, and are shared with (byte-identical to, at fork time)
-`pad-amp-nhd-prog`'s own cohort definitions. Cohorts `9100021`–`9100027`
-(DM, HTN, HF, CAD, pneumonia, ADL-dependent functional status, ambulatory
-status) were added on 2026-10-05 in this repository's own sub-range; the
-dependent-functional-status and ambulatory-status cohorts replace `9100005`
-and `9100006`, which are left unchanged in `pad-amp-nhd-prog`.
+`pad-amp-nhd-prog`'s own cohort definitions. Cohorts `9100021`–`9100028`
+(DM, HTN, HF, CAD, pneumonia, ADL-dependent functional status, ambulatory aid
+use, impaired ambulation) were added on 2026-10-05 (`9100028` on 2026-10-15) in
+this repository's own sub-range; the dependent-functional-status and ambulatory
+cohorts replace `9100005` and `9100006`, which are left unchanged in
+`pad-amp-nhd-prog`.
 
 ---
 
@@ -319,11 +320,20 @@ and `9100006`, which are left unchanged in `pad-amp-nhd-prog`.
   distinguished (both classified as non-home).
 - **Item definitions are operationalisations, not the source instruments'
   own coding**: the mFI-5 "dependent functional status" item is mapped to
-  ADL-dependence findings, bed-ridden, confined-to-chair and severe frailty;
-  the Iannuzzi/sVQI-FS ambulatory items are mapped to walking-aid, wheelchair,
-  walker/frame/crutch, bed-ridden and unable-to-walk findings (gait
-  descriptors are excluded). Observation concepts are
-  sparsely recorded in routine EHR data, so both items likely under-count.
+  ADL-dependence findings, bed-ridden, confined-to-chair, severe frailty,
+  wheelchair dependence and the (deprecated) HCPCS self-care functional-limitation
+  reporting codes; the Iannuzzi ambulatory item is mapped narrowly to
+  ambulatory-aid use (walking aids, wheelchairs including wheelchair
+  dependence, walkers, frames, crutches, canes, as SNOMED and HCPCS device
+  concepts), and the sVQI-FS item broadly to any documented limitation of
+  ambulation regardless of etiology (adding impaired mobility, difficulty
+  walking, abnormal gait, bed-ridden, unable to walk and the deprecated HCPCS
+  mobility functional-limitation codes). The broad definitions deliberately
+  trade specificity for sensitivity because these patients are likely
+  undercounted in coded data; the HCPCS reporting codes carry no severity, so
+  their presence means a therapist reported a limitation of any degree.
+  Physical- and occupational-therapy services (ADL training, gait training)
+  are not used.
 - **Null imputation of measurement-based components**: anemia and
   underweight are scored from recorded hemoglobin and BMI values only. A
   patient with no measurement is scored as not meeting the component, the
