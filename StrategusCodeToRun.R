@@ -190,6 +190,30 @@ ParallelLogger::saveSettingsToJson(
   file.path(outputLocation, databaseName, "executionSettings.json")
 )
 
+# ---- Cohort freshness: prepare ---------------------------------------------------
+# Strategus skips any cohort whose definition checksum is unchanged. The target
+# (9100011) and outcome (9100001) are modified AFTER generation (study-period and
+# facility exclusions, hand-authored outcome SQL), so a skipped copy would already
+# carry those edits and the post-steps would run twice on it. Force those two to
+# regenerate every run, and regenerate everything when the CDM release or study
+# window changed. Cohorts whose DEFINITION changed regenerate on their own.
+# See R/cohort_freshness.R. No manual reset_incremental_state needed.
+source("config.R")
+config <- get_validation_config()
+source("R/cohort_freshness.R")
+runStart <- Sys.time()
+conn <- DatabaseConnector::connect(connectionDetails)
+prepare_cohort_generation(
+  connection           = conn,
+  cohortDatabaseSchema = workDatabaseSchema,
+  cohortTable          = cohortTableName,
+  cdmDatabaseSchema    = cdmDatabaseSchema,
+  alwaysRegenerateIds  = c(config$target_cohort_id, config$outcome_cohort_id),
+  studyStartDate       = config$study_start_date,
+  studyEndDate         = config$study_end_date
+)
+DatabaseConnector::disconnect(conn)
+
 Strategus::execute(
   analysisSpecifications = analysisSpecifications,
   executionSettings      = executionSettings,
@@ -197,6 +221,27 @@ Strategus::execute(
 )
 message("Strategus execution complete -> ",
         file.path(outputLocation, databaseName, "strategusOutput"))
+
+# ---- Cohort freshness: verify ----------------------------------------------------
+# Runs BEFORE any post-step, while the cohort table is exactly what CohortGenerator
+# just wrote. Stops the run if any cohort's live subject count differs from the
+# count CohortGenerator generated, or if a cohort in the specification was never
+# generated; otherwise reports which cohorts were regenerated vs reused.
+conn <- DatabaseConnector::connect(connectionDetails)
+assert_cohort_generation_consistent(
+  connection           = conn,
+  cohortDatabaseSchema = workDatabaseSchema,
+  cohortTable          = cohortTableName,
+  cdmDatabaseSchema    = cdmDatabaseSchema,
+  strategusOutputDir   = file.path(outputLocation, databaseName, "strategusOutput"),
+  expectedCohortIds    = as.integer(unlist(lapply(analysisSpecifications$sharedResources,
+                                  function(r) vapply(if (is.null(r$cohortDefinitions)) list() else r$cohortDefinitions,
+                                                     function(x) as.integer(x$cohortId), integer(1))))),
+  runStart             = runStart,
+  studyStartDate       = config$study_start_date,
+  studyEndDate         = config$study_end_date
+)
+DatabaseConnector::disconnect(conn)
 
 # ---- Load study config ---------------------------------------------------------
 # Moved up from just before the scoring step below: restrict_to_study_period()
