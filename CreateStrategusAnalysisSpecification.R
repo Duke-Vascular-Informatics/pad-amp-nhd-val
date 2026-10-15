@@ -171,13 +171,20 @@ cohortGeneratorSpecs   <- cg$createModuleSpecifications(generateStats = TRUE)
 #     whole-CDM concept-counts scan this diagnostic needs. Turn it back on if a cohort
 #     definition is edited here or the database is changed, and that question reopens.
 #
-# STILL TRIGGERS THAT SAME WHOLE-CDM SCAN: runBreakdownIndexEvents = TRUE.
-#     CohortDiagnostics 3.4.2 builds the internal concept-counts table
-#     (executeDiagnostics: "if (runIncludedSourceConcepts || runOrphanConcepts ||
-#     runBreakdownIndexEvents)") when ANY of those three is on, so switching off only
-#     included source concepts does not remove the scan that was killed (about 3.7 + 4.5
-#     minutes on the Oct 15 run). Index-event breakdown (which concepts triggered cohort
-#     entry) is also unread by the report. Disable it as well to drop the scan entirely.
+# runBreakdownIndexEvents = FALSE   (turned off 2026-10-15)
+#     CohortDiagnostics 3.4.2 builds an internal concept-counts table -- a whole-CDM scan that
+#     took about 3.7 + 4.5 minutes on the Oct 15 PRCC run, and during which SQL Server killed
+#     the session -- when ANY of runIncludedSourceConcepts, runOrphanConcepts or
+#     runBreakdownIndexEvents is on (executeDiagnostics: "if (runIncludedSourceConcepts ||
+#     runOrphanConcepts || runBreakdownIndexEvents)"). With all three off the scan is skipped.
+#     Index-event breakdown (which concepts triggered cohort entry) is read by nothing here:
+#     the CONSORT diagram's "entry criteria met" stage is CohortGenerator's base count
+#     (cg_cohort_attrition.csv), not this diagnostic. Turn it back on, together with
+#     runIncludedSourceConcepts and runOrphanConcepts, if a cohort definition is edited here
+#     or the database changes and the "did the entry criteria capture what we expect"
+#     question reopens.
+#
+# Remaining on: runVisitContext only.
 #
 # These only take effect after re-running this script -- Strategus reads the
 # spec JSON, not this file (see the staleness guard in StrategusCodeToRun.R).
@@ -187,7 +194,7 @@ cohortDiagnosticsSpecs <- cd$createModuleSpecifications(
   runInclusionStatistics            = FALSE,
   runIncludedSourceConcepts         = FALSE,
   runOrphanConcepts                 = FALSE,
-  runBreakdownIndexEvents           = TRUE,
+  runBreakdownIndexEvents           = FALSE,
   runVisitContext                   = TRUE,
   runIncidenceRate                  = FALSE,
   runCohortRelationship             = FALSE,

@@ -113,7 +113,7 @@
         "runOrphanConcepts": false,
         "runTimeSeries": false,
         "runVisitContext": true,
-        "runBreakdownIndexEvents": true,
+        "runBreakdownIndexEvents": false,
         "runIncidenceRate": false,
         "runCohortRelationship": false,
         "runTemporalCohortCharacterization": false,
