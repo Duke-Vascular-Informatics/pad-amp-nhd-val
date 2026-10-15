@@ -50,6 +50,13 @@
 #                                    read by the report (that decision is now
 #                                    baked into exclude_facility_admissions()
 #                                    instead) -- kept as a standing diagnostic.
+#   score_component_definitions.csv  Tables 3a-c metadata: one row per (score,
+#                                    component, concept) with the component's
+#                                    lookback window, each concept's vocabulary
+#                                    name, and include_descendants. Definition
+#                                    metadata only -- no counts, no patient data.
+#                                    Added 2026-10-15; see
+#                                    .extract_score_definitions()'s own header.
 #   agg_consort_flow.csv             CONSORT funnel: one row per cohort stage
 #                                    (entry criteria, each circe InclusionRule,
 #                                    then the facility-admission exclusion),
@@ -954,6 +961,12 @@ extract_report_inputs <- function(config,
   # which is why they are easy to miss — see the section 4 header.
   written <- c(written, .extract_supplemental(config, connection_details, inputs_dir))
 
+  # ---- Score component definitions (Tables 3a-c) ------------------------------
+  # Lookback window + parent concepts per component, read from the SAME covariate
+  # CSVs the scoring step uses, with concept names from the live vocabulary. Added
+  # 2026-10-15 so the report's Table 3 columns cannot drift from what was scored.
+  written <- c(written, .extract_score_definitions(config, connection_details, inputs_dir))
+
   # ---- CONSORT patient-flow funnel --------------------------------------------
   # Added 2026-09-15. Reads two files Strategus's own CohortGeneratorModule
   # already writes (generateStats = TRUE is on, see
@@ -1309,6 +1322,127 @@ extract_report_inputs <- function(config,
   written
 }
 
+
+
+# =============================================================================
+# SCORE COMPONENT DEFINITIONS (Tables 3a-c: lookback window + parent concepts)
+#
+# Writes report_inputs/score_component_definitions.csv: one row per
+# (score, component, concept), long form. The report builds each table's
+# "Lookback window" and "Parent concepts" columns from it -- a trailing "*" on a
+# concept where include_descendants is TRUE -- instead of carrying a hand-typed
+# copy that has to be kept in sync with these CSVs.
+#
+# SOURCES. Component windows come from each score's covariate_definitions_file
+# (covariates*.csv); concepts, include_descendants, concept_role and any per-row
+# window override come from its covariate_concepts_file. config$scores lists
+# the three score file pairs (the PRCC bundle's config.R defines the same list).
+# Concept names are queried from the vocabulary schema so they match the
+# vocabulary release the analysis actually ran against.
+#
+# NOT PATIENT DATA, NOT COUNTS: pure study-design metadata, so it needs no
+# small-cell suppression and carries none of the guardrail's count columns.
+#
+# COLUMNS
+#   score_id, covariate_id, covariate_name
+#   covariate_lookback_start_day / _end_day   the component's own window
+#   concept_id, concept_name, vocabulary_id   NA for components with no concept
+#                                             rows (age bands, computed in R)
+#   include_descendants                       TRUE/FALSE
+#   concept_role                              blank, "exclude", "white_race",
+#                                             "creatinine", "bmi_direct", ...
+#   concept_lookback_start_day / _end_day     per-row window override; blank =
+#                                             use the component's own window
+#                                             (mFI-5's pneumonia arm only today)
+# =============================================================================
+
+#' Build report_inputs/score_component_definitions.csv.
+#'
+#' @param config             Study config; uses config$scores (file paths) and
+#'                           config$vocab_schema.
+#' @param connection_details DatabaseConnector connection details (read-only
+#'                           vocabulary lookup of concept names).
+#' @param inputs_dir         Destination directory.
+#' @return "score_component_definitions" if written, else character(0). Any
+#'   failure (missing CSV, vocabulary query error) writes NOTHING, so the report
+#'   falls back to its built-in text rather than rendering a half-filled table.
+.extract_score_definitions <- function(config, connection_details, inputs_dir) {
+  if (length(config$scores) == 0L) {
+    message("[extract] score_component_definitions: config$scores is empty -- skipped")
+    return(character(0))
+  }
+
+  read_csv_nocomment <- function(f) utils::read.csv(f, comment.char = "#", stringsAsFactors = FALSE)
+  to_logical <- function(x) tolower(trimws(as.character(x))) %in% c("true", "1", "t", "yes", "y")
+
+  out <- tryCatch({
+    rows <- list()
+    for (sc in config$scores) {
+      cov <- read_csv_nocomment(sc$covariate_definitions_file)
+      con <- read_csv_nocomment(sc$covariate_concepts_file)
+      if (!"concept_role" %in% names(con)) con$concept_role <- NA_character_
+      for (w in c("lookback_start_day", "lookback_end_day")) {
+        if (!w %in% names(con)) con[[w]] <- NA_integer_
+        con[[w]] <- suppressWarnings(as.integer(con[[w]]))
+      }
+      for (i in seq_len(nrow(cov))) {
+        cid <- cov$covariate_id[i]
+        cc  <- con[con$covariate_id == cid, , drop = FALSE]
+        base <- data.frame(
+          score_id = sc$id, covariate_id = cid, covariate_name = cov$covariate_name[i],
+          covariate_lookback_start_day = as.integer(cov$lookback_start_day[i]),
+          covariate_lookback_end_day   = as.integer(cov$lookback_end_day[i]),
+          stringsAsFactors = FALSE)
+        if (nrow(cc) == 0L) {
+          # No concept rows (age bands are computed from year_of_birth): keep one
+          # row so the component still appears, with the concept columns empty.
+          rows[[length(rows) + 1L]] <- cbind(base, concept_id = NA_integer_,
+            include_descendants = NA, concept_role = NA_character_,
+            concept_lookback_start_day = NA_integer_, concept_lookback_end_day = NA_integer_)
+        } else {
+          rows[[length(rows) + 1L]] <- cbind(base[rep(1L, nrow(cc)), , drop = FALSE],
+            concept_id = as.integer(cc$concept_id),
+            include_descendants = to_logical(cc$include_descendants),
+            concept_role = ifelse(is.na(cc$concept_role) | cc$concept_role == "", NA_character_,
+                                  tolower(trimws(cc$concept_role))),
+            concept_lookback_start_day = cc$lookback_start_day,
+            concept_lookback_end_day   = cc$lookback_end_day)
+        }
+      }
+    }
+    defs <- do.call(rbind, rows)
+    rownames(defs) <- NULL
+
+    # Concept names from the vocabulary actually used for this run.
+    ids <- unique(stats::na.omit(defs$concept_id))
+    conn <- DatabaseConnector::connect(connection_details)
+    on.exit(try(DatabaseConnector::disconnect(conn), silent = TRUE), add = TRUE)
+    nm <- DatabaseConnector::querySql(conn, SqlRender::translate(SqlRender::render(
+      "SELECT concept_id, concept_name, vocabulary_id FROM @vocab_schema.concept WHERE concept_id IN (@ids)",
+      vocab_schema = config$vocab_schema %||% "omop_vocab", ids = paste(ids, collapse = ",")),
+      targetDialect = "sql server"))
+    names(nm) <- tolower(names(nm))
+    missing <- setdiff(ids, nm$concept_id)
+    if (length(missing) > 0L) stop("concept id(s) not found in the vocabulary: ", paste(missing, collapse = ", "))
+
+    # merge() reorders rows, so number them first and restore the study CSV's own
+    # order (score, component, concept) afterwards -- the report lists a
+    # component's concepts in that order.
+    defs$.row <- seq_len(nrow(defs))
+    defs <- merge(defs, nm, by = "concept_id", all.x = TRUE, sort = FALSE)
+    defs <- defs[order(defs$.row), ]
+    defs$.row <- NULL
+    defs[, c("score_id", "covariate_id", "covariate_name",
+             "covariate_lookback_start_day", "covariate_lookback_end_day",
+             "concept_id", "concept_name", "vocabulary_id", "include_descendants", "concept_role",
+             "concept_lookback_start_day", "concept_lookback_end_day")]
+  }, error = function(e) {
+    message("[extract] score_component_definitions: failed -- ", conditionMessage(e))
+    NULL
+  })
+
+  if (.write_report_input(out, inputs_dir, "score_component_definitions")) "score_component_definitions" else character(0)
+}
 
 # =============================================================================
 # 4b. CONSORT PATIENT-FLOW FUNNEL
