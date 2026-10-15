@@ -80,6 +80,19 @@ folder before re-running.
   `(score_id, score_item_id)`. Never key on `covariate_id` alone: `anemia` means two
   different thresholds, `chf` two different windows, and `ambu_deficit`/`nonambulatory`
   are one concept set under two names.
+- **Cohort regeneration is automatic; you do not reset the incremental state after a cohort
+  edit.** `R/cohort_freshness.R` runs around `Strategus::execute()`: it forces the two cohorts
+  modified after generation (target `9100011`, outcome `9100001`) to regenerate every run,
+  clears every generation record if the CDM release/vocabulary or study window changed since
+  the last run, and lets CohortGenerator regenerate any cohort whose definition changed. Right
+  after execute and before any post-step it verifies each cohort's live subject count equals
+  the count CohortGenerator generated (and that every cohort in the spec was generated), then
+  logs which cohorts were regenerated vs reused. Why: the target is edited in place by the
+  study-period/facility steps, so a reused copy made them run twice and the CONSORT funnel
+  blamed 293 exclusions on the study period instead of 31 + 262 (PRCC, 2026-10-15). The
+  CONSORT extractor also refuses to write a funnel whose stages do not chain. Tested by
+  `tests/regression/test_cohort_freshness.R`. `reset_incremental_state` remains for a fully
+  clean slate (e.g. repointing the physical CDM schema).
 - **Never resolve score identity from a file path.** The inherited pipeline selected the
   anemia threshold with `grepl("vqifs", <path>)`, which also matched output folders. Use
   `config$score_id`, which is deliberately `NULL` by default so a forgotten assignment

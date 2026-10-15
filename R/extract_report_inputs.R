@@ -1573,6 +1573,37 @@ extract_report_inputs <- function(config,
     ))
   }
 
+  # CHAIN CHECK. Each stage must start from where the previous one ended:
+  # CohortGenerator's final inclusion-rule count -> the study-period step's `before` ->
+  # its `after` -> the facility step's `before`. A break means a post-step ran on a cohort
+  # that was not freshly generated (the 2026-10-15 re-run: the cohort table was reused
+  # already narrowed, so the study-period step reported 587 -> 587 against a generated 880
+  # and the funnel blamed all 293 exclusions on the study period). Such a funnel is
+  # internally plausible and WRONG, so write nothing -- absence of the file is this
+  # function's "failed" signal and the report omits the figure.
+  chain <- character(0)
+  prev  <- utils::tail(a$person_count, 1)
+  prev_what <- "CohortGenerator's final inclusion-rule count"
+  if (!is.null(study_period_exclusion) && !is.null(study_period_exclusion$before)) {
+    if (study_period_exclusion$before != prev)
+      chain <- c(chain, sprintf("study-period step started from %s but %s was %s",
+                                study_period_exclusion$before, prev_what, prev))
+    prev <- study_period_exclusion$after; prev_what <- "the study-period step's 'after' count"
+  }
+  if (!is.null(facility_exclusion) && !is.null(facility_exclusion$before)) {
+    if (facility_exclusion$before != prev)
+      chain <- c(chain, sprintf("facility step started from %s but %s was %s",
+                                facility_exclusion$before, prev_what, prev))
+  }
+  if (any(diff(flow$n) > 0)) chain <- c(chain, "stage counts increase down the funnel")
+  if (length(chain) > 0L) {
+    message("[extract] agg_consort_flow: funnel stages do not chain -- file NOT written. ",
+            paste(chain, collapse = "; "),
+            ". Likely cause: the cohort table was reused after a previous run's post-steps edited it ",
+            "(see R/cohort_freshness.R).")
+    return(character(0))
+  }
+
   flow <- .suppress_counts(flow, "n", min_cell_count)
 
   if (.write_report_input(flow, inputs_dir, "agg_consort_flow")) "agg_consort_flow" else character(0)
