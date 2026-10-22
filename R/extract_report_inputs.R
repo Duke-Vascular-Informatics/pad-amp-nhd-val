@@ -57,6 +57,13 @@
 #                                    metadata only -- no counts, no patient data.
 #                                    Added 2026-10-15; see
 #                                    .extract_score_definitions()'s own header.
+#   score_component_source_codes.csv Supplemental table of source codes: for each mFI-5
+#                                    component, the ICD-9-CM / ICD-10-CM / CPT4 / HCPCS
+#                                    source codes that map to its concept set (descendants
+#                                    and exclusions applied exactly as in scoring), with the
+#                                    standard concept each maps to. Vocabulary metadata only
+#                                    -- no counts, no patient data. Added 2026-10-22; see
+#                                    .extract_score_source_codes()'s own header.
 #   agg_consort_flow.csv             CONSORT funnel: one row per cohort stage
 #                                    (entry criteria, each circe InclusionRule,
 #                                    then the facility-admission exclusion),
@@ -967,6 +974,11 @@ extract_report_inputs <- function(config,
   # 2026-10-15 so the report's Table 3 columns cannot drift from what was scored.
   written <- c(written, .extract_score_definitions(config, connection_details, inputs_dir))
 
+  # ---- mFI-5 source-code table (supplement) -----------------------------------
+  # ICD / CPT / HCPCS codes behind each mFI-5 component, from the same concept sets the
+  # scoring step uses. Vocabulary metadata, not data. Added 2026-10-22.
+  written <- c(written, .extract_score_source_codes(config, connection_details, inputs_dir))
+
   # ---- CONSORT patient-flow funnel --------------------------------------------
   # Added 2026-09-15. Reads two files Strategus's own CohortGeneratorModule
   # already writes (generateStats = TRUE is on, see
@@ -1443,6 +1455,127 @@ extract_report_inputs <- function(config,
 
   if (.write_report_input(out, inputs_dir, "score_component_definitions")) "score_component_definitions" else character(0)
 }
+
+# =============================================================================
+# SOURCE-CODE TABLE (supplement): ICD / CPT / HCPCS codes behind each mFI-5 component
+#
+# Writes report_inputs/score_component_source_codes.csv: one row per (component, source
+# code). The report renders it as a supplemental table, so a reader can see which
+# billing/diagnosis codes feed each mFI-5 item without reading OMOP concept ids.
+#
+# HOW THE CODES ARE DERIVED -- never typed in by hand. For each component of the score:
+#   1. take the component's concept rows from covariate_concepts_<score>.csv;
+#   2. expand each included concept with its descendants when its include_descendants flag is
+#      set, then remove concept_role = "exclude" rows (and THEIR descendants only when that
+#      row's own flag is set) -- the same expansion the scoring SQL performs, so the table
+#      describes what was actually scored (for example, mFI-5 pneumonia without the two
+#      interstitial-pneumonia concepts);
+#   3. return every source code whose "Maps to" relationship lands on that standard set, from
+#      ICD10CM, ICD9CM, CPT4 and HCPCS. Standard HCPCS/CPT4 concepts map to themselves, so a
+#      component defined directly by HCPCS concepts (the self-care functional-limitation
+#      codes) appears too. CPT4 appears only if a component's standard set contains CPT4
+#      procedures; the mFI-5 sets contain none, so that column is empty by construction.
+#
+# Mapping relationships that are no longer valid are excluded; source codes that have since
+# been retired are kept, because historical records still carry them.
+#
+# NOT PATIENT DATA, NOT COUNTS: no suppression needed. Only the mFI-5 score is covered
+# (score_ids), as requested; the helper is generic if another score's table is wanted later.
+# =============================================================================
+
+#' Build report_inputs/score_component_source_codes.csv.
+#'
+#' @param config             Study config; uses config$scores and config$vocab_schema.
+#' @param connection_details DatabaseConnector connection details (vocabulary lookup only).
+#' @param inputs_dir         Destination directory.
+#' @param score_ids          Which scores to cover (default "mfi5").
+#' @return "score_component_source_codes" if written, else character(0). Any failure writes
+#'   NOTHING, so the report omits the table rather than rendering a partial one.
+.extract_score_source_codes <- function(config, connection_details, inputs_dir,
+                                        score_ids = "mfi5") {
+  scores <- config$scores[vapply(config$scores, function(x) x$id %in% score_ids, logical(1))]
+  if (length(scores) == 0L) {
+    message("[extract] score_component_source_codes: no matching score in config$scores -- skipped")
+    return(character(0))
+  }
+
+  to_logical <- function(x) tolower(trimws(as.character(x))) %in% c("true", "1", "t", "yes", "y")
+  read_csv_nocomment <- function(f) utils::read.csv(f, comment.char = "#", stringsAsFactors = FALSE)
+  # VALUES (id, flag), (id, flag) ... ; a harmless (-1, 0) row keeps the CTE valid when empty.
+  values_sql <- function(ids, flags) {
+    if (length(ids) == 0L) return("(-1, 0)")
+    paste(sprintf("(%d, %d)", as.integer(ids), as.integer(flags)), collapse = ", ")
+  }
+
+  out <- tryCatch({
+    conn <- DatabaseConnector::connect(connection_details)
+    on.exit(try(DatabaseConnector::disconnect(conn), silent = TRUE), add = TRUE)
+    vocab <- config$vocab_schema %||% "omop_vocab"
+
+    pieces <- list()
+    for (sc in scores) {
+      cov <- read_csv_nocomment(sc$covariate_definitions_file)
+      con <- read_csv_nocomment(sc$covariate_concepts_file)
+      if (!"concept_role" %in% names(con)) con$concept_role <- NA_character_
+      con$concept_role <- tolower(trimws(as.character(con$concept_role)))
+      con$include_descendants <- to_logical(con$include_descendants)
+
+      for (i in seq_len(nrow(cov))) {
+        cid <- cov$covariate_id[i]
+        cc  <- con[con$covariate_id == cid, , drop = FALSE]
+        if (nrow(cc) == 0L) next                       # age bands etc. have no concepts
+        is_exc <- !is.na(cc$concept_role) & cc$concept_role == "exclude"
+        inc <- cc[!is_exc, , drop = FALSE]
+        exc <- cc[is_exc, , drop = FALSE]
+
+        sql <- SqlRender::render("
+          WITH inc_roots AS (SELECT concept_id, d FROM (VALUES @inc_values) v(concept_id, d)),
+               inc AS (
+                 SELECT concept_id FROM inc_roots
+                 UNION
+                 SELECT ca.descendant_concept_id FROM @vocab.concept_ancestor ca
+                   JOIN inc_roots r ON ca.ancestor_concept_id = r.concept_id WHERE r.d = 1),
+               exc_roots AS (SELECT concept_id, d FROM (VALUES @exc_values) v(concept_id, d)),
+               exc AS (
+                 SELECT concept_id FROM exc_roots
+                 UNION
+                 SELECT ca.descendant_concept_id FROM @vocab.concept_ancestor ca
+                   JOIN exc_roots r ON ca.ancestor_concept_id = r.concept_id WHERE r.d = 1),
+               std AS (SELECT concept_id FROM inc WHERE concept_id NOT IN (SELECT concept_id FROM exc))
+          SELECT DISTINCT src.vocabulary_id, src.concept_code, src.concept_name AS source_name,
+                 sc.concept_id AS standard_concept_id, sc.concept_name AS standard_concept_name
+          FROM std
+          JOIN @vocab.concept_relationship cr ON cr.concept_id_2 = std.concept_id
+          JOIN @vocab.concept src ON src.concept_id = cr.concept_id_1
+          JOIN @vocab.concept sc  ON sc.concept_id  = std.concept_id
+          WHERE cr.relationship_id = 'Maps to' AND cr.invalid_reason IS NULL
+            AND src.vocabulary_id IN ('ICD10CM', 'ICD9CM', 'CPT4', 'HCPCS')",
+          vocab = vocab,
+          inc_values = values_sql(inc$concept_id, inc$include_descendants),
+          exc_values = values_sql(exc$concept_id, exc$include_descendants))
+        r <- DatabaseConnector::querySql(conn, SqlRender::translate(sql, targetDialect = "sql server"))
+        names(r) <- tolower(names(r))
+        if (nrow(r) > 0L) {
+          pieces[[length(pieces) + 1L]] <- cbind(
+            data.frame(score_id = sc$id, covariate_id = cid, covariate_name = cov$covariate_name[i],
+                       stringsAsFactors = FALSE), r)
+        } else {
+          message("[extract] score_component_source_codes: no source codes for ", sc$id, "/", cid)
+        }
+      }
+    }
+    if (length(pieces) == 0L) stop("no source codes found for any component")
+    res <- do.call(rbind, pieces)
+    res[order(res$score_id, match(res$covariate_id, unique(res$covariate_id)),
+              res$vocabulary_id, res$concept_code), ]
+  }, error = function(e) {
+    message("[extract] score_component_source_codes: failed -- ", conditionMessage(e))
+    NULL
+  })
+
+  if (.write_report_input(out, inputs_dir, "score_component_source_codes")) "score_component_source_codes" else character(0)
+}
+
 
 # =============================================================================
 # 4b. CONSORT PATIENT-FLOW FUNNEL
