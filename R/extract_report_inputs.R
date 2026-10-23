@@ -344,7 +344,8 @@ fetch_demographics_from_omop <- function(config, connection_details) {
     #   4195136 = Amputation above knee (AKA)
     #   4338257 = Amputation below knee (BKA) / through tibia and fibula
     #   Other   = through-knee (4143795), hip disarticulation (4242396),
-    #             ankle disarticulation (4264289), hemipelvectomy (36675618)
+    #             ankle amputation (4264289; as of 2026-10-23 the cohort keeps only its
+    #             supramalleolar child -- ankle disarticulation is excluded), hemipelvectomy (36675618)
     sql_proc_type <- SqlRender::render(
       "WITH target AS (
          SELECT subject_id,

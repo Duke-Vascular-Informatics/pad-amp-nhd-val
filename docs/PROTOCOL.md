@@ -104,12 +104,15 @@ de novo risk score (see Section 11).
 ## 5. Study Population
 
 **Target cohort** (OMOP cohort id `9100011`, `[DVI] Major Lower Extremity
-Amputation (dysvascular, trauma/cancer excluded)`): adults aged 18 years or
+Amputation (dysvascular, trauma and cancer excluded)`): adults aged 18 years or
 older undergoing an inpatient major lower-extremity amputation, with
 peripheral arterial disease, diabetes mellitus, or a lower-extremity wound
 documented on or before the index date, and at least 1 day of prior
 observation. Traumatic, burn, and oncologic amputations are excluded by the
-cohort's circe inclusion rules. Patients admitted from another hospital or
+cohort's circe inclusion rules. The qualifying procedure is above-knee,
+through-knee, below-knee (tibia/fibula), supramalleolar, hip disarticulation, or
+hemipelvectomy; ankle disarticulation (including its CPT/ICD-9-Proc source codes)
+and Syme-type ankle procedures do not qualify (concept-set exclusions, 2026-10-23). Patients admitted from another hospital or
 a skilled nursing facility are additionally excluded by a post-execute step
 (`R/exclude_facility_admissions.R`), restricting the cohort to patients
 admitted from home (including elective admissions coordinated through an

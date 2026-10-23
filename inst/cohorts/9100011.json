@@ -189,6 +189,36 @@
           },
           {
             "concept": {
+              "CONCEPT_ID": 37168057,
+              "CONCEPT_NAME": "Ankle disarticulation",
+              "STANDARD_CONCEPT": "S",
+              "INVALID_REASON": "NA",
+              "CONCEPT_CODE": "1269450005",
+              "DOMAIN_ID": "Procedure",
+              "VOCABULARY_ID": "SNOMED",
+              "CONCEPT_CLASS_ID": "Procedure"
+            },
+            "isExcluded": true,
+            "includeDescendants": true,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 4264289,
+              "CONCEPT_NAME": "Amputation of ankle",
+              "STANDARD_CONCEPT": "S",
+              "INVALID_REASON": "NA",
+              "CONCEPT_CODE": "397218006",
+              "DOMAIN_ID": "Procedure",
+              "VOCABULARY_ID": "SNOMED",
+              "CONCEPT_CLASS_ID": "Procedure"
+            },
+            "isExcluded": true,
+            "includeDescendants": false,
+            "includeMapped": false
+          },
+          {
+            "concept": {
               "CONCEPT_ID": 2006242,
               "CONCEPT_NAME": "Amputation of ankle through malleoli of tibia and fibula",
               "STANDARD_CONCEPT": "S",
