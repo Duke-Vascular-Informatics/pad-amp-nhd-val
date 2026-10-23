@@ -72,7 +72,7 @@ target:
   # edited in place). 9100011 is this study's own: broadened LE-wound set,
   # condition_occurrence rather than condition_era, and a trauma/malignancy
   # exclusion anchored to the index admission. See inst/Cohorts.csv.
-  cohort_id: 9100011   # [DVI] Major LE Amputation (dysvascular, trauma/cancer excluded)
+  cohort_id: 9100011   # [DVI] Major LE Amputation (dysvascular, trauma and cancer excluded)
 
   # Index event concept ids. Used by the custom step's cohort-restricted
   # procedure crosswalk, not for cohort entry (inst/ owns that).
@@ -86,7 +86,9 @@ target:
       - 4338257   # [vocab query] Amputation of leg through tibia and fibula (BKA)
       - 4143795   # [vocab query] Through knee amputation
       - 4242396   # [vocab query] Disarticulation of hip
-      - 4264289   # [vocab query] Amputation of ankle
+      - 4264289   # [vocab query] Amputation of ankle -- kept as an index-procedure ancestor so
+                  # supramalleolar amputation (4119910) is still recognised; ankle disarticulation
+                  # itself (37168057 + descendants, and 4264289 exact) is EXCLUDED from cohort 9100011
       - 36675618  # [vocab query] Amputation of entire lower limb and ipsilateral hemipelvis
 
 outcome:

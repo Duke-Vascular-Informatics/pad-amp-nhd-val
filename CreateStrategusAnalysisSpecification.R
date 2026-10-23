@@ -30,8 +30,8 @@
 # custom step does produce. Worth revisiting only as a confirmatory arm.)
 #
 # COHORTS — see inst/Cohorts.csv for the full per-cohort rationale.
-#   target     9100011   [DVI] Major LE Amputation (dysvascular, trauma/cancer
-#                        excluded) — this study's own, forked 2026-08-12 from the
+#   target     9100011   [DVI] Major LE Amputation (dysvascular, trauma and
+#                        cancer excluded) — this study's own, forked 2026-08-12 from the
 #                        shared 1797941 rather than editing it (see below)
 #   outcome    9100001   [DVI] Non-Home Discharge                 (hand-authored SQL)
 #   covariates 9100002-9100004, 9100007-9100010, 9100021-9100027 authored here
