@@ -111,7 +111,8 @@ documented on or before the index date, and at least 1 day of prior
 observation. Traumatic, burn, and oncologic amputations are excluded by the
 cohort's circe inclusion rules. The qualifying procedure is above-knee,
 through-knee, below-knee (tibia/fibula), supramalleolar, hip disarticulation, or
-hemipelvectomy; ankle disarticulation (including its CPT/ICD-9-Proc source codes)
+hemipelvectomy, including re-amputation and revision of an above-knee or
+below-knee amputation (stump revision); ankle disarticulation (including its CPT/ICD-9-Proc source codes)
 and Syme-type ankle procedures do not qualify (concept-set exclusions, 2026-10-23). Patients admitted from another hospital or
 a skilled nursing facility are additionally excluded by a post-execute step
 (`R/exclude_facility_admissions.R`), restricting the cohort to patients

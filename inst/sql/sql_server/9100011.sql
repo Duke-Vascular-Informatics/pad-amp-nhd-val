@@ -13,12 +13,12 @@ SELECT 0 as codeset_id, c.concept_id FROM (select distinct I.concept_id FROM
 ) C UNION ALL 
 SELECT 1 as codeset_id, c.concept_id FROM (select distinct I.concept_id FROM
 ( 
-  select concept_id from @vocabulary_database_schema.CONCEPT where (concept_id in (4195136,4338257,4143795,4242396,4264289,36675618))
+  select concept_id from @vocabulary_database_schema.CONCEPT where (concept_id in (4195136,4338257,4143795,4242396,4264289,36675618,4225223,4234960,43531499))
 UNION  select c.concept_id
   from @vocabulary_database_schema.CONCEPT c
   join @vocabulary_database_schema.CONCEPT_ANCESTOR ca on c.concept_id = ca.descendant_concept_id
   WHERE c.invalid_reason is null
-  and (ca.ancestor_concept_id in (4195136,4338257,4143795,4242396,4264289,36675618))
+  and (ca.ancestor_concept_id in (4195136,4338257,4143795,4242396,4264289,36675618,4225223,4234960,43531499))
 
 ) I
 LEFT JOIN
