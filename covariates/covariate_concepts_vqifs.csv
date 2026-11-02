@@ -14,6 +14,7 @@
 #   chf   316139  Heart failure          (SNOMED 84114007)   — from covariates_mfi5
 #   dm    201820  Diabetes mellitus      (SNOMED 73211009)   — from covariates_mfi5
 #   copd  255573  COPD                   (SNOMED 13645005)   — from covariates_mfi5
+#         + 258780 Emphysematous bronchitis (SNOMED 185086009), added 2026-11-01 to match OHDSI PL 1271 (Rule 1).
 #   pvd   317309  Peripheral arterial occlusive disease (SNOMED 399957001)
 #                 — from phenotype_library/catalog.yaml :: peripheral_arterial_disease
 #                 (verified 2026-05-14; 190 descendants). Proxy for the paper's
@@ -31,7 +32,12 @@
 #                 are likely undercounted; Difficulty walking (92) and Abnormal gait (56) were the
 #                 concepts that had carried most of the earlier signal. Proxy for the paper's impaired
 #                 preadmission ambulation status (ambulatory w/ assistance, wheelchair, bedridden).
-#   cad   4185932  Ischemic heart disease (SNOMED 414545008)
+#   cad   ALIGNED 2026-11-01 with OHDSI Phenotype Library entry 197 (Rule 1): that entry's roots +
+#         descendants (starting with 4185932 Ischemic heart disease, SNOMED 414545008), EXCEPT its
+#         root 318443 Arteriosclerotic vascular disease (all vascular beds; would flag nearly every
+#         PAD patient), replaced by its coronary branch 317576 Coronary arteriosclerosis. Five PL
+#         roots are dropped as deprecated / non-standard. Must equal cohort 9100024; see its _README.
+#         Domain is 'auto' (covariates_vqifs.csv) because 44783188 is Observation-domain.
 #                 — from phenotype_library/catalog.yaml :: ischemic_heart_disease
 #                 (verified 2026-06-13; same concept used by pad-oler-amp-desc's
 #                 and pad-oler-macce-val's own `cad`/covariate rows). CORRECTED
@@ -91,9 +97,28 @@ covariate_id,concept_id,include_descendants,concept_role,value_concept_ids
 htn,316866,TRUE,,
 chf,316139,TRUE,,
 cad,4185932,TRUE,,
+cad,317576,TRUE,,
+cad,316995,TRUE,,
+cad,4127089,TRUE,,
+cad,4108215,TRUE,,
+cad,4080593,TRUE,,
+cad,43020660,TRUE,,
+cad,45766165,TRUE,,
+cad,37109910,TRUE,,
+cad,37109911,TRUE,,
+cad,37109912,TRUE,,
+cad,438172,TRUE,,
+cad,4108678,TRUE,,
+cad,4124687,TRUE,,
+cad,4108220,TRUE,,
+cad,4108680,TRUE,,
+cad,42537729,TRUE,,
+cad,44783188,TRUE,,
+cad,37312532,FALSE,,
 pvd,317309,TRUE,,
 dm,201820,TRUE,,
 copd,255573,TRUE,,
+copd,258780,TRUE,,
 renal_impairment,3016723,FALSE,creatinine,
 renal_impairment,4146536,TRUE,dialysis,
 renal_impairment,4032243,TRUE,dialysis,

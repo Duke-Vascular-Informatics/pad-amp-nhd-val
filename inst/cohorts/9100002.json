@@ -3,6 +3,9 @@
   "_README": [
     "Chronic obstructive pulmonary disease, as the mFI-5 and Kraiss sVQI-FS",
     "score items define it: SNOMED 13645005 -> OMOP 255573 plus descendants.",
+    "ALIGNED 2026-11-01 WITH OHDSI PHENOTYPE LIBRARY ENTRY 1271 (Chronic obstructive pulmonary disease (COPD)) per workspace Rule 1:",
+    "the concept set is now the library's, 255573 plus 258780 Emphysematous bronchitis (SNOMED 185086009, [vocab query]) and their descendants",
+    "(the addition brings in 46270376 Acute exacerbation of chronic obstructive bronchitis). Index logic differs by design (Limit All, lookback windows).",
     "",
     "DELIBERATELY NOT the [DVI] VA-FI Chronic lung disease cohort (1797958).",
     "That cohort is a faithful VA Frailty Index deficit (Cheng et al., J Gerontol",
@@ -27,6 +30,23 @@
               "INVALID_REASON": "V",
               "INVALID_REASON_CAPTION": "Valid",
               "CONCEPT_CODE": "13645005",
+              "DOMAIN_ID": "Condition",
+              "VOCABULARY_ID": "SNOMED",
+              "CONCEPT_CLASS_ID": "Disorder"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 258780,
+              "CONCEPT_NAME": "Emphysematous bronchitis",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "185086009",
               "DOMAIN_ID": "Condition",
               "VOCABULARY_ID": "SNOMED",
               "CONCEPT_CLASS_ID": "Disorder"
