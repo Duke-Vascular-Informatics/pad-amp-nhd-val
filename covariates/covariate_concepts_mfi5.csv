@@ -110,6 +110,7 @@ fs_dep,43533210,FALSE,,,,
 fs_dep,45770280,FALSE,,,,
 dm,201820,TRUE,,,,
 copd,255573,TRUE,,,,
+copd,258780,TRUE,,,,
 copd,255848,TRUE,,,-30,-1
 copd,4273378,FALSE,exclude,,-30,-1
 copd,1340380,FALSE,exclude,,-30,-1

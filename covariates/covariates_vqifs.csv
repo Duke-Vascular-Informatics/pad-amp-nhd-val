@@ -129,7 +129,7 @@
 covariate_id,covariate_name,domain,lookback_start_day,lookback_end_day,min_count,points,missing_is_negative
 htn,Hypertension,condition,-365,-1,1,1,TRUE
 chf,Congestive heart failure,condition,-365,-1,1,1,TRUE
-cad,Coronary artery disease,condition,-365,-1,1,1,TRUE
+cad,Coronary artery disease,auto,-365,-1,1,1,TRUE
 pvd,Peripheral vascular disease,condition,-365,-1,1,1,TRUE
 dm,Diabetes mellitus (any type),condition,-365,-1,1,1,TRUE
 copd,Chronic obstructive pulmonary disease,condition,-365,-1,1,1,TRUE

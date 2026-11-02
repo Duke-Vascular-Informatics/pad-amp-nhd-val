@@ -86,7 +86,7 @@ mfi5,chf,9100023,[DVI] Heart failure (risk score item),cohort,-30,-1,1,"30 days 
 mfi5,htn,9100022,[DVI] Hypertension (risk score item),cohort,-365,-1,1,"Limit=All; concept set equals the CSV exactly. Replaces VA-FI 1797951."
 vqifs,htn,9100022,[DVI] Hypertension (risk score item),cohort,-365,-1,1,"Same cohort as the mFI-5 htn item."
 vqifs,chf,9100023,[DVI] Heart failure (risk score item),cohort,-365,-1,1,"Same cohort as the mFI-5 chf item, read over 365 days instead of 30."
-vqifs,cad,9100024,[DVI] Coronary artery disease (risk score item),cohort,-365,-1,1,"Limit=All; concept set equals the CSV exactly (4185932). Replaces VA-FI 1797949."
+vqifs,cad,9100024,[DVI] Coronary artery disease (risk score item),cohort,-365,-1,1,"Limit=All; concept set equals the CSV exactly: aligned 2026-11-01 with OHDSI PL 197 minus its all-vessel root 318443 (see cohort 9100024 _README). Replaces VA-FI 1797949."
 vqifs,pvd,9100003,[DVI] Peripheral Arterial Occlusive Disease (risk score item),cohort,-365,-1,1,"NEW rather than reusing VA-FI 1797955, which also spans aortic aneurysm and venous thrombosis -- not peripheral ARTERIAL occlusive disease."
 vqifs,dm,9100021,[DVI] Diabetes mellitus (risk score item),cohort,-365,-1,1,"Same cohort as the mFI-5 dm item."
 vqifs,copd,9100002,[DVI] COPD (risk score item),cohort,-365,-1,1,"Same new cohort as the mFI-5 copd item."

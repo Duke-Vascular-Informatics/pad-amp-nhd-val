@@ -155,10 +155,56 @@ cohorts <- list(
   `9100024` = list(
     readme = c(
       "Coronary artery disease - the Kraiss sVQI-FS cad item (1 point).",
-      "Concept set is EXACTLY covariates/covariate_concepts_vqifs.csv :: cad (4185932 Ischemic heart disease + descendants).",
+      "ALIGNED 2026-11-01 WITH OHDSI PHENOTYPE LIBRARY ENTRY 197 ('Coronary Artery Disease from vessel disease to ischemic injury') per workspace Rule 1 (use the published phenotype unless there is a clear analytic reason to deviate). Concept set = PL 197's roots + descendants, EXCEPT its root 318443 'Arteriosclerotic vascular disease', which is replaced by its coronary branch 317576 'Coronary arteriosclerosis'.",
+      "WHY THE ONE DEVIATION: 318443 spans every vascular bed (aortic, carotid, renal, upper/lower-limb and limb bypass-graft atherosclerosis; 95 concepts reached only through it, none cardiac). In a PAD amputation cohort that would label nearly every patient as having coronary disease. The 82 concepts this set adds over the earlier 4185932-only version are all coronary or myocardial-infarction related; the earlier set missed coronary arteriosclerosis / coronary atherosclerosis (e.g. ICD-10 I25.10) entirely, and Duke prevalence was 21 percent (124 of 587).",
+      "Five other PL 197 roots are NOT carried: 319038 and 45766212 are deprecated in the vocabulary (no mapping, no descendants) and 4058723 / 4177223 / 44809539 (H/O angina, H/O PTCA, H/O acute coronary syndrome) are non-standard and map only to the generic 'History of event' (1340204), which cannot define coronary disease.",
+      "Both a ConditionOccurrence and an Observation criterion are used, as in PL 197 (the emergency-admission concept is Observation-domain). covariates/covariate_concepts_vqifs.csv :: cad lists the same roots and its domain is 'auto'.",
       "Replaces the reused Limit=First [DVI] VA-FI Coronary artery disease cohort 1797949."),
-    sets = list(list(name = "[DVI] Coronary artery disease (risk score item)", criterion = "ConditionOccurrence",
-                     items = list(list(4185932L, TRUE, FALSE))))  # [vocab query] SNOMED: Ischemic heart disease
+    sets = list(
+      list(name = "[DVI] Coronary artery disease (risk score item)", criterion = "ConditionOccurrence",
+           items = list(
+             list(4185932L, TRUE, FALSE),  # [vocab query] Ischemic heart disease
+             list(317576L, TRUE, FALSE),  # [vocab query] Coronary arteriosclerosis (coronary branch of PL root 318443; keeps coronary atherosclerosis without the all-vessel parent)
+             list(316995L, TRUE, FALSE),  # [vocab query] Coronary occlusion
+             list(4127089L, TRUE, FALSE),  # [vocab query] Coronary artery spasm
+             list(4108215L, TRUE, FALSE),  # [vocab query] Coronary thrombosis not resulting in myocardial infarction
+             list(4080593L, TRUE, FALSE),  # [vocab query] Syphilitic coronary artery disease
+             list(43020660L, TRUE, FALSE),  # [vocab query] Ischemic dilated cardiomyopathy due to coronary artery disease
+             list(45766165L, TRUE, FALSE),  # [vocab query] Heart failure with reduced ejection fraction due to coronary artery disease
+             list(37109910L, TRUE, FALSE),  # [vocab query] Ventricular aneurysm due to and following acute myocardial infarction
+             list(37109911L, TRUE, FALSE),  # [vocab query] Pulmonary embolism due to and following acute myocardial infarction
+             list(37109912L, TRUE, FALSE),  # [vocab query] Arrhythmia due to and following acute myocardial infarction
+             list(438172L, TRUE, FALSE),  # [vocab query] Atrial septal defect due to and following acute myocardial infarction
+             list(4108678L, TRUE, FALSE),  # [vocab query] Hemopericardium due to and following acute myocardial infarction
+             list(4124687L, TRUE, FALSE),  # [vocab query] Cardiac rupture due to and following acute myocardial infarction
+             list(4108220L, TRUE, FALSE),  # [vocab query] Rupture of papillary muscle as current complication following acute myocardial infarction
+             list(4108680L, TRUE, FALSE),  # [vocab query] Thrombosis of atrium, auricular appendage, and ventricle due to and following acute myocardial infarction
+             list(42537729L, TRUE, FALSE),  # [vocab query] Aortocoronary bypass graft present
+             list(44783188L, TRUE, FALSE),  # [vocab query] Emergency hospital admission for ischemic heart disease
+             list(37312532L, FALSE, FALSE)   # [vocab query] Coronary arteriosclerosis in artery of transplanted heart
+           )),
+      list(name = "[DVI] Coronary artery disease (risk score item, observation domain)", criterion = "Observation",
+           items = list(
+             list(4185932L, TRUE, FALSE),  # [vocab query] Ischemic heart disease
+             list(317576L, TRUE, FALSE),  # [vocab query] Coronary arteriosclerosis (coronary branch of PL root 318443; keeps coronary atherosclerosis without the all-vessel parent)
+             list(316995L, TRUE, FALSE),  # [vocab query] Coronary occlusion
+             list(4127089L, TRUE, FALSE),  # [vocab query] Coronary artery spasm
+             list(4108215L, TRUE, FALSE),  # [vocab query] Coronary thrombosis not resulting in myocardial infarction
+             list(4080593L, TRUE, FALSE),  # [vocab query] Syphilitic coronary artery disease
+             list(43020660L, TRUE, FALSE),  # [vocab query] Ischemic dilated cardiomyopathy due to coronary artery disease
+             list(45766165L, TRUE, FALSE),  # [vocab query] Heart failure with reduced ejection fraction due to coronary artery disease
+             list(37109910L, TRUE, FALSE),  # [vocab query] Ventricular aneurysm due to and following acute myocardial infarction
+             list(37109911L, TRUE, FALSE),  # [vocab query] Pulmonary embolism due to and following acute myocardial infarction
+             list(37109912L, TRUE, FALSE),  # [vocab query] Arrhythmia due to and following acute myocardial infarction
+             list(438172L, TRUE, FALSE),  # [vocab query] Atrial septal defect due to and following acute myocardial infarction
+             list(4108678L, TRUE, FALSE),  # [vocab query] Hemopericardium due to and following acute myocardial infarction
+             list(4124687L, TRUE, FALSE),  # [vocab query] Cardiac rupture due to and following acute myocardial infarction
+             list(4108220L, TRUE, FALSE),  # [vocab query] Rupture of papillary muscle as current complication following acute myocardial infarction
+             list(4108680L, TRUE, FALSE),  # [vocab query] Thrombosis of atrium, auricular appendage, and ventricle due to and following acute myocardial infarction
+             list(42537729L, TRUE, FALSE),  # [vocab query] Aortocoronary bypass graft present
+             list(44783188L, TRUE, FALSE),  # [vocab query] Emergency hospital admission for ischemic heart disease
+             list(37312532L, FALSE, FALSE)   # [vocab query] Coronary arteriosclerosis in artery of transplanted heart
+           )))
   ),
 
   `9100025` = list(
