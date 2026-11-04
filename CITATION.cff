@@ -65,6 +65,15 @@ keywords:
 
 references:
   - type: software
+    title: "Charon: Containerized HADES Analytics for Research in OHDSI Networks (the development container this repo was built in, institution-specific configuration; v1.2.1)"
+    authors:
+      - family-names: "Johnson"
+        given-names: "Adam P."
+    doi: "10.5281/zenodo.23874907"
+    repository-code: "https://github.com/Duke-Vascular-Informatics/charon"
+    year: 2026
+
+  - type: software
     title: >
       pad-amp-synth: A Synthea Module and OMOP ETL Producing a Synthetic CDM of
       Major Lower Extremity Amputation Patients (release synth-data-pad_amp-v3; the
