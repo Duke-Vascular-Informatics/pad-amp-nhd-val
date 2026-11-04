@@ -99,13 +99,25 @@ every covariate, including mFI-5's COPD-or-pneumonia item. Per-covariate deltas 
 
 See `CLAUDE.md` for the full set of gotchas.
 
+## Citing
+
+If you use this code, please cite it: see [`CITATION.cff`](CITATION.cff) (GitHub's
+**Cite this repository** button reads it). Each release is archived on Zenodo, which
+provides the DOI; the synthetic data it was developed with is cited separately (see Data source).
+
 ## Funding
 
-NIH/NCATS **K12TR005435**.
+Research reported in this publication was supported by the National Center For Advancing
+Translational Sciences of the National Institutes of Health under Award Number K12TR005435.
+The content is solely the responsibility of the authors and does not necessarily represent
+the official views of the National Institutes of Health.
 
 ## License
 
-Copyright 2026 Duke University. All Rights Reserved. The software is hereby licensed under the GNU GPL License v2 (see [LICENSE](LICENSE)). This is copyleft: redistributed or modified versions must remain GPL v2-licensed.
+Copyright 2026 Duke University. All Rights Reserved. The software is hereby licensed under the GNU GPL License v2 (see [LICENSE](LICENSE)). This is copyleft: redistributed or modified versions must remain GPL v2-licensed. OMOP vocabulary files are subject to the
+[Athena license terms](https://www.ohdsi.org/analytic-tools/athena-standardized-vocabularies/).
+
+The synthetic development data (see Data source) is licensed separately, under **CC BY 4.0**; the GPL v2 applies to the code only.
 
 ### Third-party vocabulary content
 
