@@ -1079,6 +1079,33 @@ extract_report_inputs <- function(config,
 #' Each query is independently wrapped: one failure does not suppress the
 #' others, and a failed query simply leaves its artifact absent, which the
 #' render half reads back as NULL.
+# -----------------------------------------------------------------------------
+# .cdm_holder_org()
+#
+# Reduces the OMOP cdm_source.cdm_holder text to the organisation name only.
+# In practice the field carries "<organisation> - <person> - <email>", i.e. a named
+# contact, which must not be written into an export that leaves the secure environment.
+#
+# Rule: keep the part before the first " - " (or en/em dash separator), then drop any
+# whitespace-separated token containing "@". A holder with no separator is kept whole
+# apart from email-like tokens. NA/empty stays NA.
+#
+# KEEP IN SYNC with .cdm_holder_org() in pad-amp-nhd-val-report/R/report_prognostic.R,
+# which applies the same reduction at render time for exports made before this change.
+#
+# @param x  character vector of cdm_holder values.
+# @return   character vector, organisation part only.
+# -----------------------------------------------------------------------------
+.cdm_holder_org <- function(x) {
+  x <- as.character(x)
+  org <- trimws(sub("\\s+[-\u2013\u2014]\\s+.*$", "", x))
+  vapply(org, function(v) {
+    if (is.na(v)) return(NA_character_)
+    toks <- strsplit(v, "\\s+")[[1]]
+    trimws(paste(toks[!grepl("@", toks, fixed = TRUE)], collapse = " "))
+  }, character(1), USE.NAMES = FALSE)
+}
+
 .extract_supplemental <- function(config, connection_details, inputs_dir) {
   written <- character(0)
   conn <- NULL
@@ -1093,12 +1120,17 @@ extract_report_inputs <- function(config,
     # (found via a real Duke export of supp_admission_source.csv with cells
     # of 1-3), since this whole function predates .suppress_counts() and
     # nothing had wired it in.
-    run <- function(sql, name, suppress_cols = NULL) {
+    #
+    # post: optional function(data.frame) -> data.frame applied right after the query and
+    # before anything is written (added 2026-11-04 so a field can be reduced to what is safe
+    # to ship, not just hidden at render time).
+    run <- function(sql, name, suppress_cols = NULL, post = NULL) {
       tryCatch({
         r <- DatabaseConnector::querySql(
           conn, SqlRender::translate(sql, targetDialect = "sql server")
         )
         names(r) <- tolower(names(r))
+        if (!is.null(post)) r <- post(r)
         if (!is.null(suppress_cols)) r <- .suppress_counts(r, suppress_cols, min_cell_count)
         if (.write_report_input(r, inputs_dir, name)) written <<- c(written, name)
       }, error = function(e) {
@@ -1111,14 +1143,18 @@ extract_report_inputs <- function(config,
     # Table S1 needs the full row. Both come from one table, so query it once
     # for each shape rather than making render re-derive one from the other.
 
+  # cdm_source_name and cdm_source_abbreviation are deliberately NOT selected (they identify the
+  # instance), and cdm_holder -- which in practice carries "<organisation> - <person> - <email>" --
+  # is reduced to the organisation by .cdm_holder_org() before anything is written, so a data
+  # steward's name and email never reach the export. Changed 2026-11-04.
   sql_cdm_src <- SqlRender::render(
-    "SELECT cdm_source_name, cdm_source_abbreviation, cdm_holder,
-            source_release_date, cdm_release_date, cdm_version,
+    "SELECT cdm_holder, source_release_date, cdm_release_date, cdm_version,
             vocabulary_version
      FROM @cdm_schema.cdm_source",
     cdm_schema = config$cdm_schema
   )
-  run(sql_cdm_src, "supp_cdm_source")
+  run(sql_cdm_src, "supp_cdm_source",
+      post = function(r) { r$cdm_holder <- .cdm_holder_org(r$cdm_holder); r })
 
     # The methods-text subset. Same table, narrower projection — kept separate
     # so a schema change to cdm_source cannot silently break the methods line.
