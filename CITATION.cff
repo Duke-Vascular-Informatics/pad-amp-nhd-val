@@ -65,6 +65,18 @@ keywords:
 
 references:
   - type: software
+    title: >
+      pad-amp-synth: A Synthea Module and OMOP ETL Producing a Synthetic CDM of
+      Major Lower Extremity Amputation Patients (release synth-data-pad_amp-v3; the
+      synthetic data this code was developed against)
+    authors:
+      - family-names: "Johnson"
+        given-names: "Adam P."
+    doi: "10.5281/zenodo.23955868"
+    repository-code: "https://github.com/Duke-Vascular-Informatics/pad-amp-synth"
+    url: "https://github.com/Duke-Vascular-Informatics/pad-amp-synth/releases/tag/synth-data-pad_amp-v3"
+
+  - type: software
     title: "OHDSI Strategus"
     authors:
       - name: "Observational Health Data Sciences and Informatics (OHDSI)"
