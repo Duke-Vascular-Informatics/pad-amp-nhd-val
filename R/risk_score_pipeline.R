@@ -2763,50 +2763,10 @@ evaluate_integer_risk_score <- function(person_level, lookup) {
   )
 }
 
-# -----------------------------------------------------------------------------
-# calc_ece()
-#
-# Computes the Expected Calibration Error (ECE) between a vector of predicted
-# probabilities and a binary outcome vector.
-#
-# Method: predictions are sorted into n_bins equal-width probability bins
-# spanning [0, 1].  For each non-empty bin the absolute difference between
-# the mean predicted probability and the observed event rate is computed and
-# weighted by the fraction of observations in that bin.  ECE is the weighted
-# sum across all bins.
-#
-# Arguments:
-#   pred   — numeric vector of predicted probabilities in [0, 1]
-#   truth  — numeric vector of binary outcomes (0/1)
-#   n_bins — number of equal-width bins (default 10)
-#
-# Returns a single numeric value, or NA if no valid observations remain after
-# removing NAs.
-# -----------------------------------------------------------------------------
-calc_ece <- function(pred, truth, n_bins = 10L) {
-
-  # Remove missing values from both vectors jointly.
-  valid <- !is.na(pred) & !is.na(truth)
-  pred  <- pred[valid]
-  truth <- truth[valid]
-  if (length(pred) == 0L) return(NA_real_)
-
-  # Assign each prediction to one of n_bins equal-width bins over [0, 1].
-  breaks <- seq(0, 1, length.out = n_bins + 1L)
-  bins   <- cut(pred, breaks = breaks, include.lowest = TRUE, labels = FALSE)
-
-  n   <- length(pred)
-  ece <- 0.0
-
-  for (b in seq_len(n_bins)) {
-    idx <- which(bins == b)
-    if (length(idx) == 0L) next
-    # Weighted absolute calibration error for this bin.
-    ece <- ece + (length(idx) / n) * abs(mean(pred[idx]) - mean(truth[idx]))
-  }
-
-  ece
-}
+# NOTE (2026-11-04): the subgroup analysis used to call a separate equal-width-bin calc_ece().
+# It now calls compute_ece() -- ten QUANTILE bins, probabilities clamped -- the same function as
+# the overall ECE, so subgroup and overall ECE (and the forest-plot reference line) are directly
+# comparable. Do not reintroduce a second ECE definition.
 
 # -----------------------------------------------------------------------------
 # compute_subgroup_bias()
@@ -2843,6 +2803,8 @@ calc_ece <- function(pred, truth, n_bins = 10L) {
 #                (derived from score_indicationClaudication in person_level;
 #                 score > 0 → Claudication, score == 0 → Critical limb ischemia)
 #
+# ECE: compute_ece() -- ten quantile bins -- identical to the overall ECE (changed 2026-11-04;
+# it was previously equal-width bins, which made subgroup and overall ECE non-comparable).
 # Bootstrap CIs use B = 200 resamples (percentile method, 2.5th–97.5th).
 # The random seed is fixed at 42 for reproducibility.
 #
@@ -3013,7 +2975,7 @@ compute_subgroup_bias <- function(person_level,
       # Observed ECE and AUROC for this subgroup. AUROC reuses
       # compute_binary_metrics() so NA-handling (constant outcome) matches the
       # overall-cohort discrimination metrics exactly.
-      ece_obs   <- calc_ece(grp[[prediction_col]], as.numeric(grp$outcome))
+      ece_obs   <- compute_ece(as.numeric(grp$outcome), grp[[prediction_col]])
       auroc_obs <- compute_binary_metrics(grp$outcome, grp[[prediction_col]])$auroc
 
       # Bootstrap to obtain 95% percentile CIs. The same resampled index is
@@ -3028,7 +2990,7 @@ compute_subgroup_bias <- function(person_level,
         } else {
           as.numeric(pROC::auc(pROC::roc(y_i, p_i, quiet = TRUE, direction = "<")))
         }
-        c(ece = calc_ece(p_i, y_i), auroc = auroc_i)
+        c(ece = compute_ece(y_i, p_i), auroc = auroc_i)
       }, numeric(2L))
 
       boot_eces   <- boot_mat["ece", ]
