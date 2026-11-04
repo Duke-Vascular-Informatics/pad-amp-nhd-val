@@ -29,6 +29,11 @@ Shared baseline (applies first):
   the report repo instead. The one exception is `R/risk_score_pipeline.R`'s own
   diagnostic calibration plot (via `omopReportToolkit`) — a QC artifact of the
   scoring step, independent of whether a report is ever generated from a run.
+- **Development-data tag.** `inst/synthetic_data_provenance.yaml` records which synthetic dataset this code
+  version was developed against (dataset id and version, generator commit, published release tag and SHA-256).
+  `R/synthetic_provenance.R :: log_synthetic_provenance()` writes it to every run log, including the Duke bundle's
+  (`run_analysis.R`). Update it in the same commit that repoints the study at another synthetic version, and run
+  `tests/regression/test_synthetic_provenance.R`. It is development provenance only; no result comes from that data.
 - Repo is **public** (made public 2026-10-02 ahead of publication; GPL-2.0, see `LICENSE`). Nothing patient-level or site-credentialed may ever be committed here.
 
 ### Pipeline

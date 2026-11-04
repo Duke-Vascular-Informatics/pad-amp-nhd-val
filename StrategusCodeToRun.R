@@ -201,6 +201,10 @@ ParallelLogger::saveSettingsToJson(
 source("config.R")
 config <- get_validation_config()
 source("R/cohort_freshness.R")
+# Log which synthetic dataset this code version was developed against
+# (inst/synthetic_data_provenance.yaml). Warns, never stops, if the record is missing.
+source("R/synthetic_provenance.R")
+log_synthetic_provenance()
 runStart <- Sys.time()
 conn <- DatabaseConnector::connect(connectionDetails)
 prepare_cohort_generation(

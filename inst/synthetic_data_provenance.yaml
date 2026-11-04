@@ -1,0 +1,57 @@
+# =============================================================================
+# inst/synthetic_data_provenance.yaml
+#
+# Which SYNTHETIC dataset this version of the analysis code was developed and
+# tested against. The runner logs this record at the start of every run
+# (R/synthetic_provenance.R :: log_synthetic_provenance), so a log from any
+# environment, including the Duke secure environment where the code runs on real
+# data, states what the code was developed with.
+#
+# This is development provenance only. No result in the manuscript comes from
+# this dataset. UPDATE THIS FILE IN THE SAME COMMIT that repoints the study at a
+# different synthetic dataset version (study_params.yaml / overlay), and re-run
+# tests/regression/test_synthetic_provenance.R.
+#
+# The commit that contains this file identifies the code version; `git describe`
+# or the repository tag names it.
+# =============================================================================
+schema_version: 1
+
+dataset:
+  id: pad_amp                         # synthetic_data/registry.yaml id in the lab workspace
+  version: v3
+  physical_schema: omop_synth_pad_amp_v3
+  persons: 1464
+  cdm_version: "5.4"
+  cdm_release_date: "2026-10-13"      # cdm_source.cdm_release_date in the dataset
+
+generator:
+  repo: Duke-Vascular-Informatics/pad-amp-synth
+  commit: 8134bc409c94e9c464189b3716eeb0ee2311855f          # "generate pad_amp v3" (#22)
+  module_commit: bc39e0f197ae2927d4cb787a1303e1863aa8740a   # last Synthea module change before v3 (#21)
+  synthea_version: "3.3.0"
+  etl: "OHDSI ETL-Synthea, via synthea-omop-template v3.0.0"
+  seed: null                          # random draw, not recorded: regenerating does NOT reproduce v3,
+                                      # so the published release asset below is the only way to get this dataset
+
+vocabulary:
+  release: "v5.0 27-AUG-25"           # cdm_source.vocabulary_version; vocabulary tables are never redistributed
+
+# The published copy of the clinical tables (clinical fact tables only, plus cdm_source).
+release:
+  repo: Duke-Vascular-Informatics/pad-amp-synth
+  tag: synth-data-pad_amp-v3
+  asset: pad_amp_clinical_tables.zip
+  sha256: 9c402386f251a24d79da6251b89b121890c900141cd502d4191ccf82a937254f
+  size_bytes: 46462065
+  status: published                   # pending | published
+  published_date: "2026-11-04"
+  doi: "10.5281/zenodo.23955868"      # Zenodo version DOI of the release. Zenodo archives the generator SOURCE at the tag
+                                      # (here the generating commit); the data zip is a GitHub release asset, verified by sha256
+  license: CC-BY-4.0                  # data only; the generator code is GPL-2.0-only
+  license_notice: DATA_LICENSE.md     # attached to the release as a second asset
+
+verified:
+  date: "2026-11-02"
+  how: "tests/regression/test_cohort_vs_domain_covariates.R against this dataset (24 of 24 covariates agree)"
+
