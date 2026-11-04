@@ -44,9 +44,12 @@ release:
   asset: pad_amp_clinical_tables.zip
   sha256: 9c402386f251a24d79da6251b89b121890c900141cd502d4191ccf82a937254f
   size_bytes: 46462065
-  status: pending                     # pending | published
-  published_date: null
-  doi: null                           # version DOI, once Zenodo has archived the release
+  status: published                   # pending | published
+  published_date: "2026-11-04"
+  doi: "10.5281/zenodo.23955868"      # Zenodo version DOI of the release. Zenodo archives the generator SOURCE at the tag
+                                      # (here the generating commit); the data zip is a GitHub release asset, verified by sha256
+  license: CC-BY-4.0                  # data only; the generator code is GPL-2.0-only
+  license_notice: DATA_LICENSE.md     # attached to the release as a second asset
 
 verified:
   date: "2026-11-02"
