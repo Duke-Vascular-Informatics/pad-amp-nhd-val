@@ -118,6 +118,9 @@ folder before re-running.
   concept set as 9100011's "Lower Extremity Peripheral Artery Occlusive Disease": four roots less ten
   non-lower-extremity exclusions). Keep them identical; the oracle rows in `covariate_concepts_vqifs.csv`
   and the cohort JSON are checked by the regression test's concept-set drift check.
+  Table 1's PAD count (`R/extract_report_inputs.R`, indication query) uses the same set too (on or before the index
+  date); it used 317309 alone until 2026-11-05 and so disagreed with the sVQI-FS item. The regression test does NOT
+  cover that query, so change all three together.
 - **Never reuse a `Limit: First` cohort for a score item.** The four VA-FI cohorts
   (1797949–1797952) were dropped on 2026-10-05 for exactly this reason: one row per person
   at their first-ever record means a lookback window cannot bind, and the published 30-day

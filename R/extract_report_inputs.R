@@ -275,8 +275,14 @@ fetch_demographics_from_omop <- function(config, connection_details) {
       SqlRender::translate(distribution_sql("ethnicity_concept_id"), targetDialect = "sql server")
     )
 
-    # ---- Indication categories (condition_ancestor rollup, any time before index date) ----
-    # PAD   : ancestor 317309  (Peripheral vascular disease, [vocab query])
+    # ---- Indication categories (condition_ancestor rollup, any time on or before the index date) ----
+    # PAD   : the SAME concept set as the target cohort's PAD indication (cohort 9100011) and the sVQI-FS
+    #         pvd item (cohort 9100003): ancestors 40484167, 44782775, 4124836, 3654996 with descendants,
+    #         less descendants of ten non-lower-extremity roots (764058, 4117679, 199870, 321037, 4134603,
+    #         4190192, 4109481, 761857, 761856, 765061) [vocab query]. Changed 2026-11-05: this query
+    #         used ancestor 317309 alone (the old sVQI-FS set), so Table 1 PAD (154) disagreed with the
+    #         sVQI-FS item (84 then 387 on the new set) for no clinical reason. KEEP IN SYNC with
+    #         inst/cohorts/9100003.json and covariates/covariate_concepts_vqifs.csv (pvd rows).
     # DM    : ancestor 201820  (Diabetes mellitus, [vocab query])
     # Wound : 25 LE wound ancestors from target_amputation.sql ([vocab query])
     sql_indication <- SqlRender::render(
@@ -290,9 +296,17 @@ fetch_demographics_from_omop <- function(config, connection_details) {
          FROM @cdm_schema.condition_occurrence co
          INNER JOIN @cdm_schema.concept_ancestor ca
            ON ca.descendant_concept_id = co.condition_concept_id
-          AND ca.ancestor_concept_id   = 317309
+          AND ca.ancestor_concept_id   IN (40484167, 44782775, 4124836, 3654996)
          INNER JOIN target t ON t.subject_id = co.person_id
            AND co.condition_start_date <= t.cohort_start_date
+         -- Remove the ten excluded (non-lower-extremity) roots and their descendants, exactly as the
+         -- cohort definition's excluded concept items do.
+         WHERE co.condition_concept_id NOT IN (
+           SELECT descendant_concept_id
+           FROM @cdm_schema.concept_ancestor
+           WHERE ancestor_concept_id IN (764058, 4117679, 199870, 321037, 4134603,
+                                         4190192, 4109481, 761857, 761856, 765061)
+         )
        ),
        dm AS (
          SELECT DISTINCT co.person_id
