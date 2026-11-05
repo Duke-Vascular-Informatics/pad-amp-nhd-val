@@ -129,8 +129,9 @@ folder before re-running.
   dataset has no inpatient insulin and cannot.
 - **One diabetes definition everywhere (2026-11-05):** cohort 9100021 = 201820 + 442793 with descendants (all types incl. type 1
   and 2, and diabetic complications), also the target's diabetes indication, Table 1, and the insulin item's requirement.
-- **Table 1 wound (9100029) = the target's wound set plus five gangrene roots** (4263116 generic/dry/wet/trophic/symmetrical,
-  44782426, 35615085, 4141477, 4142822); the target cohort 9100011 does not yet include them.
+- **Wound set = 29 roots in BOTH the target's wound entry criterion and Table 1 (9100029)**: the original 24 plus five gangrene roots
+  (4263116 generic/dry/wet/trophic/symmetrical, 44782426, 35615085, 4141477, 4142822), added 2026-11-05. Keep the two identical.
+  `scripts/render_cohort_sql.R` now honors the `generate_stats` column (the target needs inclusion statistics for the CONSORT figure).
 - **Table 1 phenotype rows are read from ATLAS cohorts (2026-11-05).** PAD = 9100003, diabetes (all types) = 9100021,
   lower-extremity wound = 9100029, above-knee = 9100030, below-knee = 9100031 (Other = the rest of the target cohort),
   via `.table1_indication_sql()` / `.table1_amp_level_sql()` in `R/extract_report_inputs.R`. 9100029-31 exist only for
