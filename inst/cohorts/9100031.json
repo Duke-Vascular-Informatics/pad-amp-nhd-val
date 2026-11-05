@@ -1,0 +1,100 @@
+{
+  "cdmVersionRange": ">=5.0.0",
+  "_README": [
+    "Below-knee (transtibial) amputation and its revisions: the below-knee roots of the target cohort's amputation concept",
+    "set (cohort 9100011): 4338257 Amputation of leg through tibia and fibula, 4234960 Revision of transtibial amputation and",
+    "43531499 Revision of below knee amputation stump, each with descendants. Used for the Table 1 amputation-level row.",
+    "Added 2026-11-05.",
+    "Limit=All at all three levels with EndStrategy StartDate+0 (same as every other covariate cohort here), so a cohort entry is a single dated event."
+  ],
+  "ConceptSets": [
+    {
+      "id": 0,
+      "name": "[DVI] Below-Knee Amputation",
+      "expression": {
+        "items": [
+          {
+            "concept": {
+              "CONCEPT_ID": 4338257,
+              "CONCEPT_NAME": "Amputation of leg through tibia and fibula",
+              "STANDARD_CONCEPT": "S",
+              "INVALID_REASON": "NA",
+              "CONCEPT_CODE": "88312006",
+              "DOMAIN_ID": "Procedure",
+              "VOCABULARY_ID": "SNOMED",
+              "CONCEPT_CLASS_ID": "Procedure"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 4234960,
+              "CONCEPT_NAME": "Revision of transtibial amputation",
+              "STANDARD_CONCEPT": "S",
+              "INVALID_REASON": "NA",
+              "CONCEPT_CODE": "405446005",
+              "DOMAIN_ID": "Procedure",
+              "VOCABULARY_ID": "SNOMED",
+              "CONCEPT_CLASS_ID": "Procedure"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 43531499,
+              "CONCEPT_NAME": "Revision of below knee amputation stump",
+              "STANDARD_CONCEPT": "S",
+              "INVALID_REASON": "NA",
+              "CONCEPT_CODE": "609217001",
+              "DOMAIN_ID": "Procedure",
+              "VOCABULARY_ID": "SNOMED",
+              "CONCEPT_CLASS_ID": "Procedure"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          }
+        ]
+      }
+    }
+  ],
+  "PrimaryCriteria": {
+    "CriteriaList": [
+      {
+        "ProcedureOccurrence": {
+          "CodesetId": 0
+        }
+      }
+    ],
+    "ObservationWindow": {
+      "PriorDays": 0,
+      "PostDays": 0
+    },
+    "PrimaryCriteriaLimit": {
+      "Type": "All"
+    }
+  },
+  "QualifiedLimit": {
+    "Type": "All"
+  },
+  "ExpressionLimit": {
+    "Type": "All"
+  },
+  "InclusionRules": [],
+  "CensoringCriteria": [],
+  "CollapseSettings": {
+    "CollapseType": "ERA",
+    "EraPad": 0
+  },
+  "CensorWindow": {},
+  "EndStrategy": {
+    "DateOffset": {
+      "DateField": "StartDate",
+      "Offset": 0
+    }
+  }
+}

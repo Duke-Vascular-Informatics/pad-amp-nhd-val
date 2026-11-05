@@ -1,15 +1,18 @@
 {
   "cdmVersionRange": ">=5.0.0",
   "_README": [
-    "Insulin-treated diabetes - the Iannuzzi insulin_dep item (2 points).",
-    "ATC 21600713 INSULINS AND ANALOGUES plus descendants, exactly as",
-    "covariates/covariate_concepts.csv :: insulin_dep specifies.",
+    "Insulin exposure outside an inpatient stay: the insulin half of the Iannuzzi insulin_dep item (2 points).",
+    "ATC 21600713 INSULINS AND ANALOGUES plus descendants, exactly as covariates/covariate_concepts.csv :: insulin_dep,",
+    "excluding any exposure that falls within an inpatient stay (see the \"Not during an inpatient stay\" inclusion rule).",
+    "The item is \"who with diabetes is currently on insulin\": this cohort within the prior 365 days AND a diabetes diagnosis",
+    "at any time before index (cohort 9100021), combined at score level via cohort_map.csv and_cohort_id.",
+    "Renamed 2026-11-05 from \"Insulin-Treated Diabetes\" (it no longer contains the diabetes requirement itself).",
     "PrimaryCriteriaLimit / QualifiedLimit / ExpressionLimit are all \"All\" and EndStrategy is StartDate+0, unlike the [DVI] VA-FI cohorts (1797948-1797977) which are \"First\". A first-ever-only cohort cannot answer a lookback-window question."
   ],
   "ConceptSets": [
     {
       "id": 0,
-      "name": "[DVI] Insulin-Treated Diabetes",
+      "name": "[DVI] Insulins and analogues (ATC A10A)",
       "expression": {
         "items": [
           {
@@ -24,6 +27,48 @@
               "DOMAIN_ID": "Drug",
               "VOCABULARY_ID": "ATC",
               "CONCEPT_CLASS_ID": "ATC 3rd"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          }
+        ]
+      }
+    },
+    {
+      "id": 1,
+      "name": "[DVI] Inpatient visit (incl. ER-to-inpatient)",
+      "expression": {
+        "items": [
+          {
+            "concept": {
+              "CONCEPT_ID": 9201,
+              "CONCEPT_NAME": "Inpatient Visit",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "IP",
+              "DOMAIN_ID": "Visit",
+              "VOCABULARY_ID": "Visit",
+              "CONCEPT_CLASS_ID": "Visit"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 262,
+              "CONCEPT_NAME": "Emergency Room and Inpatient Visit",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "ERIP",
+              "DOMAIN_ID": "Visit",
+              "VOCABULARY_ID": "Visit",
+              "CONCEPT_CLASS_ID": "Visit"
             },
             "isExcluded": false,
             "includeDescendants": true,
@@ -55,7 +100,55 @@
   "ExpressionLimit": {
     "Type": "All"
   },
-  "InclusionRules": [],
+  "InclusionRules": [
+    {
+      "name": "Not during an inpatient stay",
+      "description": "Zero inpatient visits (9201 Inpatient Visit, 262 Emergency Room and Inpatient Visit, with descendants) that span the insulin exposure start date: a visit that started on or before that date (StartWindow, unbounded back to day 0) AND ended on or after it (EndWindow, day 0 onward). This is what 'outpatient' means for the Iannuzzi insulin item: insulin given or prescribed while the patient was NOT hospitalized (chosen 2026-11-05 as the cleanest rule; inpatient sliding-scale and drip insulin are excluded). Exposures with no visit link are kept, ED-only visits are not excluded. Implementation note: the EndWindow must have UseEventEnd = true so Circe compares the visit END date; without it Circe tests the visit start date twice and only visits starting on the exposure date are excluded (caught by tests/regression/test_insulin_item.R).",
+      "expression": {
+        "Type": "ALL",
+        "CriteriaList": [
+          {
+            "Criteria": {
+              "VisitOccurrence": {
+                "CodesetId": 1
+              }
+            },
+            "StartWindow": {
+              "Start": {
+                "Coeff": -1
+              },
+              "End": {
+                "Days": 0,
+                "Coeff": 1
+              },
+              "UseIndexEnd": false,
+              "UseEventEnd": false
+            },
+            "EndWindow": {
+              "Start": {
+                "Days": 0,
+                "Coeff": -1
+              },
+              "End": {
+                "Coeff": 1
+              },
+              "UseIndexEnd": false,
+              "UseEventEnd": true
+            },
+            "RestrictVisit": false,
+            "IgnoreObservationPeriod": true,
+            "Occurrence": {
+              "Type": 0,
+              "Count": 0,
+              "IsDistinct": false
+            }
+          }
+        ],
+        "DemographicCriteriaList": [],
+        "Groups": []
+      }
+    }
+  ],
   "CensoringCriteria": [],
   "CollapseSettings": {
     "CollapseType": "ERA",

@@ -53,7 +53,9 @@ for (i in seq_len(nrow(manifest))) {
   json <- paste(readLines(json_path, warn = FALSE), collapse = "\n")
   sql  <- CirceR::buildCohortQuery(
     CirceR::cohortExpressionFromJson(json),
-    options = CirceR::createGenerateOptions(generateStats = FALSE)
+    # Honor the manifest's generate_stats column: the target cohort (9100011) is generated WITH inclusion-rule
+    # statistics because the CONSORT figure reads them; rendering it without them silently empties that figure.
+    options = CirceR::createGenerateOptions(generateStats = isTRUE(as.logical(manifest$generate_stats[i])))
   )
   writeLines(sql, sql_path)
   rendered <- rendered + 1L

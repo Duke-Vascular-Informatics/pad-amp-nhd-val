@@ -1,0 +1,454 @@
+{
+  "cdmVersionRange": ">=5.0.0",
+  "_README": [
+    "Lower-extremity wound, ulcer, gangrene, cellulitis, osteomyelitis and diabetic foot, for the Table 1 indication row.",
+    "Starts from the target cohort's wound indication (cohort 9100011, 24 roots with descendants) and ADDS five gangrene roots that",
+    "cohort lacks (2026-11-05): 4263116 Gangrene (with Dry, Wet, Trophic and Symmetrical gangrene beneath it), 44782426 Gangrene due",
+    "to peripheral vascular disease, 35615085 Bilateral gangrene of feet, and the two organism-specific gas gangrene concepts 4141477",
+    "and 4142822. Without them generic, dry and wet gangrene codes were not counted as a wound. Non-extremity gangrene (hernia, bowel,",
+    "Fournier, upper limb) is deliberately left out.",
+    "Limit=All at all three levels with EndStrategy StartDate+0 (same as every other covariate cohort here), so a cohort entry is a single dated event."
+  ],
+  "ConceptSets": [
+    {
+      "id": 0,
+      "name": "[DVI] Lower Extremity Wound (broad)",
+      "expression": {
+        "items": [
+          {
+            "concept": {
+              "CONCEPT_ID": 197304,
+              "CONCEPT_NAME": "Ulcer of lower extremity",
+              "DOMAIN_ID": "Condition",
+              "VOCABULARY_ID": "SNOMED",
+              "STANDARD_CONCEPT": "S",
+              "INVALID_REASON": "V"
+            },
+            "includeDescendants": true,
+            "isExcluded": false,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 4097962,
+              "CONCEPT_NAME": "Open wound of lower limb",
+              "DOMAIN_ID": "Condition",
+              "VOCABULARY_ID": "SNOMED",
+              "STANDARD_CONCEPT": "S",
+              "INVALID_REASON": "V"
+            },
+            "includeDescendants": true,
+            "isExcluded": false,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 4054067,
+              "CONCEPT_NAME": "Open wound of foot",
+              "DOMAIN_ID": "Condition",
+              "VOCABULARY_ID": "SNOMED",
+              "STANDARD_CONCEPT": "S",
+              "INVALID_REASON": "V"
+            },
+            "includeDescendants": true,
+            "isExcluded": false,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 4108371,
+              "CONCEPT_NAME": "Peripheral gangrene",
+              "DOMAIN_ID": "Condition",
+              "VOCABULARY_ID": "SNOMED",
+              "STANDARD_CONCEPT": "S",
+              "INVALID_REASON": "V"
+            },
+            "includeDescendants": true,
+            "isExcluded": false,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 433696,
+              "CONCEPT_NAME": "Gas gangrene",
+              "DOMAIN_ID": "Condition",
+              "VOCABULARY_ID": "SNOMED",
+              "STANDARD_CONCEPT": "S",
+              "INVALID_REASON": "V"
+            },
+            "includeDescendants": true,
+            "isExcluded": false,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 4226354,
+              "CONCEPT_NAME": "Gangrene due to diabetes mellitus",
+              "DOMAIN_ID": "Condition",
+              "VOCABULARY_ID": "SNOMED",
+              "STANDARD_CONCEPT": "S",
+              "INVALID_REASON": "V"
+            },
+            "includeDescendants": true,
+            "isExcluded": false,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 4291464,
+              "CONCEPT_NAME": "Ischemic gangrene",
+              "DOMAIN_ID": "Condition",
+              "VOCABULARY_ID": "SNOMED",
+              "STANDARD_CONCEPT": "S",
+              "INVALID_REASON": "V"
+            },
+            "includeDescendants": true,
+            "isExcluded": false,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 4112159,
+              "CONCEPT_NAME": "Gangrene of foot",
+              "DOMAIN_ID": "Condition",
+              "VOCABULARY_ID": "SNOMED",
+              "STANDARD_CONCEPT": "S",
+              "INVALID_REASON": "V"
+            },
+            "includeDescendants": true,
+            "isExcluded": false,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 4111843,
+              "CONCEPT_NAME": "Gangrene of toe",
+              "DOMAIN_ID": "Condition",
+              "VOCABULARY_ID": "SNOMED",
+              "STANDARD_CONCEPT": "S",
+              "INVALID_REASON": "V"
+            },
+            "includeDescendants": true,
+            "isExcluded": false,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 317577,
+              "CONCEPT_NAME": "Arteriosclerotic gangrene",
+              "DOMAIN_ID": "Condition",
+              "VOCABULARY_ID": "SNOMED",
+              "STANDARD_CONCEPT": "S",
+              "INVALID_REASON": "V"
+            },
+            "includeDescendants": true,
+            "isExcluded": false,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 4256119,
+              "CONCEPT_NAME": "Acral gangrene",
+              "DOMAIN_ID": "Condition",
+              "VOCABULARY_ID": "SNOMED",
+              "STANDARD_CONCEPT": "S",
+              "INVALID_REASON": "V"
+            },
+            "includeDescendants": true,
+            "isExcluded": false,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 4111732,
+              "CONCEPT_NAME": "Presenile gangrene",
+              "DOMAIN_ID": "Condition",
+              "VOCABULARY_ID": "SNOMED",
+              "STANDARD_CONCEPT": "S",
+              "INVALID_REASON": "V"
+            },
+            "includeDescendants": true,
+            "isExcluded": false,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 40480503,
+              "CONCEPT_NAME": "Progressive cutaneous gangrene",
+              "DOMAIN_ID": "Condition",
+              "VOCABULARY_ID": "SNOMED",
+              "STANDARD_CONCEPT": "S",
+              "INVALID_REASON": "V"
+            },
+            "includeDescendants": true,
+            "isExcluded": false,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 46273172,
+              "CONCEPT_NAME": "Gangrene due to arterial insufficiency",
+              "DOMAIN_ID": "Condition",
+              "VOCABULARY_ID": "SNOMED",
+              "STANDARD_CONCEPT": "S",
+              "INVALID_REASON": "V"
+            },
+            "includeDescendants": true,
+            "isExcluded": false,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 46273522,
+              "CONCEPT_NAME": "Gangrene due to Raynaud disease",
+              "DOMAIN_ID": "Condition",
+              "VOCABULARY_ID": "SNOMED",
+              "STANDARD_CONCEPT": "S",
+              "INVALID_REASON": "V"
+            },
+            "includeDescendants": true,
+            "isExcluded": false,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 46270361,
+              "CONCEPT_NAME": "Gangrene due to secondary Raynaud phenomenon",
+              "DOMAIN_ID": "Condition",
+              "VOCABULARY_ID": "SNOMED",
+              "STANDARD_CONCEPT": "S",
+              "INVALID_REASON": "V"
+            },
+            "includeDescendants": true,
+            "isExcluded": false,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 42709838,
+              "CONCEPT_NAME": "Cellulitis of lower limb",
+              "DOMAIN_ID": "Condition",
+              "VOCABULARY_ID": "SNOMED",
+              "STANDARD_CONCEPT": "S",
+              "INVALID_REASON": "V"
+            },
+            "includeDescendants": true,
+            "isExcluded": false,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 4028237,
+              "CONCEPT_NAME": "Cellulitis of foot",
+              "DOMAIN_ID": "Condition",
+              "VOCABULARY_ID": "SNOMED",
+              "STANDARD_CONCEPT": "S",
+              "INVALID_REASON": "V"
+            },
+            "includeDescendants": true,
+            "isExcluded": false,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 4320944,
+              "CONCEPT_NAME": "Cellulitis of toe",
+              "DOMAIN_ID": "Condition",
+              "VOCABULARY_ID": "SNOMED",
+              "STANDARD_CONCEPT": "S",
+              "INVALID_REASON": "V"
+            },
+            "includeDescendants": true,
+            "isExcluded": false,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 133566,
+              "CONCEPT_NAME": "Necrotizing fasciitis",
+              "DOMAIN_ID": "Condition",
+              "VOCABULARY_ID": "SNOMED",
+              "STANDARD_CONCEPT": "S",
+              "INVALID_REASON": "V"
+            },
+            "includeDescendants": true,
+            "isExcluded": false,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 133853,
+              "CONCEPT_NAME": "Osteomyelitis of ankle AND/OR foot",
+              "DOMAIN_ID": "Condition",
+              "VOCABULARY_ID": "SNOMED",
+              "STANDARD_CONCEPT": "S",
+              "INVALID_REASON": "V"
+            },
+            "includeDescendants": true,
+            "isExcluded": false,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 1246044,
+              "CONCEPT_NAME": "Osteomyelitis of foot",
+              "DOMAIN_ID": "Condition",
+              "VOCABULARY_ID": "SNOMED",
+              "STANDARD_CONCEPT": "S",
+              "INVALID_REASON": "V"
+            },
+            "includeDescendants": true,
+            "isExcluded": false,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 4087682,
+              "CONCEPT_NAME": "Diabetic foot",
+              "DOMAIN_ID": "Condition",
+              "VOCABULARY_ID": "SNOMED",
+              "STANDARD_CONCEPT": "S",
+              "INVALID_REASON": "V"
+            },
+            "includeDescendants": true,
+            "isExcluded": false,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 4159742,
+              "CONCEPT_NAME": "Diabetic foot ulcer",
+              "DOMAIN_ID": "Condition",
+              "VOCABULARY_ID": "SNOMED",
+              "STANDARD_CONCEPT": "S",
+              "INVALID_REASON": "V"
+            },
+            "includeDescendants": true,
+            "isExcluded": false,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 4263116,
+              "CONCEPT_NAME": "Gangrene",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "36024000",
+              "DOMAIN_ID": "Observation",
+              "VOCABULARY_ID": "SNOMED",
+              "CONCEPT_CLASS_ID": "Morph Abnormality"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 44782426,
+              "CONCEPT_NAME": "Gangrene due to peripheral vascular disease",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "102631000119103",
+              "DOMAIN_ID": "Condition",
+              "VOCABULARY_ID": "SNOMED",
+              "CONCEPT_CLASS_ID": "Disorder"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 35615085,
+              "CONCEPT_NAME": "Bilateral gangrene of feet",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "16011311000119104",
+              "DOMAIN_ID": "Condition",
+              "VOCABULARY_ID": "SNOMED",
+              "CONCEPT_CLASS_ID": "Disorder"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 4141477,
+              "CONCEPT_NAME": "Gas gangrene caused by clostridium histolyticum",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "266091007",
+              "DOMAIN_ID": "Condition",
+              "VOCABULARY_ID": "SNOMED",
+              "CONCEPT_CLASS_ID": "Disorder"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 4142822,
+              "CONCEPT_NAME": "Gas gangrene caused by Paeniclostridium sordellii",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "266095003",
+              "DOMAIN_ID": "Condition",
+              "VOCABULARY_ID": "SNOMED",
+              "CONCEPT_CLASS_ID": "Disorder"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          }
+        ]
+      }
+    }
+  ],
+  "PrimaryCriteria": {
+    "CriteriaList": [
+      {
+        "ConditionOccurrence": {
+          "CodesetId": 0
+        }
+      }
+    ],
+    "ObservationWindow": {
+      "PriorDays": 0,
+      "PostDays": 0
+    },
+    "PrimaryCriteriaLimit": {
+      "Type": "All"
+    }
+  },
+  "QualifiedLimit": {
+    "Type": "All"
+  },
+  "ExpressionLimit": {
+    "Type": "All"
+  },
+  "InclusionRules": [],
+  "CensoringCriteria": [],
+  "CollapseSettings": {
+    "CollapseType": "ERA",
+    "EraPad": 0
+  },
+  "CensorWindow": {},
+  "EndStrategy": {
+    "DateOffset": {
+      "DateField": "StartDate",
+      "Offset": 0
+    }
+  }
+}

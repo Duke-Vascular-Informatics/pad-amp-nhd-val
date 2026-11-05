@@ -118,6 +118,26 @@ folder before re-running.
   concept set as 9100011's "Lower Extremity Peripheral Artery Occlusive Disease": four roots less ten
   non-lower-extremity exclusions). Keep them identical; the oracle rows in `covariate_concepts_vqifs.csv`
   and the cohort JSON are checked by the regression test's concept-set drift check.
+- **Insulin item (2026-11-05): "who with diabetes is currently on insulin".** Positive = an outpatient insulin exposure in the
+  365 days before index AND a diabetes diagnosis at any time before index. Outpatient = no inpatient visit (9201, 262, with
+  descendants) spans the exposure date (start and end inclusive); exposures with no visit link count; ED-only visits are not
+  excluded. Cohort path: cohort 9100007 AND cohort 9100021 via `and_cohort_id` in `cohort_map.csv`. Domain path:
+  `query_insulin_covariate_counts()` with the `diagnosis_required` rows of `covariate_concepts.csv`. **Circe gotcha:** an
+  inclusion rule that checks a visit's END date needs `EndWindow.UseEventEnd = true`; without it Circe silently tests the
+  visit START date twice. `tests/regression/test_insulin_item.R` (16 hand-built patients: window edges, inpatient overlap,
+  ER-to-inpatient, ED-only, no visit link, diabetes before/after index) is the only thing that exercises this; the synthetic
+  dataset has no inpatient insulin and cannot.
+- **One diabetes definition everywhere (2026-11-05):** cohort 9100021 = 201820 + 442793 with descendants (all types incl. type 1
+  and 2, and diabetic complications), also the target's diabetes indication, Table 1, and the insulin item's requirement.
+- **Wound set = 29 roots in BOTH the target's wound entry criterion and Table 1 (9100029)**: the original 24 plus five gangrene roots
+  (4263116 generic/dry/wet/trophic/symmetrical, 44782426, 35615085, 4141477, 4142822), added 2026-11-05. Keep the two identical.
+  `scripts/render_cohort_sql.R` now honors the `generate_stats` column (the target needs inclusion statistics for the CONSORT figure).
+- **Table 1 phenotype rows are read from ATLAS cohorts (2026-11-05).** PAD = 9100003, diabetes (all types) = 9100021,
+  lower-extremity wound = 9100029, above-knee = 9100030, below-knee = 9100031 (Other = the rest of the target cohort),
+  via `.table1_indication_sql()` / `.table1_amp_level_sql()` in `R/extract_report_inputs.R`. 9100029-31 exist only for
+  Table 1 (ATLAS 1798663-65). Indication = an entry on or before the index date; level = an entry on the index visit.
+  PASS 3 of `tests/regression/test_cohort_vs_domain_covariates.R` recomputes these rows straight from the cohort JSON
+  concept sets and requires an exact match. Age, sex, race and ethnicity stay direct person-table queries.
 - **Never reuse a `Limit: First` cohort for a score item.** The four VA-FI cohorts
   (1797949–1797952) were dropped on 2026-10-05 for exactly this reason: one row per person
   at their first-ever record means a lookback window cannot bind, and the published 30-day

@@ -51,6 +51,17 @@
 #   threshold and g/L → g/dL unit conversion are applied in
 #   query_anemia_covariate_counts(), not via concept set.
 #
+# INSULIN_DEP (REDEFINED 2026-11-05 -- "who with diabetes is currently on insulin"):
+#   positive = an OUTPATIENT insulin exposure in the 365 days before index (ATC 21600713 below)
+#              AND a diabetes diagnosis at ANY time before index (the two 'diagnosis_required' rows:
+#              201820 Diabetes mellitus + 442793 Complication due to diabetes mellitus, with descendants,
+#              the same all-types diabetes definition used everywhere).
+#   "Outpatient" = the exposure does NOT fall within an inpatient stay: no inpatient visit
+#              (visit_concept 9201 Inpatient Visit or 262 Emergency Room and Inpatient Visit, with
+#              descendants) spans the exposure start date. Exposures with no visit link count (they are
+#              not inpatient). Emergency-department-only visits are not excluded.
+#   Cohort path: cohort 9100007 (insulin exposure outside an inpatient stay) AND cohort 9100021 (diabetes), see
+#              covariates/cohort_map.csv and_cohort_id. Domain path: query_insulin_covariate_counts().
 # INSULIN_DEP:
 #   catalog entry: insulin_dependent_diabetes_drug
 #   ATC 21600713 'INSULINS AND ANALOGUES' ancestor (10,053 standard
@@ -171,3 +182,5 @@ tissue_loss,4029926,TRUE,,
 tissue_loss,4291464,TRUE,,
 anemia,3000963,FALSE,,
 insulin_dep,21600713,TRUE,,
+insulin_dep,201820,TRUE,diagnosis_required,
+insulin_dep,442793,TRUE,diagnosis_required,

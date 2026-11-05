@@ -1014,6 +1014,83 @@ query_renal_impairment_covariate_counts <- function(connection, config, covariat
 
 
 # -----------------------------------------------------------------------------
+# query_insulin_covariate_counts()
+#
+# Direct-query (oracle) implementation of the Iannuzzi insulin_dep item: "who with diabetes is currently on
+# insulin" (redefined 2026-11-05). A patient is positive when BOTH hold:
+#   1. an OUTPATIENT insulin exposure with its start date in the covariate window (365 days before index), and
+#   2. a diabetes diagnosis (concept_role = 'diagnosis_required') at any time before index (-36500..-1).
+#
+# "Outpatient" = the exposure does not fall within an inpatient stay: no inpatient visit (visit_concept_id 9201
+# Inpatient Visit or 262 Emergency Room and Inpatient Visit, with descendants) has visit_start_date <= the exposure
+# start date <= visit_end_date. Exposures with no visit link are kept (they are not inpatient); ED-only visits
+# are not excluded.
+#
+# This is the independent check on the cohort path (cohort 9100007 AND cohort 9100021 via cohort_map.csv
+# and_cohort_id); tests/regression/test_cohort_vs_domain_covariates.R requires the two to agree exactly.
+# Returns SUBJECT_ID / EVENT_COUNT like every other query_* function.
+# -----------------------------------------------------------------------------
+query_insulin_covariate_counts <- function(connection, config, covariate, covariate_concepts) {
+  is_dx   <- !is.na(covariate_concepts$concept_role) & covariate_concepts$concept_role == "diagnosis_required"
+  ins     <- covariate_concepts[!is_dx, , drop = FALSE]
+  dx      <- covariate_concepts[is_dx,  , drop = FALSE]
+  if (nrow(ins) == 0L || nrow(dx) == 0L) {
+    stop("Covariate insulin_dep needs insulin concept rows AND concept_role = 'diagnosis_required' rows ",
+         "(the diabetes requirement) in its concepts CSV")
+  }
+  # Concept-id subquery honouring each row's include_descendants flag.
+  ids_sql <- function(rows) {
+    base <- unique(rows$concept_id)
+    desc <- unique(rows$concept_id[rows$include_descendants])
+    paste0("SELECT concept_id FROM (SELECT CAST(value AS BIGINT) AS concept_id FROM string_split('",
+           paste(base, collapse = ","), "', ',')) b",
+           if (length(desc)) paste0(" UNION SELECT ca.descendant_concept_id FROM @cdm_schema.concept_ancestor ca ",
+                                    "WHERE ca.ancestor_concept_id IN (", paste(desc, collapse = ","), ")") else "")
+  }
+  sql <- SqlRender::render(
+    sql = paste0("
+      WITH target_population AS (
+        SELECT c.subject_id, CAST(c.cohort_start_date AS DATE) AS index_date
+        FROM @results_schema.@cohort_table c
+        WHERE c.cohort_definition_id = @target_id
+      ),
+      insulin_ids   AS (", ids_sql(ins), "),
+      dx_ids        AS (", ids_sql(dx),  "),
+      inpatient_ids AS (SELECT descendant_concept_id AS concept_id FROM @cdm_schema.concept_ancestor
+                        WHERE ancestor_concept_id IN (9201, 262))
+      SELECT t.subject_id AS subject_id, COUNT(*) AS event_count
+      FROM target_population t
+      INNER JOIN @cdm_schema.drug_exposure de
+              ON de.person_id = t.subject_id
+             AND de.drug_concept_id IN (SELECT concept_id FROM insulin_ids)
+             AND de.drug_exposure_start_date BETWEEN DATEADD(DAY, @lookback_start, t.index_date)
+                                                 AND DATEADD(DAY, @lookback_end,   t.index_date)
+      WHERE NOT EXISTS (
+              SELECT 1 FROM @cdm_schema.visit_occurrence v
+              WHERE v.person_id = de.person_id
+                AND v.visit_concept_id IN (SELECT concept_id FROM inpatient_ids)
+                AND v.visit_start_date <= de.drug_exposure_start_date
+                AND v.visit_end_date   >= de.drug_exposure_start_date)
+        AND EXISTS (
+              SELECT 1 FROM @cdm_schema.condition_occurrence co
+              WHERE co.person_id = t.subject_id
+                AND co.condition_concept_id IN (SELECT concept_id FROM dx_ids)
+                AND co.condition_start_date BETWEEN DATEADD(DAY, @dx_start, t.index_date)
+                                                AND DATEADD(DAY, @dx_end,   t.index_date))
+      GROUP BY t.subject_id"),
+    cdm_schema     = config$cdm_schema,
+    results_schema = results_schema_prefix(config),
+    cohort_table   = config$cohort_table,
+    target_id      = config$target_cohort_id,
+    lookback_start = as.integer(covariate$lookback_start_day),
+    lookback_end   = as.integer(covariate$lookback_end_day),
+    dx_start       = -36500L,   # diabetes at ANY time before index (100 years back)
+    dx_end         = -1L
+  )
+  DatabaseConnector::querySql(connection, SqlRender::translate(sql, targetDialect = "sql server"))
+}
+
+# -----------------------------------------------------------------------------
 # query_prolonged_antibiotic_counts()
 #
 # Counts non-prophylactic systemic antibiotic exposures per patient.
@@ -1587,7 +1664,13 @@ lookup_cohort_map <- function(config, covariate_id) {
       cohort_id          = suppressWarnings(as.integer(hit$cohort_id[[i]])),
       cohort_name        = hit$cohort_name[[i]],
       lookback_start_day = as.integer(hit$lookback_start_day[[i]]),
-      lookback_end_day   = as.integer(hit$lookback_end_day[[i]])
+      lookback_end_day   = as.integer(hit$lookback_end_day[[i]]),
+      # Optional second requirement (added 2026-11-05): the item is positive only if the patient ALSO has an
+      # entry in and_cohort_id inside and_lookback_*. Used by the Iannuzzi insulin item (outpatient insulin AND a
+      # diabetes diagnosis at any time before index). Absent columns or blank cells mean no extra requirement.
+      and_cohort_id          = if ("and_cohort_id" %in% names(hit)) suppressWarnings(as.integer(hit$and_cohort_id[[i]])) else NA_integer_,
+      and_lookback_start_day = if ("and_lookback_start_day" %in% names(hit)) suppressWarnings(as.integer(hit$and_lookback_start_day[[i]])) else NA_integer_,
+      and_lookback_end_day   = if ("and_lookback_end_day" %in% names(hit)) suppressWarnings(as.integer(hit$and_lookback_end_day[[i]])) else NA_integer_
     )
   })
 }
@@ -1655,8 +1738,29 @@ query_cohort_covariate_counts <- function(connection, config, covariate, mapping
          "path (mechanism = 'computed_r' in cohort_map.csv).")
   }
 
+  # Optional second requirement from cohort_map.csv (and_cohort_id): the patient must ALSO have an entry in that
+  # cohort inside its own window. Rendered here as a complete clause (numbers only) so no placeholder is left.
+  and_clause <- ""
+  if (!is.null(mapping$and_cohort_id) && !is.na(mapping$and_cohort_id)) {
+    and_clause <- SqlRender::render(
+      sql = "WHERE EXISTS (
+               SELECT 1
+               FROM @results_schema.@cohort_table a
+               WHERE a.subject_id = t.subject_id
+                 AND a.cohort_definition_id = @and_id
+                 AND CAST(a.cohort_start_date AS DATE)
+                       BETWEEN DATEADD(DAY, @and_start, t.index_date)
+                           AND DATEADD(DAY, @and_end,   t.index_date))",
+      results_schema = config$results_schema,
+      cohort_table   = config$cohort_table,
+      and_id         = mapping$and_cohort_id,
+      and_start      = mapping$and_lookback_start_day,
+      and_end        = mapping$and_lookback_end_day
+    )
+  }
+
   sql <- SqlRender::render(
-    sql = "
+    sql = paste0("
       WITH target_population AS (
         SELECT c.subject_id,
                CAST(c.cohort_start_date AS DATE) AS index_date
@@ -1672,7 +1776,8 @@ query_cohort_covariate_counts <- function(connection, config, covariate, mapping
              AND CAST(cov.cohort_start_date AS DATE)
                    BETWEEN DATEADD(DAY, @lookback_start, t.index_date)
                        AND DATEADD(DAY, @lookback_end,   t.index_date)
-      GROUP BY t.subject_id",
+      ", and_clause, "
+      GROUP BY t.subject_id"),
     results_schema      = config$results_schema,
     cohort_table        = config$cohort_table,
     target_id           = config$target_cohort_id,
@@ -1772,6 +1877,10 @@ query_covariate_counts <- function(connection, config, covariate, covariate_conc
 
   if (covariate$covariate_id == "female") {
     return(query_female_covariate_counts(connection, config, covariate, covariate_concepts))
+  }
+
+  if (covariate$covariate_id == "insulin_dep") {
+    return(query_insulin_covariate_counts(connection, config, covariate, covariate_concepts))
   }
 
   if (covariate$covariate_id %in% c("underweight", "overweight", "obese")) {

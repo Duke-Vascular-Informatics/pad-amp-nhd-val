@@ -126,11 +126,17 @@ cohorts <- list(
 
   `9100021` = list(
     readme = c(
-      "Diabetes mellitus (any type) - the mFI-5 dm item (1 point).",
-      "Concept set is EXACTLY covariates/covariate_concepts_mfi5.csv :: dm (201820 + descendants).",
+      "Diabetes mellitus, ALL TYPES (type 1, type 2, secondary and diabetic complications) - the mFI-5 and sVQI-FS dm items,",
+      "the Table 1 diabetes indication, and the diabetes requirement of the Iannuzzi insulin item.",
+      "Concept set is EXACTLY the target cohort's diabetes indication (cohort 9100011) and the score CSVs' dm concepts:",
+      "201820 Diabetes mellitus + 442793 Complication due to diabetes mellitus, each with descendants.",
+      "442793 is NOT a descendant of 201820 in this vocabulary (it adds 469 concepts: diabetic nephropathy, neuropathy,",
+      "retinopathy and other complication concepts that can be coded without a general diabetes code), so it was added",
+      "2026-11-05 to give ONE diabetes definition everywhere. Until then this cohort held 201820 alone.",
       "Replaces the reused Limit=First [DVI] VA-FI Diabetes cohort 1797952, which was also broader than the CSV (adds 4034964)."),
     sets = list(list(name = "[DVI] Diabetes mellitus (risk score item)", criterion = "ConditionOccurrence",
-                     items = list(list(201820L, TRUE, FALSE))))  # [vocab query] SNOMED: Diabetes mellitus
+                     items = list(list(201820L, TRUE, FALSE),    # [vocab query] SNOMED: Diabetes mellitus
+                                  list(442793L, TRUE, FALSE))))  # [vocab query] SNOMED: Complication due to diabetes mellitus
   ),
 
   `9100022` = list(
