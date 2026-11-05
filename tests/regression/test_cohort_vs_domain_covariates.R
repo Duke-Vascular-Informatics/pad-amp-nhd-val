@@ -184,8 +184,11 @@ for (score in config$scores) {
 message("\n########## CONCEPT-SET DRIFT CHECK ##########")
 # Concept ids of a cohort's concept sets, split by circe's isExcluded flag so an
 # exclusion in the cohort must be matched by an exclusion in the CSV (and vice versa).
-extractConcepts <- function(path, excluded = FALSE) {
+extractConcepts <- function(path, excluded = FALSE, sets = NULL) {
   j <- jsonlite::fromJSON(path, simplifyVector = FALSE)
+  # sets: optional vector of concept-set ids to read (cohort 9100007 also carries a visit concept set that is not
+  # part of the insulin concepts)
+  if (!is.null(sets)) j$ConceptSets <- Filter(function(cs) cs$id %in% sets, j$ConceptSets)
   ids <- integer(0)  # not c(): an empty result must be integer(0), not NULL, or identical() against an empty CSV side is FALSE
   walk <- function(x) {
     if (is.list(x)) {
@@ -207,7 +210,7 @@ DRIFT <- list(
   list(cid = "9100002", csv = "covariates/covariate_concepts_mfi5.csv",  cov = "copd",             window = "default"),
   list(cid = "9100003", csv = "covariates/covariate_concepts_vqifs.csv", cov = "pvd",              window = "default"),
   list(cid = "9100004", csv = "covariates/covariate_concepts.csv",       cov = "tissue_loss",      window = "default"),
-  list(cid = "9100007", csv = "covariates/covariate_concepts.csv",       cov = "insulin_dep",      window = "default"),
+  list(cid = "9100007", csv = "covariates/covariate_concepts.csv",       cov = "insulin_dep",      window = "default", sets = 0L),
   list(cid = "9100021", csv = "covariates/covariate_concepts_mfi5.csv",  cov = "dm",               window = "default"),
   list(cid = "9100021", csv = "covariates/covariate_concepts_vqifs.csv", cov = "dm",               window = "default"),
   list(cid = "9100022", csv = "covariates/covariate_concepts_mfi5.csv",  cov = "htn",              window = "default"),
@@ -228,11 +231,16 @@ for (spec in DRIFT) {
     rows <- rows[if (spec$window == "override") has_override else !has_override, , drop = FALSE]
   }
   is_excl_row <- !is.na(rows$concept_role) & tolower(trimws(rows$concept_role)) == "exclude"
+  # 'diagnosis_required' rows are the diabetes requirement of the insulin item, not insulin concepts; they are
+  # checked against cohort 9100021 below.
+  is_dx_row   <- !is.na(rows$concept_role) & tolower(trimws(rows$concept_role)) == "diagnosis_required"
+  rows        <- rows[!is_dx_row, , drop = FALSE]
+  is_excl_row <- is_excl_row[!is_dx_row]
   want     <- sort(unique(as.integer(rows$concept_id[!is_excl_row])))
   want_exc <- sort(unique(as.integer(rows$concept_id[is_excl_row])))
   cj       <- file.path("inst", "cohorts", paste0(spec$cid, ".json"))
-  got      <- extractConcepts(cj)
-  got_exc  <- extractConcepts(cj, excluded = TRUE)
+  got      <- extractConcepts(cj, sets = spec$sets)
+  got_exc  <- extractConcepts(cj, excluded = TRUE, sets = spec$sets)
   ok   <- identical(want, got) && identical(want_exc, got_exc)
   cat(sprintf("  %-9s %-14s %-8s csv=[%s]%s cohort=[%s]%s  %s\n", spec$cid, spec$cov, spec$window,
               paste(want, collapse = ","),
@@ -242,6 +250,17 @@ for (spec in DRIFT) {
               if (ok) "match" else "*** DRIFT ***"))
   if (!ok) failures <- c(failures, sprintf("concept drift in cohort %s (%s, %s)", spec$cid, spec$cov, spec$csv))
 }
+
+# ONE DIABETES DEFINITION (2026-11-05): the diabetes requirement of the Iannuzzi insulin item (diagnosis_required rows)
+# and both score dm items must equal cohort 9100021, which also drives Table 1.
+local({
+  dm_cohort <- extractConcepts(file.path("inst", "cohorts", "9100021.json"))
+  ins <- read.csv("covariates/covariate_concepts.csv", comment.char = "#", stringsAsFactors = FALSE)
+  ins_dx <- sort(unique(as.integer(ins$concept_id[ins$covariate_id == "insulin_dep" & !is.na(ins$concept_role) & ins$concept_role == "diagnosis_required"])))
+  ok <- identical(ins_dx, dm_cohort)
+  cat(sprintf("  insulin_dep diagnosis_required=[%s] vs cohort 9100021=[%s]  %s\n", paste(ins_dx, collapse = ","), paste(dm_cohort, collapse = ","), if (ok) "match" else "*** DRIFT ***"))
+  if (!ok) failures <<- c(failures, "insulin_dep diagnosis requirement differs from the diabetes cohort 9100021")
+})
 
 # ---------------------------------------------------------------------------
 # PASS 3: Table 1 phenotype rows read from cohorts must equal an independent direct count from the CDM

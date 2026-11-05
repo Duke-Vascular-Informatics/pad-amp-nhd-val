@@ -1,10 +1,12 @@
 {
   "cdmVersionRange": ">=5.0.0",
   "_README": [
-    "Lower-extremity wound, ulcer, gangrene, cellulitis, osteomyelitis and diabetic foot: the SAME concept set as the target cohort's",
-    "wound indication (cohort 9100011, \"[DVI] Lower Extremity Wound (broad)\", 24 roots with descendants). Used for the",
-    "Table 1 indication row, so that Table 1 counts the same phenotype that defines cohort entry (it used a hand-written list of 25",
-    "roots, one of which, 4263116 Gangrene, is not in the cohort definition). Added 2026-11-05.",
+    "Lower-extremity wound, ulcer, gangrene, cellulitis, osteomyelitis and diabetic foot, for the Table 1 indication row.",
+    "Starts from the target cohort's wound indication (cohort 9100011, 24 roots with descendants) and ADDS five gangrene roots that",
+    "cohort lacks (2026-11-05): 4263116 Gangrene (with Dry, Wet, Trophic and Symmetrical gangrene beneath it), 44782426 Gangrene due",
+    "to peripheral vascular disease, 35615085 Bilateral gangrene of feet, and the two organism-specific gas gangrene concepts 4141477",
+    "and 4142822. Without them generic, dry and wet gangrene codes were not counted as a wound. Non-extremity gangrene (hernia, bowel,",
+    "Fournier, upper limb) is deliberately left out.",
     "Limit=All at all three levels with EndStrategy StartDate+0 (same as every other covariate cohort here), so a cohort entry is a single dated event."
   ],
   "ConceptSets": [
@@ -323,6 +325,91 @@
             },
             "includeDescendants": true,
             "isExcluded": false,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 4263116,
+              "CONCEPT_NAME": "Gangrene",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "36024000",
+              "DOMAIN_ID": "Observation",
+              "VOCABULARY_ID": "SNOMED",
+              "CONCEPT_CLASS_ID": "Morph Abnormality"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 44782426,
+              "CONCEPT_NAME": "Gangrene due to peripheral vascular disease",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "102631000119103",
+              "DOMAIN_ID": "Condition",
+              "VOCABULARY_ID": "SNOMED",
+              "CONCEPT_CLASS_ID": "Disorder"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 35615085,
+              "CONCEPT_NAME": "Bilateral gangrene of feet",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "16011311000119104",
+              "DOMAIN_ID": "Condition",
+              "VOCABULARY_ID": "SNOMED",
+              "CONCEPT_CLASS_ID": "Disorder"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 4141477,
+              "CONCEPT_NAME": "Gas gangrene caused by clostridium histolyticum",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "266091007",
+              "DOMAIN_ID": "Condition",
+              "VOCABULARY_ID": "SNOMED",
+              "CONCEPT_CLASS_ID": "Disorder"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 4142822,
+              "CONCEPT_NAME": "Gas gangrene caused by Paeniclostridium sordellii",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "266095003",
+              "DOMAIN_ID": "Condition",
+              "VOCABULARY_ID": "SNOMED",
+              "CONCEPT_CLASS_ID": "Disorder"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
             "includeMapped": false
           }
         ]

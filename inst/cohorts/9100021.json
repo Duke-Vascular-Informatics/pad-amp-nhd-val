@@ -1,6 +1,6 @@
 {
   "cdmVersionRange": ">=5.0.0",
-  "_README": ["Diabetes mellitus (any type) - the mFI-5 dm item (1 point).", "Concept set is EXACTLY covariates/covariate_concepts_mfi5.csv :: dm (201820 + descendants).", "Replaces the reused Limit=First [DVI] VA-FI Diabetes cohort 1797952, which was also broader than the CSV (adds 4034964).", "PrimaryCriteriaLimit / QualifiedLimit / ExpressionLimit are all \"All\" and EndStrategy is StartDate+0, unlike the [DVI] VA-FI cohorts (1797948-1797977) which are \"First\". A first-ever-only cohort cannot answer a lookback-window question."],
+  "_README": ["Diabetes mellitus, ALL TYPES (type 1, type 2, secondary and diabetic complications) - the mFI-5 and sVQI-FS dm items,", "the Table 1 diabetes indication, and the diabetes requirement of the Iannuzzi insulin item.", "Concept set is EXACTLY the target cohort's diabetes indication (cohort 9100011) and the score CSVs' dm concepts:", "201820 Diabetes mellitus + 442793 Complication due to diabetes mellitus, each with descendants.", "442793 is NOT a descendant of 201820 in this vocabulary (it adds 469 concepts: diabetic nephropathy, neuropathy,", "retinopathy and other complication concepts that can be coded without a general diabetes code), so it was added", "2026-11-05 to give ONE diabetes definition everywhere. Until then this cohort held 201820 alone.", "Replaces the reused Limit=First [DVI] VA-FI Diabetes cohort 1797952, which was also broader than the CSV (adds 4034964).", "PrimaryCriteriaLimit / QualifiedLimit / ExpressionLimit are all \"All\" and EndStrategy is StartDate+0, unlike the [DVI] VA-FI cohorts (1797948-1797977) which are \"First\". A first-ever-only cohort cannot answer a lookback-window question."],
   "ConceptSets": [
     {
       "id": 0,
@@ -16,6 +16,23 @@
               "INVALID_REASON": "V",
               "INVALID_REASON_CAPTION": "Valid",
               "CONCEPT_CODE": "73211009",
+              "DOMAIN_ID": "Condition",
+              "VOCABULARY_ID": "SNOMED",
+              "CONCEPT_CLASS_ID": "Disorder"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 442793,
+              "CONCEPT_NAME": "Complication due to diabetes mellitus",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "74627003",
               "DOMAIN_ID": "Condition",
               "VOCABULARY_ID": "SNOMED",
               "CONCEPT_CLASS_ID": "Disorder"
