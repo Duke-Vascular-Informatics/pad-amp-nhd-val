@@ -103,14 +103,21 @@ folder before re-running.
   anemia threshold with `grepl("vqifs", <path>)`, which also matched output folders. Use
   `config$score_id`, which is deliberately `NULL` by default so a forgotten assignment
   fails loudly.
-- **Every score-item window is 365 days (`-365..-1`) unless the published
-  definition says otherwise** — mFI-5 CHF and the mFI-5 pneumonia arm are 30 days,
-  Iannuzzi tissue loss is `-365..0`. This is set in three places that must agree:
-  `covariates/cohort_map.csv` (cohort path), `covariates/covariates*.csv` (domain-query
-  oracle) and, for the pneumonia arm, a per-row `lookback_start_day`/`lookback_end_day`
-  override in `covariate_concepts_mfi5.csv`. mFI-5 `copd` is the one item with TWO
-  `cohort_map.csv` rows (COPD 365 d OR pneumonia 30 d); a pair may have several rows and
-  any hit is positive. The regression test requires exact cohort-vs-domain agreement.
+- **Score-item windows are chosen per item (changed 2026-11-05).** Chronic conditions (diabetes, hypertension,
+  COPD, coronary artery disease, peripheral artery disease, insulin-treated diabetes) look back **any time before index**, encoded as
+  `-36500` days (100 years, safely inside the SQL DATE range) `..-1`; hemoglobin and BMI (anemia, underweight)
+  use **90 days** so they describe the patient at surgery; mFI-5 CHF and the mFI-5 pneumonia arm are 30 days;
+  everything else (functional status, ambulation, sVQI-FS CHF, which can resolve or improve, and renal impairment) is 365 days
+  (`-365..-1`); Iannuzzi tissue loss is `-365..0`. This is set in three places that must agree:
+  `covariates/cohort_map.csv` (cohort path), `covariates/covariates*.csv` (domain-query oracle) and, for
+  the pneumonia arm, a per-row `lookback_start_day`/`lookback_end_day` override in
+  `covariate_concepts_mfi5.csv`. mFI-5 `copd` is the one item with TWO `cohort_map.csv` rows (COPD any time
+  OR pneumonia 30 d); a pair may have several rows and any hit is positive. The regression test requires
+  exact cohort-vs-domain agreement.
+- **The sVQI-FS `pvd` item and the target's PAD indication are one phenotype** (cohort 9100003 uses the same
+  concept set as 9100011's "Lower Extremity Peripheral Artery Occlusive Disease": four roots less ten
+  non-lower-extremity exclusions). Keep them identical; the oracle rows in `covariate_concepts_vqifs.csv`
+  and the cohort JSON are checked by the regression test's concept-set drift check.
 - **Never reuse a `Limit: First` cohort for a score item.** The four VA-FI cohorts
   (1797949–1797952) were dropped on 2026-10-05 for exactly this reason: one row per person
   at their first-ever record means a lookback window cannot bind, and the published 30-day

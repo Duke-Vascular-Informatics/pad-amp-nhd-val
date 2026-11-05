@@ -1,40 +1,262 @@
 {
   "cdmVersionRange": ">=5.0.0",
   "_README": [
-    "Peripheral arterial occlusive disease, as the Kraiss sVQI-FS pvd item",
-    "defines it: SNOMED 399957001 -> OMOP 317309 plus descendants.",
+    "Peripheral artery disease of the lower extremity, as the Kraiss sVQI-FS pvd item.",
     "",
-    "DELIBERATELY NOT the [DVI] VA-FI Peripheral vascular disease cohort",
-    "(1797955). That cohort is a faithful VA-FI deficit and spans OMOP 321052",
-    "peripheral vascular disease, 40479625 atherosclerosis of artery, 317585",
-    "aortic aneurysm and 444247 venous thrombosis. Aneurysmal and venous disease",
-    "are not peripheral ARTERIAL occlusive disease; a patient scoring the sVQI-FS",
-    "pvd item on a DVT is not what the instrument measures.",
+    "SAME concept set as the target cohort's PAD indication (cohort 9100011, \"[DVI] Lower Extremity Peripheral",
+    "Artery Occlusive Disease\"): arteriosclerosis of artery of extremity, peripheral vascular disease associated",
+    "with another disorder, peripheral ischemia and peripheral arterial disease, with descendants, less ten",
+    "non-lower-extremity roots (upper-limb, embolic, renal, intestinal, thoracic, aortic arch branch).",
+    "Changed 2026-11-05 from OMOP 317309 + descendants so that Table 1 PAD and this item are one phenotype.",
+    "Kraiss 2022 defines the item by ABI < 0.7 or prior arterial intervention/amputation; those relate only to",
+    "lower-extremity arterial disease, so a diagnosis-based lower-extremity PAD set is the proxy.",
     "",
-    "Note 321052 is an ANCESTOR of 317309, so the VA-FI cohort is a strict",
-    "superset here rather than a disjoint set.",
-    "PrimaryCriteriaLimit / QualifiedLimit / ExpressionLimit are all \"All\" and EndStrategy is StartDate+0, unlike the [DVI] VA-FI cohorts (1797948-1797977) which are \"First\". A first-ever-only cohort cannot answer a lookback-window question."
+    "DELIBERATELY NOT the [DVI] VA-FI Peripheral vascular disease cohort (1797955), a faithful VA-FI deficit that",
+    "also spans aortic aneurysm and venous thrombosis (not peripheral ARTERIAL disease).",
+    "PrimaryCriteriaLimit / QualifiedLimit / ExpressionLimit are all \"All\" and EndStrategy is StartDate+0, unlike the",
+    "[DVI] VA-FI cohorts (1797948-1797977) which are \"First\". A first-ever-only cohort cannot answer a lookback-window question."
   ],
   "ConceptSets": [
     {
       "id": 0,
-      "name": "[DVI] Peripheral Arterial Occlusive Disease (risk score item)",
+      "name": "[DVI] Lower Extremity Peripheral Artery Occlusive Disease",
       "expression": {
         "items": [
           {
             "concept": {
-              "CONCEPT_ID": 317309,
-              "CONCEPT_NAME": "Peripheral arterial occlusive disease",
+              "CONCEPT_ID": 40484167,
+              "CONCEPT_NAME": "Arteriosclerosis of artery of extremity",
               "STANDARD_CONCEPT": "S",
               "STANDARD_CONCEPT_CAPTION": "Standard",
               "INVALID_REASON": "V",
               "INVALID_REASON_CAPTION": "Valid",
-              "CONCEPT_CODE": "399957001",
+              "CONCEPT_CODE": "443971004",
               "DOMAIN_ID": "Condition",
               "VOCABULARY_ID": "SNOMED",
               "CONCEPT_CLASS_ID": "Disorder"
             },
             "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 44782775,
+              "CONCEPT_NAME": "Peripheral vascular disease associated with another disorder",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "34881000119105",
+              "DOMAIN_ID": "Condition",
+              "VOCABULARY_ID": "SNOMED",
+              "CONCEPT_CLASS_ID": "Disorder"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 4124836,
+              "CONCEPT_NAME": "Peripheral ischemia",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "233958001",
+              "DOMAIN_ID": "Condition",
+              "VOCABULARY_ID": "SNOMED",
+              "CONCEPT_CLASS_ID": "Disorder"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 3654996,
+              "CONCEPT_NAME": "Peripheral arterial disease",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "840580004",
+              "DOMAIN_ID": "Condition",
+              "VOCABULARY_ID": "SNOMED",
+              "CONCEPT_CLASS_ID": "Disorder"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 764058,
+              "CONCEPT_NAME": "Disorder of artery of upper limb",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "450251000124102",
+              "DOMAIN_ID": "Condition",
+              "VOCABULARY_ID": "SNOMED",
+              "CONCEPT_CLASS_ID": "Disorder"
+            },
+            "isExcluded": true,
+            "includeDescendants": true,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 4117679,
+              "CONCEPT_NAME": "Peripheral arterial embolism",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "286959000",
+              "DOMAIN_ID": "Condition",
+              "VOCABULARY_ID": "SNOMED",
+              "CONCEPT_CLASS_ID": "Disorder"
+            },
+            "isExcluded": true,
+            "includeDescendants": true,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 199870,
+              "CONCEPT_NAME": "Renal vascular disorder",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "16934004",
+              "DOMAIN_ID": "Condition",
+              "VOCABULARY_ID": "SNOMED",
+              "CONCEPT_CLASS_ID": "Disorder"
+            },
+            "isExcluded": true,
+            "includeDescendants": true,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 321037,
+              "CONCEPT_NAME": "Cholesterol embolus syndrome",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "236489002",
+              "DOMAIN_ID": "Condition",
+              "VOCABULARY_ID": "SNOMED",
+              "CONCEPT_CLASS_ID": "Disorder"
+            },
+            "isExcluded": true,
+            "includeDescendants": true,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 4134603,
+              "CONCEPT_NAME": "Vascular disorder of intestine",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "128321003",
+              "DOMAIN_ID": "Condition",
+              "VOCABULARY_ID": "SNOMED",
+              "CONCEPT_CLASS_ID": "Disorder"
+            },
+            "isExcluded": true,
+            "includeDescendants": true,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 4190192,
+              "CONCEPT_NAME": "Disorder of blood vessels of thorax",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "373434004",
+              "DOMAIN_ID": "Condition",
+              "VOCABULARY_ID": "SNOMED",
+              "CONCEPT_CLASS_ID": "Disorder"
+            },
+            "isExcluded": true,
+            "includeDescendants": true,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 4109481,
+              "CONCEPT_NAME": "Abnormality of aortic arch branch",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "253695008",
+              "DOMAIN_ID": "Condition",
+              "VOCABULARY_ID": "SNOMED",
+              "CONCEPT_CLASS_ID": "Disorder"
+            },
+            "isExcluded": true,
+            "includeDescendants": true,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 761857,
+              "CONCEPT_NAME": "Pain at rest of right upper limb due to atherosclerosis",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "16066531000119106",
+              "DOMAIN_ID": "Condition",
+              "VOCABULARY_ID": "SNOMED",
+              "CONCEPT_CLASS_ID": "Disorder"
+            },
+            "isExcluded": true,
+            "includeDescendants": true,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 761856,
+              "CONCEPT_NAME": "Pain at rest of left upper limb due to atherosclerosis",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "16066331000119101",
+              "DOMAIN_ID": "Condition",
+              "VOCABULARY_ID": "SNOMED",
+              "CONCEPT_CLASS_ID": "Disorder"
+            },
+            "isExcluded": true,
+            "includeDescendants": true,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 765061,
+              "CONCEPT_NAME": "Pain of bilateral upper limbs",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "15634591000119104",
+              "DOMAIN_ID": "Condition",
+              "VOCABULARY_ID": "SNOMED",
+              "CONCEPT_CLASS_ID": "Clinical Finding"
+            },
+            "isExcluded": true,
             "includeDescendants": true,
             "includeMapped": false
           }

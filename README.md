@@ -68,7 +68,7 @@ means no matching library entry. All library entries were pending peer review wh
 | Coronary artery disease | sVQI-FS | 1798601 | 197 (aligned, minus the all-vessel root) |
 | COPD | mFI-5, sVQI-FS | 1798591 | 1271 (aligned) |
 | Pneumonia (current) | mFI-5 | 1798602 | 1261 (deviates) |
-| Peripheral arterial occlusive disease | sVQI-FS | 1798592 | 371 (deviates) |
+| Peripheral arterial occlusive disease (lower-extremity PAD; same set as the target indication) | sVQI-FS | 1798592 | 371 (deviates) |
 | Ischemic tissue loss | Iannuzzi | 1798593 | none |
 | Dependent functional status (ADL dependence) | mFI-5 | 1798603 | none |
 | Ambulatory aid use (strict) | Iannuzzi | 1798604 | none |
