@@ -15,10 +15,14 @@
 #   dm    201820  Diabetes mellitus      (SNOMED 73211009)   — from covariates_mfi5
 #   copd  255573  COPD                   (SNOMED 13645005)   — from covariates_mfi5
 #         + 258780 Emphysematous bronchitis (SNOMED 185086009), added 2026-11-01 to match OHDSI PL 1271 (Rule 1).
-#   pvd   317309  Peripheral arterial occlusive disease (SNOMED 399957001)
-#                 — from phenotype_library/catalog.yaml :: peripheral_arterial_disease
-#                 (verified 2026-05-14; 190 descendants). Proxy for the paper's
-#                 "ABI <0.7 or arterial intervention/amputation" PVD item.
+#   pvd   SAME concept set as the target cohort's PAD indication (cohort 9100011, "[DVI] Lower Extremity
+#         Peripheral Artery Occlusive Disease"; phenotype_library/catalog.yaml :: peripheral_arterial_disease):
+#         4 included roots with descendants (arteriosclerosis of artery of extremity, peripheral vascular
+#         disease associated with another disorder, peripheral ischemia, peripheral arterial disease) less 10
+#         excluded non-lower-extremity roots (upper-limb, embolic, renal, intestinal, thoracic...).
+#         Changed 2026-11-05 from 317309 alone so Table 1 PAD and the sVQI-FS item are one phenotype. Kraiss
+#         2022 defines the item by ABI < 0.7 or prior arterial intervention/amputation; those relate only to
+#         lower-extremity arterial disease, so a diagnosis-based lower-extremity PAD set is the proxy.
 #   nonambulatory  Impaired ambulation, BROAD set (cohort 9100028), added 2026-10-15 -- NOT the
 #                 same set as the Iannuzzi ambu_deficit item any more. Any documented limitation of
 #                 ambulation regardless of etiology: everything in the Iannuzzi aid-use set (see the
@@ -115,7 +119,20 @@ cad,4108680,TRUE,,
 cad,42537729,TRUE,,
 cad,44783188,TRUE,,
 cad,37312532,FALSE,,
-pvd,317309,TRUE,,
+pvd,40484167,TRUE,,
+pvd,44782775,TRUE,,
+pvd,4124836,TRUE,,
+pvd,3654996,TRUE,,
+pvd,764058,TRUE,exclude,
+pvd,4117679,TRUE,exclude,
+pvd,199870,TRUE,exclude,
+pvd,321037,TRUE,exclude,
+pvd,4134603,TRUE,exclude,
+pvd,4190192,TRUE,exclude,
+pvd,4109481,TRUE,exclude,
+pvd,761857,TRUE,exclude,
+pvd,761856,TRUE,exclude,
+pvd,765061,TRUE,exclude,
 dm,201820,TRUE,,
 copd,255573,TRUE,,
 copd,258780,TRUE,,
