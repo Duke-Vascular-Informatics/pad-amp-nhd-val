@@ -179,7 +179,13 @@ prepare_cohort_generation <- function(connection, cohortDatabaseSchema, cohortTa
   f <- file.path(strategusOutputDir, "CohortGeneratorModule", "cg_cohort_attrition.csv")
   if (!file.exists(f)) return(NULL)
   a <- utils::read.csv(f, stringsAsFactors = FALSE)
-  a <- a[a$mode_id == 0, , drop = FALSE]
+  # mode_id 1 = PEOPLE (distinct subjects) and mode_id 0 = qualifying EVENTS. The live count below is distinct
+  # subjects, so it must be compared with mode 1. For a Limit=First cohort (the target) the two coincide, which is
+  # why this once read mode 0; for a Limit=All cohort with an inclusion rule (9100007, outpatient insulin, added
+  # 2026-11-05) mode 0 is the event count (979,789) against 97,677 people and the check wrongly stopped a run.
+  # Fall back to mode 0 only when an older file has no mode 1 rows.
+  use_mode <- if (any(a$mode_id == 1)) 1L else 0L
+  a <- a[a$mode_id == use_mode, , drop = FALSE]
   if (nrow(a) == 0L) return(NULL)
   do.call(rbind, lapply(split(a, a$cohort_definition_id), function(g) {
     g <- g[which.max(g$rule_sequence), ]

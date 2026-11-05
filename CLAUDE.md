@@ -118,6 +118,9 @@ folder before re-running.
   concept set as 9100011's "Lower Extremity Peripheral Artery Occlusive Disease": four roots less ten
   non-lower-extremity exclusions). Keep them identical; the oracle rows in `covariate_concepts_vqifs.csv`
   and the cohort JSON are checked by the regression test's concept-set drift check.
+- **Cohort-freshness check compares PEOPLE (mode_id 1), not events (mode_id 0)** in `cg_cohort_attrition.csv`. They coincide for a
+  Limit=First cohort (the target) but not for a Limit=All cohort with an inclusion rule (9100007: 979,789 events vs 97,677 people), where
+  reading mode 0 stopped the 2026-11-05 PRCC run. The check only covers cohorts that have attrition rows (those with inclusion rules).
 - **Insulin item (2026-11-05): "who with diabetes is currently on insulin".** Positive = an outpatient insulin exposure in the
   365 days before index AND a diabetes diagnosis at any time before index. Outpatient = no inpatient visit (9201, 262, with
   descendants) spans the exposure date (start and end inclusive); exposures with no visit link count; ED-only visits are not
