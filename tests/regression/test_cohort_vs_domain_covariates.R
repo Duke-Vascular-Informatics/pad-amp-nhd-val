@@ -244,6 +244,75 @@ for (spec in DRIFT) {
 }
 
 # ---------------------------------------------------------------------------
+# PASS 3: Table 1 phenotype rows read from cohorts must equal an independent direct count from the CDM
+#
+# R/extract_report_inputs.R builds the Table 1 indication rows (PAD, diabetes, lower-extremity wound) and the
+# amputation-level rows (above-knee, below-knee, other) from ATLAS cohorts (.table1_indication_sql() and
+# .table1_amp_level_sql()). Here the same numbers are recomputed straight from the cohort JSON concept sets
+# against the CDM (descendants expanded, excluded concepts removed), with no cohort table involved, and the two
+# must match exactly. This is the Table 1 analogue of the score-component comparison above.
+# ---------------------------------------------------------------------------
+message("\n########## PASS 3: Table 1 phenotypes, cohort-based vs direct CDM ##########")
+source("R/extract_report_inputs.R")
+local({
+  omopDb  <- Sys.getenv("OMOP_DATABASE", unset = "omop_synth")
+  cdmTwo  <- paste0(omopDb, ".", Sys.getenv("OMOP_CDM_SCHEMA_OVERRIDE", unset = "pad_amp_nhd_val_cdm_test"))
+  workTwo <- paste0(omopDb, ".", config$results_schema)
+  conn <- DatabaseConnector::connect(connectionDetails)
+  on.exit(DatabaseConnector::disconnect(conn), add = TRUE)
+  q <- function(sql) { r <- DatabaseConnector::querySql(conn, SqlRender::translate(sql, "sql server")); names(r) <- tolower(names(r)); r }
+
+  # concept ids of a cohort's single concept set after expansion and exclusion
+  ids_of <- function(cid) {
+    j <- jsonlite::fromJSON(file.path("inst", "cohorts", paste0(cid, ".json")), simplifyVector = FALSE)
+    items <- j$ConceptSets[[1]]$expression$items
+    pick <- function(excl) Filter(function(i) isTRUE(i$isExcluded) == excl, items)
+    expand <- function(its) {
+      if (!length(its)) return(integer(0))
+      desc <- vapply(its, function(i) isTRUE(i$includeDescendants), logical(1))
+      ids  <- vapply(its, function(i) as.integer(i$concept$CONCEPT_ID), integer(1))
+      out <- ids[!desc]
+      if (any(desc)) out <- c(out, q(sprintf("SELECT DISTINCT descendant_concept_id AS id FROM %s.concept_ancestor WHERE ancestor_concept_id IN (%s)",
+                                             cdmTwo, paste(ids[desc], collapse = ",")))$id)
+      unique(out)
+    }
+    setdiff(expand(pick(FALSE)), expand(pick(TRUE)))
+  }
+  in_list <- function(v) paste(v, collapse = ",")
+  tgt <- sprintf("(SELECT subject_id, cohort_start_date, ISNULL(cohort_end_date, cohort_start_date) AS cohort_end_date FROM %s.%s WHERE cohort_definition_id = %d)",
+                 workTwo, config$cohort_table, config$target_cohort_id)
+
+  direct_ind <- function(cid) q(sprintf(
+    "SELECT COUNT(DISTINCT t.subject_id) AS n FROM %s t INNER JOIN %s.condition_occurrence co ON co.person_id = t.subject_id
+       AND co.condition_start_date <= t.cohort_start_date AND co.condition_concept_id IN (%s)", tgt, cdmTwo, in_list(ids_of(cid))))$n
+  direct_proc <- function(cid) q(sprintf(
+    "SELECT DISTINCT t.subject_id FROM %s t INNER JOIN %s.procedure_occurrence po ON po.person_id = t.subject_id
+       AND po.procedure_date BETWEEN t.cohort_start_date AND t.cohort_end_date AND po.procedure_concept_id IN (%s)", tgt, cdmTwo, in_list(ids_of(cid))))$subject_id
+
+  ind <- q(.table1_indication_sql(workTwo, config$cohort_table, config$target_cohort_id))
+  lvl <- q(.table1_amp_level_sql(workTwo, config$cohort_table, config$target_cohort_id))
+  n_target <- q(sprintf("SELECT COUNT(*) AS n FROM %s.%s WHERE cohort_definition_id = %d", workTwo, config$cohort_table, config$target_cohort_id))$n
+
+  aka <- direct_proc(.TABLE1_COHORTS[["aka"]]); bka <- direct_proc(.TABLE1_COHORTS[["bka"]])
+  want <- c("PAD" = direct_ind(.TABLE1_COHORTS[["pad"]]),
+            "Diabetes mellitus" = direct_ind(.TABLE1_COHORTS[["dm"]]),
+            "LE wound / gangrene" = direct_ind(.TABLE1_COHORTS[["wound"]]),
+            "Above-knee amputation (AKA)" = length(aka),
+            "Below-knee amputation (BKA)" = length(setdiff(bka, aka)),
+            "Other amputation" = n_target - length(union(aka, bka)))
+  got <- stats::setNames(c(ind$n, lvl$n), c(ind$category, lvl$category))
+  cat(sprintf("  %-30s %8s %8s  %s\n", "Table 1 row", "cohort", "direct", "verdict"))
+  for (k in names(want)) {
+    ok <- identical(as.numeric(got[[k]]), as.numeric(want[[k]]))
+    cat(sprintf("  %-30s %8s %8s  %s\n", k, got[[k]], want[[k]], if (ok) "match" else "*** DIFFERS ***"))
+    if (!ok) failures <<- c(failures, sprintf("Table 1 row '%s': cohort-based %s vs direct %s", k, got[[k]], want[[k]]))
+  }
+  tot <- sum(got[c("Above-knee amputation (AKA)", "Below-knee amputation (BKA)", "Other amputation")])
+  if (tot != n_target) failures <<- c(failures, sprintf("amputation levels sum to %d, target cohort has %d", tot, n_target))
+  cat(sprintf("  amputation levels sum to %d of %d target patients\n", tot, n_target))
+})
+
+# ---------------------------------------------------------------------------
 # Persist and summarise
 # ---------------------------------------------------------------------------
 allRows <- do.call(rbind, report)

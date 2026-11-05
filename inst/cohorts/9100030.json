@@ -1,0 +1,84 @@
+{
+  "cdmVersionRange": ">=5.0.0",
+  "_README": [
+    "Above-knee amputation and revision of an above-knee amputation: the two above-knee roots of the target cohort's",
+    "amputation concept set (cohort 9100011): 4195136 Amputation above-knee and 4225223 Revision of above knee amputation,",
+    "each with descendants. Used for the Table 1 amputation-level row. Added 2026-11-05.",
+    "Limit=All at all three levels with EndStrategy StartDate+0 (same as every other covariate cohort here), so a cohort entry is a single dated event."
+  ],
+  "ConceptSets": [
+    {
+      "id": 0,
+      "name": "[DVI] Above-Knee Amputation",
+      "expression": {
+        "items": [
+          {
+            "concept": {
+              "CONCEPT_ID": 4195136,
+              "CONCEPT_NAME": "Amputation above-knee",
+              "STANDARD_CONCEPT": "S",
+              "INVALID_REASON": "NA",
+              "CONCEPT_CODE": "79733001",
+              "DOMAIN_ID": "Procedure",
+              "VOCABULARY_ID": "SNOMED",
+              "CONCEPT_CLASS_ID": "Procedure"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 4225223,
+              "CONCEPT_NAME": "Revision of above knee amputation",
+              "STANDARD_CONCEPT": "S",
+              "INVALID_REASON": "NA",
+              "CONCEPT_CODE": "405449003",
+              "DOMAIN_ID": "Procedure",
+              "VOCABULARY_ID": "SNOMED",
+              "CONCEPT_CLASS_ID": "Procedure"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          }
+        ]
+      }
+    }
+  ],
+  "PrimaryCriteria": {
+    "CriteriaList": [
+      {
+        "ProcedureOccurrence": {
+          "CodesetId": 0
+        }
+      }
+    ],
+    "ObservationWindow": {
+      "PriorDays": 0,
+      "PostDays": 0
+    },
+    "PrimaryCriteriaLimit": {
+      "Type": "All"
+    }
+  },
+  "QualifiedLimit": {
+    "Type": "All"
+  },
+  "ExpressionLimit": {
+    "Type": "All"
+  },
+  "InclusionRules": [],
+  "CensoringCriteria": [],
+  "CollapseSettings": {
+    "CollapseType": "ERA",
+    "EraPad": 0
+  },
+  "CensorWindow": {},
+  "EndStrategy": {
+    "DateOffset": {
+      "DateField": "StartDate",
+      "Offset": 0
+    }
+  }
+}

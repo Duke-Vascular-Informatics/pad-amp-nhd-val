@@ -275,75 +275,9 @@ fetch_demographics_from_omop <- function(config, connection_details) {
       SqlRender::translate(distribution_sql("ethnicity_concept_id"), targetDialect = "sql server")
     )
 
-    # ---- Indication categories (condition_ancestor rollup, any time on or before the index date) ----
-    # PAD   : the SAME concept set as the target cohort's PAD indication (cohort 9100011) and the sVQI-FS
-    #         pvd item (cohort 9100003): ancestors 40484167, 44782775, 4124836, 3654996 with descendants,
-    #         less descendants of ten non-lower-extremity roots (764058, 4117679, 199870, 321037, 4134603,
-    #         4190192, 4109481, 761857, 761856, 765061) [vocab query]. Changed 2026-11-05: this query
-    #         used ancestor 317309 alone (the old sVQI-FS set), so Table 1 PAD (154) disagreed with the
-    #         sVQI-FS item (84 then 387 on the new set) for no clinical reason. KEEP IN SYNC with
-    #         inst/cohorts/9100003.json and covariates/covariate_concepts_vqifs.csv (pvd rows).
-    # DM    : ancestor 201820  (Diabetes mellitus, [vocab query])
-    # Wound : 25 LE wound ancestors from target_amputation.sql ([vocab query])
-    sql_indication <- SqlRender::render(
-      "WITH target AS (
-         SELECT subject_id, cohort_start_date
-         FROM @results_schema.@cohort_table
-         WHERE cohort_definition_id = @target_id
-       ),
-       pad AS (
-         SELECT DISTINCT co.person_id
-         FROM @cdm_schema.condition_occurrence co
-         INNER JOIN @cdm_schema.concept_ancestor ca
-           ON ca.descendant_concept_id = co.condition_concept_id
-          AND ca.ancestor_concept_id   IN (40484167, 44782775, 4124836, 3654996)
-         INNER JOIN target t ON t.subject_id = co.person_id
-           AND co.condition_start_date <= t.cohort_start_date
-         -- Remove the ten excluded (non-lower-extremity) roots and their descendants, exactly as the
-         -- cohort definition's excluded concept items do.
-         WHERE co.condition_concept_id NOT IN (
-           SELECT descendant_concept_id
-           FROM @cdm_schema.concept_ancestor
-           WHERE ancestor_concept_id IN (764058, 4117679, 199870, 321037, 4134603,
-                                         4190192, 4109481, 761857, 761856, 765061)
-         )
-       ),
-       dm AS (
-         SELECT DISTINCT co.person_id
-         FROM @cdm_schema.condition_occurrence co
-         INNER JOIN @cdm_schema.concept_ancestor ca
-           ON ca.descendant_concept_id = co.condition_concept_id
-          AND ca.ancestor_concept_id   = 201820
-         INNER JOIN target t ON t.subject_id = co.person_id
-           AND co.condition_start_date <= t.cohort_start_date
-       ),
-       wound AS (
-         SELECT DISTINCT co.person_id
-         FROM @cdm_schema.condition_occurrence co
-         INNER JOIN @cdm_schema.concept_ancestor ca
-           ON ca.descendant_concept_id = co.condition_concept_id
-          AND ca.ancestor_concept_id   IN (
-              197304, 4097962, 4054067,
-              4108371, 433696, 4226354, 4263116, 4291464, 4112159,
-              4111843, 317577, 4256119, 4111732, 40480503, 46273172,
-              46273522, 46270361,
-              42709838, 4028237, 4320944, 133566,
-              133853, 1246044,
-              4087682, 4159742
-            )
-         INNER JOIN target t ON t.subject_id = co.person_id
-           AND co.condition_start_date <= t.cohort_start_date
-       )
-       SELECT 'PAD'   AS category, COUNT(*) AS n FROM pad
-       UNION ALL
-       SELECT 'Diabetes mellitus', COUNT(*)      FROM dm
-       UNION ALL
-       SELECT 'LE wound / gangrene', COUNT(*)    FROM wound",
-      results_schema = results_schema_prefix(config),
-      cohort_table   = config$cohort_table,
-      cdm_schema     = config$cdm_schema,
-      target_id      = config$target_cohort_id
-    )
+    # ---- Indication categories: cohort-based (see .table1_indication_sql above) -----------------------
+    sql_indication <- .table1_indication_sql(results_schema_prefix(config), config$cohort_table, config$target_cohort_id)
+
     indication_df <- tryCatch(
       DatabaseConnector::querySql(
         conn, SqlRender::translate(sql_indication, targetDialect = "sql server")
@@ -351,56 +285,9 @@ fetch_demographics_from_omop <- function(config, connection_details) {
       error = function(e) NULL
     )
 
-    # ---- Amputation level (qualifying procedure at index visit) --------------
-    # Concept ancestor rollup by amputation level (mutually exclusive priority:
-    # AKA → BKA → Other). Uses OMOP procedure_concept_id at the index visit.
-    # Ancestor IDs (SNOMED, verified [vocab query]):
-    #   4195136 = Amputation above knee (AKA)
-    #   4338257 = Amputation below knee (BKA) / through tibia and fibula
-    #   Other   = through-knee (4143795), hip disarticulation (4242396),
-    #             ankle amputation (4264289; as of 2026-10-23 the cohort keeps only its
-    #             supramalleolar child -- ankle disarticulation is excluded), hemipelvectomy (36675618)
-    sql_proc_type <- SqlRender::render(
-      "WITH target AS (
-         SELECT subject_id,
-                cohort_start_date,
-                ISNULL(cohort_end_date, cohort_start_date) AS cohort_end_date
-         FROM @results_schema.@cohort_table
-         WHERE cohort_definition_id = @target_id
-       ),
-       amp_level AS (
-         SELECT t.subject_id,
-                CASE
-                  WHEN MAX(CASE WHEN ca.ancestor_concept_id = 4195136 THEN 1 ELSE 0 END) = 1
-                    THEN 'Above-knee amputation (AKA)'
-                  WHEN MAX(CASE WHEN ca.ancestor_concept_id = 4338257 THEN 1 ELSE 0 END) = 1
-                    THEN 'Below-knee amputation (BKA)'
-                  ELSE 'Other amputation'
-                END AS category
-         FROM target t
-         INNER JOIN @cdm_schema.procedure_occurrence po
-           ON po.person_id = t.subject_id
-          AND po.procedure_date BETWEEN t.cohort_start_date AND t.cohort_end_date
-         INNER JOIN @cdm_schema.concept_ancestor ca
-           ON ca.descendant_concept_id = po.procedure_concept_id
-          AND ca.ancestor_concept_id   IN (4195136, 4338257, 4143795,
-                                           4242396, 4264289, 36675618)
-         GROUP BY t.subject_id
-       )
-       SELECT 'Above-knee amputation (AKA)' AS category,
-              COUNT(DISTINCT subject_id)     AS n
-       FROM amp_level WHERE category = 'Above-knee amputation (AKA)'
-       UNION ALL
-       SELECT 'Below-knee amputation (BKA)', COUNT(DISTINCT subject_id)
-       FROM amp_level WHERE category = 'Below-knee amputation (BKA)'
-       UNION ALL
-       SELECT 'Other amputation',            COUNT(DISTINCT subject_id)
-       FROM amp_level WHERE category = 'Other amputation'",
-      results_schema = results_schema_prefix(config),
-      cohort_table   = config$cohort_table,
-      cdm_schema     = config$cdm_schema,
-      target_id      = config$target_cohort_id
-    )
+    # ---- Amputation level: cohort-based (see .table1_amp_level_sql above) ----------------------------
+    sql_proc_type <- .table1_amp_level_sql(results_schema_prefix(config), config$cohort_table, config$target_cohort_id)
+
     proc_type_df <- tryCatch(
       DatabaseConnector::querySql(
         conn, SqlRender::translate(sql_proc_type, targetDialect = "sql server")
@@ -1807,3 +1694,83 @@ extract_report_inputs <- function(config,
 # StrategusCodeToRun.R no longer calls this function directly — see its own
 # tail for the pointer message it prints instead.
 # =============================================================================
+
+# =============================================================================
+# Table 1 queries built from ATLAS cohorts  (added 2026-11-05)
+#
+# Every Table 1 variable that is a clinical phenotype is read from a Strategus-generated cohort, the
+# same ATLAS-defined cohorts that drive the score components, instead of a hand-written concept list:
+#
+#   Indication PAD        cohort 9100003  (ATLAS 1798592)  same set as the target cohort's PAD indication
+#   Indication diabetes   cohort 9100021  (ATLAS 1798598)  diabetes mellitus, all types (type 1 and type 2)
+#   Indication wound      cohort 9100029  (ATLAS 1798663)  same set as the target cohort's wound indication
+#   Amputation level      cohorts 9100030 (ATLAS 1798664) above-knee and 9100031 (ATLAS 1798665) below-knee;
+#                         "Other" is every other patient in the target cohort
+#
+# Age, sex, race and ethnicity are person-table attributes with no phenotype, so they stay direct queries.
+# Before this change the indication query used 317309 alone for PAD and a 25-root wound list that disagreed
+# with the cohort definition, and the level query used its own ancestor list (Table 1 PAD was 154 patients
+# against 387 for the sVQI-FS item).
+#
+# Indication = the patient has an entry in the cohort on or before the target cohort's index date.
+# Level      = the patient has an entry on the index visit (index date through cohort end date); AKA wins over
+#              BKA, which wins over Other, as before.
+# =============================================================================
+.TABLE1_COHORTS <- c(pad = 9100003L, dm = 9100021L, wound = 9100029L, aka = 9100030L, bka = 9100031L)
+
+.table1_indication_sql <- function(results_schema, cohort_table, target_id, cohorts = .TABLE1_COHORTS) {
+  SqlRender::render(
+    "WITH target AS (
+       SELECT subject_id, cohort_start_date
+       FROM @results_schema.@cohort_table
+       WHERE cohort_definition_id = @target_id
+     ),
+     hit AS (
+       SELECT DISTINCT t.subject_id, c.cohort_definition_id
+       FROM target t
+       INNER JOIN @results_schema.@cohort_table c
+          ON c.subject_id = t.subject_id
+         AND c.cohort_definition_id IN (@pad_id, @dm_id, @wound_id)
+         AND c.cohort_start_date <= t.cohort_start_date
+     )
+     SELECT 'PAD'                 AS category, COUNT(*) AS n FROM hit WHERE cohort_definition_id = @pad_id
+     UNION ALL
+     SELECT 'Diabetes mellitus',  COUNT(*)               FROM hit WHERE cohort_definition_id = @dm_id
+     UNION ALL
+     SELECT 'LE wound / gangrene', COUNT(*)              FROM hit WHERE cohort_definition_id = @wound_id",
+    results_schema = results_schema, cohort_table = cohort_table, target_id = target_id,
+    pad_id = cohorts[["pad"]], dm_id = cohorts[["dm"]], wound_id = cohorts[["wound"]]
+  )
+}
+
+.table1_amp_level_sql <- function(results_schema, cohort_table, target_id, cohorts = .TABLE1_COHORTS) {
+  SqlRender::render(
+    "WITH target AS (
+       SELECT subject_id,
+              cohort_start_date,
+              ISNULL(cohort_end_date, cohort_start_date) AS cohort_end_date
+       FROM @results_schema.@cohort_table
+       WHERE cohort_definition_id = @target_id
+     ),
+     lvl AS (
+       SELECT t.subject_id,
+              MAX(CASE WHEN c.cohort_definition_id = @aka_id THEN 1 ELSE 0 END) AS aka,
+              MAX(CASE WHEN c.cohort_definition_id = @bka_id THEN 1 ELSE 0 END) AS bka
+       FROM target t
+       LEFT JOIN @results_schema.@cohort_table c
+         ON c.subject_id = t.subject_id
+        AND c.cohort_definition_id IN (@aka_id, @bka_id)
+        AND c.cohort_start_date BETWEEN t.cohort_start_date AND t.cohort_end_date
+       GROUP BY t.subject_id
+     )
+     SELECT 'Above-knee amputation (AKA)' AS category, COUNT(*) AS n FROM lvl WHERE aka = 1
+     UNION ALL
+     SELECT 'Below-knee amputation (BKA)', COUNT(*) FROM lvl WHERE aka = 0 AND bka = 1
+     UNION ALL
+     SELECT 'Other amputation',            COUNT(*) FROM lvl WHERE aka = 0 AND bka = 0",
+    results_schema = results_schema, cohort_table = cohort_table, target_id = target_id,
+    aka_id = cohorts[["aka"]], bka_id = cohorts[["bka"]]
+  )
+}
+
+
