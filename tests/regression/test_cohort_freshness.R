@@ -177,6 +177,22 @@ fl <- if (length(r_good)) read.csv(file.path(good_dir, "agg_consort_flow.csv")) 
 check(!is.null(fl) && identical(as.integer(fl$n), c(1034L, 1013L, 960L, 911L, 880L, 849L, 587L)),
       "writes the correct 880 -> 849 -> 587 funnel when the stages chain")
 
+# ---- 7. Limit=All cohort with an inclusion rule: compare PEOPLE, not events ----------
+# Shape taken from the 2026-11-05 PRCC failure: cohort 9100007 had 979,789 qualifying events (mode_id 0) and
+# 97,677 people (mode_id 1); the cohort table held 97,677 subjects, which is correct.
+cat("\n[7] .cf_attrition_final_counts() reads person-level rows\n")
+sd7 <- file.path(tempdir(), "strategus_out7", "CohortGeneratorModule"); dir.create(sd7, recursive = TRUE, showWarnings = FALSE)
+write.csv(data.frame(database_id = "x", cohort_definition_id = c(rep(9100007L, 4), rep(TARGET, 4)),
+                     mode_id = c(0L, 0L, 1L, 1L, 0L, 0L, 1L, 1L), cohort_entry = c(1L, 0L, 1L, 0L, 1L, 0L, 1L, 0L),
+                     rule_sequence = c(-1L, 0L, -1L, 0L, -1L, 0L, -1L, 0L),
+                     person_count = c(5890148L, 979789L, 184997L, 97677L, 1322L, 1298L, 1322L, 1298L)),
+          file.path(sd7, "cg_cohort_attrition.csv"), row.names = FALSE)
+fc <- .cf_attrition_final_counts(file.path(tempdir(), "strategus_out7"))
+check(!is.null(fc) && fc$expected[fc$cohort_definition_id == 9100007L] == 97677L,
+      "a Limit=All cohort with a rule is compared on 97,677 people, not 979,789 events")
+check(!is.null(fc) && fc$expected[fc$cohort_definition_id == TARGET] == 1298L,
+      "the Limit=First target is unchanged (modes agree)")
+
 if (length(failures) > 0) {
   cat("\n*** COHORT-FRESHNESS TEST FAILED ***\n"); for (f in failures) cat("  - ", f, "\n", sep = ""); quit(status = 1)
 }
