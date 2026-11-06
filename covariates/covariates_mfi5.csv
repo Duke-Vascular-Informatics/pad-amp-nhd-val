@@ -37,7 +37,7 @@
 #     expressed with a per-row lookback override in covariate_concepts_mfi5.csv
 #     (and as a second (mfi5, copd) row in cohort_map.csv).
 #   htn — Hypertension REQUIRING MEDICATION (REVISED 2026-11-06): an outpatient
-#     antihypertensive exposure (ATC C02/C03/C07/C08/C09) in the 365 days before
+#     antihypertensive exposure (the OHDSI PL 1046/1047/1049 drug sets plus ATC C09A-C09D) in the 365 days before
 #     index AND a hypertension diagnosis (316866 + descendants) at any time before
 #     index. The lookback above is the MEDICATION window; the diagnosis window is
 #     fixed at any time before index (query_outpatient_drug_with_dx_counts()).

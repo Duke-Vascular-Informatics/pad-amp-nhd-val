@@ -7,12 +7,12 @@ CREATE TABLE #Codesets (
 INSERT INTO #Codesets (codeset_id, concept_id)
 SELECT 0 as codeset_id, c.concept_id FROM (select distinct I.concept_id FROM
 ( 
-  select concept_id from @vocabulary_database_schema.CONCEPT where (concept_id in (21600381,21601461,21601664,21601744,21601782))
+  select concept_id from @vocabulary_database_schema.CONCEPT where (concept_id in (1395058,974166,978555,907013,1332418,1353776,1326012,1318137,1318853,1319880,1319998,1314002,1322081,1338005,1346823,1386957,1307046,1313200,1314577,1327978,1345858,1353766,21601783,21601801,21601822,21601832))
 UNION  select c.concept_id
   from @vocabulary_database_schema.CONCEPT c
   join @vocabulary_database_schema.CONCEPT_ANCESTOR ca on c.concept_id = ca.descendant_concept_id
   WHERE c.invalid_reason is null
-  and (ca.ancestor_concept_id in (21600381,21601461,21601664,21601744,21601782))
+  and (ca.ancestor_concept_id in (1395058,974166,978555,907013,1332418,1353776,1326012,1318137,1318853,1319880,1319998,1314002,1322081,1338005,1346823,1386957,1307046,1313200,1314577,1327978,1345858,1353766,21601783,21601801,21601822,21601832))
 
 ) I
 ) C UNION ALL 
