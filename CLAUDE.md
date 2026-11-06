@@ -130,6 +130,13 @@ folder before re-running.
   visit START date twice. `tests/regression/test_insulin_item.R` (16 hand-built patients: window edges, inpatient overlap,
   ER-to-inpatient, ED-only, no visit link, diabetes before/after index) is the only thing that exercises this; the synthetic
   dataset has no inpatient insulin and cannot.
+- **mFI-5 hypertension requires medication (2026-11-06, NOT YET RUN AT PRCC).** Subramaniam 2018 (NSQIP HYPERMED) scores
+  hypertension only when it is treated. Positive = an outpatient antihypertensive exposure (ATC C02, C03, C07, C08, C09 with
+  descendants) in the 365 days before index AND a hypertension diagnosis (cohort 9100022) at any time before index. Cohort path:
+  9100032 AND 9100022 via `and_cohort_id`; domain path: `query_outpatient_drug_with_dx_counts()` (the insulin oracle, generalised;
+  it is selected by the `diagnosis_required` row). The sVQI-FS htn item is unchanged. 9100032 is LOCAL ONLY (not yet in ATLAS);
+  its SQL was made by substituting the codeset in 9100007.sql, so re-run `scripts/render_cohort_sql.R` and Step 1 before running.
+  Verify 21600381 (ATC C02) in the vocabulary; it was not observable in the synthetic data.
 - **One diabetes definition everywhere (2026-11-05):** cohort 9100021 = 201820 + 442793 with descendants (all types incl. type 1
   and 2, and diabetic complications), also the target's diabetes indication, Table 1, and the insulin item's requirement.
 - **Wound set = 29 roots in BOTH the target's wound entry criterion and Table 1 (9100029)**: the original 24 plus five gangrene roots
