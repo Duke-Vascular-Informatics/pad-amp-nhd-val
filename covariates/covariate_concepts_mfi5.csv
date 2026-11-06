@@ -63,15 +63,16 @@
 #     316139   Heart failure               (SNOMED 84114007 + descendants)
 #
 # HTN (REVISED 2026-11-06: hypertension REQUIRING MEDICATION, Subramaniam 2018 / NSQIP HYPERMED):
-#   positive = an OUTPATIENT antihypertensive exposure in the 365 days before index (the five ATC rows below,
-#              with descendants: 21600381 C02 ANTIHYPERTENSIVES, 21601461 C03 DIURETICS, 21601664 C07 BETA
-#              BLOCKING AGENTS, 21601744 C08 CALCIUM CHANNEL BLOCKERS, 21601782 C09 AGENTS ACTING ON THE
-#              RENIN-ANGIOTENSIN SYSTEM)
-#              AND a hypertension diagnosis at ANY time before index (the diagnosis_required row:
-#              catalog entry hypertension, 316866 Hypertensive disorder, SNOMED 38341003 + descendants).
+#   positive = an OUTPATIENT antihypertensive exposure in the 365 days before index (the drug rows below, each with
+#              descendants) AND a hypertension diagnosis at ANY time before index (the diagnosis_required row:
+#              316866 Hypertensive disorder, SNOMED 38341003 + descendants, = the diagnosis set of PL 1046/1047/1049).
+#   DRUG SET MATCHES THE OHDSI PHENOTYPE LIBRARY (2026-11-06; PL status Pending): the ingredient sets of PL 1046
+#              (thiazide and thiazide-like diuretics, 4), PL 1047 (dihydropyridine CCBs, 6) and PL 1049 (beta blockers,
+#              12), plus ACE inhibitors and ARBs by ATC third level C09A-C09D, which the library lacks. Loop and
+#              potassium-sparing diuretics, non-dihydropyridine CCBs and centrally acting agents/C02 are NOT included,
+#              as in the PL. Only the PL drug concept sets are adopted, not its new-user first-exposure design.
 #   "Outpatient" and the domain path are the insulin item's (query_outpatient_drug_with_dx_counts()).
 #   Cohort path: cohort 9100032 AND cohort 9100022 via covariates/cohort_map.csv and_cohort_id.
-#   VERIFY 21600381 against the vocabulary (not observable in the synthetic characterization output).
 #
 # COLUMN DEFINITIONS:
 #   covariate_id         matches covariate_id in covariates_mfi5.csv
@@ -124,9 +125,34 @@ copd,255848,TRUE,,,-30,-1
 copd,4273378,FALSE,exclude,,-30,-1
 copd,1340380,FALSE,exclude,,-30,-1
 chf,316139,TRUE,,,,
-htn,21600381,TRUE,,,,
-htn,21601461,TRUE,,,,
-htn,21601664,TRUE,,,,
-htn,21601744,TRUE,,,,
-htn,21601782,TRUE,,,,
+# htn drug group: Thiazide and thiazide-like diuretics [PL 1046 / 1035]
+htn,1395058,TRUE,,,,
+htn,974166,TRUE,,,,
+htn,978555,TRUE,,,,
+htn,907013,TRUE,,,,
+# htn drug group: Dihydropyridine calcium channel blockers [PL 1047 / 1048]
+htn,1332418,TRUE,,,,
+htn,1353776,TRUE,,,,
+htn,1326012,TRUE,,,,
+htn,1318137,TRUE,,,,
+htn,1318853,TRUE,,,,
+htn,1319880,TRUE,,,,
+# htn drug group: Beta blockers [PL 1049 / 1036]
+htn,1319998,TRUE,,,,
+htn,1314002,TRUE,,,,
+htn,1322081,TRUE,,,,
+htn,1338005,TRUE,,,,
+htn,1346823,TRUE,,,,
+htn,1386957,TRUE,,,,
+htn,1307046,TRUE,,,,
+htn,1313200,TRUE,,,,
+htn,1314577,TRUE,,,,
+htn,1327978,TRUE,,,,
+htn,1345858,TRUE,,,,
+htn,1353766,TRUE,,,,
+# htn drug group: ACE inhibitors and ARBs, ATC C09A-C09D (not in PL)
+htn,21601783,TRUE,,,,
+htn,21601801,TRUE,,,,
+htn,21601822,TRUE,,,,
+htn,21601832,TRUE,,,,
 htn,316866,TRUE,diagnosis_required,,,

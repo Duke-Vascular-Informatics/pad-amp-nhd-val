@@ -1,35 +1,24 @@
 {
   "cdmVersionRange": ">=5.0.0",
-  "_README": [
-    "Antihypertensive exposure outside an inpatient stay: the medication half of the mFI-5 hypertension item (1 point).",
-    "Subramaniam 2018 (from ACS NSQIP HYPERMED) scores hypertension only when it requires medication. Added 2026-11-06 at the study team's request.",
-    "ATC 2nd-level classes with descendants: C02 ANTIHYPERTENSIVES (21600381), C03 DIURETICS (21601461), C07 BETA BLOCKING AGENTS (21601664),",
-    "C08 CALCIUM CHANNEL BLOCKERS (21601744), C09 AGENTS ACTING ON THE RENIN-ANGIOTENSIN SYSTEM (21601782), exactly as covariates/covariate_concepts_mfi5.csv :: htn.",
-    "Diuretics and beta blockers have non-hypertensive indications; the item therefore also requires a hypertension diagnosis at any time before index",
-    "(cohort 9100022), combined at score level via cohort_map.csv and_cohort_id, the same pattern as the insulin item (9100007 AND 9100021).",
-    "Outpatient rule identical to 9100007: no inpatient visit (9201, 262, with descendants) spans the exposure start date; exposures with no visit link are kept.",
-    "Window (set in cohort_map.csv, not here): 365 days before index, chosen 2026-11-06 over the NSQIP-literal 30 days because EHR medication lists are sparse.",
-    "VERIFY: 21600381 (C02) was not observable in the synthetic characterization output; confirm it against the vocabulary before the PRCC run.",
-    "PrimaryCriteriaLimit / QualifiedLimit / ExpressionLimit are all \"All\" and EndStrategy is StartDate+0, like every covariate cohort here."
-  ],
+  "_README": "Antihypertensive exposure outside an inpatient stay: the medication half of the mFI-5 hypertension item (1 point). Subramaniam 2018 (from ACS NSQIP HYPERMED) scores hypertension only when it requires medication. REVISED 2026-11-06 to match the OHDSI Phenotype Library: the concept set is the drug-ingredient sets of PL 1046 (thiazide and thiazide-like diuretics: chlorthalidone, hydrochlorothiazide, indapamide, metolazone), PL 1047 (dihydropyridine calcium channel blockers: amlodipine, felodipine, isradipine, nicardipine, nifedipine, nisoldipine) and PL 1049 (beta blockers: 12 ingredients), each with descendants, plus ACE inhibitors and ARBs by ATC third level with descendants (C09A 21601783, C09B 21601801, C09C 21601822, C09D 21601832), because the library has no ACE-inhibitor or ARB cohort. The PL cohorts are new-user, first-exposure, nested-in-hypertension designs; only their drug concept sets are adopted here (deviation: any outpatient exposure in the window, not first exposure). Deliberately NOT included, as in the PL: loop and potassium-sparing diuretics, non-dihydropyridine CCBs, centrally acting agents, hydralazine and other C02 drugs, which have common non-hypertensive uses or are not first-line. The item also requires a hypertension diagnosis at any time before index (cohort 9100022, the same 316866 set as PL 1046/1047/1049), combined at score level via cohort_map.csv and_cohort_id, the insulin pattern (9100007 AND 9100021). Outpatient rule identical to 9100007: no inpatient visit (9201, 262, with descendants) spans the exposure start date; exposures with no visit link are kept. Window (set in cohort_map.csv, not here): 365 days before index, chosen over the NSQIP-literal 30 days because EHR medication lists are sparse. PrimaryCriteriaLimit / QualifiedLimit / ExpressionLimit are all All and EndStrategy is StartDate+0, like every covariate cohort here.",
   "ConceptSets": [
     {
       "id": 0,
-      "name": "[DVI] Antihypertensive agents (ATC C02, C03, C07, C08, C09)",
+      "name": "[DVI] Antihypertensive drugs (thiazide-like, dihydropyridine CCB, beta blocker, ACEi, ARB)",
       "expression": {
         "items": [
           {
             "concept": {
-              "CONCEPT_ID": 21600381,
-              "CONCEPT_NAME": "ANTIHYPERTENSIVES",
-              "STANDARD_CONCEPT": "C",
-              "STANDARD_CONCEPT_CAPTION": "Classification",
+              "CONCEPT_ID": 1395058,
+              "CONCEPT_NAME": "chlorthalidone",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
               "INVALID_REASON": "V",
               "INVALID_REASON_CAPTION": "Valid",
-              "CONCEPT_CODE": "C02",
+              "CONCEPT_CODE": "2409",
               "DOMAIN_ID": "Drug",
-              "VOCABULARY_ID": "ATC",
-              "CONCEPT_CLASS_ID": "ATC 2nd"
+              "VOCABULARY_ID": "RxNorm",
+              "CONCEPT_CLASS_ID": "Ingredient"
             },
             "isExcluded": false,
             "includeDescendants": true,
@@ -37,16 +26,16 @@
           },
           {
             "concept": {
-              "CONCEPT_ID": 21601461,
-              "CONCEPT_NAME": "DIURETICS",
-              "STANDARD_CONCEPT": "C",
-              "STANDARD_CONCEPT_CAPTION": "Classification",
+              "CONCEPT_ID": 974166,
+              "CONCEPT_NAME": "hydrochlorothiazide",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
               "INVALID_REASON": "V",
               "INVALID_REASON_CAPTION": "Valid",
-              "CONCEPT_CODE": "C03",
+              "CONCEPT_CODE": "5487",
               "DOMAIN_ID": "Drug",
-              "VOCABULARY_ID": "ATC",
-              "CONCEPT_CLASS_ID": "ATC 2nd"
+              "VOCABULARY_ID": "RxNorm",
+              "CONCEPT_CLASS_ID": "Ingredient"
             },
             "isExcluded": false,
             "includeDescendants": true,
@@ -54,16 +43,16 @@
           },
           {
             "concept": {
-              "CONCEPT_ID": 21601664,
-              "CONCEPT_NAME": "BETA BLOCKING AGENTS",
-              "STANDARD_CONCEPT": "C",
-              "STANDARD_CONCEPT_CAPTION": "Classification",
+              "CONCEPT_ID": 978555,
+              "CONCEPT_NAME": "indapamide",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
               "INVALID_REASON": "V",
               "INVALID_REASON_CAPTION": "Valid",
-              "CONCEPT_CODE": "C07",
+              "CONCEPT_CODE": "5764",
               "DOMAIN_ID": "Drug",
-              "VOCABULARY_ID": "ATC",
-              "CONCEPT_CLASS_ID": "ATC 2nd"
+              "VOCABULARY_ID": "RxNorm",
+              "CONCEPT_CLASS_ID": "Ingredient"
             },
             "isExcluded": false,
             "includeDescendants": true,
@@ -71,16 +60,16 @@
           },
           {
             "concept": {
-              "CONCEPT_ID": 21601744,
-              "CONCEPT_NAME": "CALCIUM CHANNEL BLOCKERS",
-              "STANDARD_CONCEPT": "C",
-              "STANDARD_CONCEPT_CAPTION": "Classification",
+              "CONCEPT_ID": 907013,
+              "CONCEPT_NAME": "metolazone",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
               "INVALID_REASON": "V",
               "INVALID_REASON_CAPTION": "Valid",
-              "CONCEPT_CODE": "C08",
+              "CONCEPT_CODE": "6916",
               "DOMAIN_ID": "Drug",
-              "VOCABULARY_ID": "ATC",
-              "CONCEPT_CLASS_ID": "ATC 2nd"
+              "VOCABULARY_ID": "RxNorm",
+              "CONCEPT_CLASS_ID": "Ingredient"
             },
             "isExcluded": false,
             "includeDescendants": true,
@@ -88,16 +77,373 @@
           },
           {
             "concept": {
-              "CONCEPT_ID": 21601782,
-              "CONCEPT_NAME": "AGENTS ACTING ON THE RENIN-ANGIOTENSIN SYSTEM",
+              "CONCEPT_ID": 1332418,
+              "CONCEPT_NAME": "amlodipine",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "17767",
+              "DOMAIN_ID": "Drug",
+              "VOCABULARY_ID": "RxNorm",
+              "CONCEPT_CLASS_ID": "Ingredient"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 1353776,
+              "CONCEPT_NAME": "felodipine",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "4316",
+              "DOMAIN_ID": "Drug",
+              "VOCABULARY_ID": "RxNorm",
+              "CONCEPT_CLASS_ID": "Ingredient"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 1326012,
+              "CONCEPT_NAME": "isradipine",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "33910",
+              "DOMAIN_ID": "Drug",
+              "VOCABULARY_ID": "RxNorm",
+              "CONCEPT_CLASS_ID": "Ingredient"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 1318137,
+              "CONCEPT_NAME": "nicardipine",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "7396",
+              "DOMAIN_ID": "Drug",
+              "VOCABULARY_ID": "RxNorm",
+              "CONCEPT_CLASS_ID": "Ingredient"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 1318853,
+              "CONCEPT_NAME": "nifedipine",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "7417",
+              "DOMAIN_ID": "Drug",
+              "VOCABULARY_ID": "RxNorm",
+              "CONCEPT_CLASS_ID": "Ingredient"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 1319880,
+              "CONCEPT_NAME": "nisoldipine",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "7435",
+              "DOMAIN_ID": "Drug",
+              "VOCABULARY_ID": "RxNorm",
+              "CONCEPT_CLASS_ID": "Ingredient"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 1319998,
+              "CONCEPT_NAME": "acebutolol",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "149",
+              "DOMAIN_ID": "Drug",
+              "VOCABULARY_ID": "RxNorm",
+              "CONCEPT_CLASS_ID": "Ingredient"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 1314002,
+              "CONCEPT_NAME": "atenolol",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "1202",
+              "DOMAIN_ID": "Drug",
+              "VOCABULARY_ID": "RxNorm",
+              "CONCEPT_CLASS_ID": "Ingredient"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 1322081,
+              "CONCEPT_NAME": "betaxolol",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "1520",
+              "DOMAIN_ID": "Drug",
+              "VOCABULARY_ID": "RxNorm",
+              "CONCEPT_CLASS_ID": "Ingredient"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 1338005,
+              "CONCEPT_NAME": "bisoprolol",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "19484",
+              "DOMAIN_ID": "Drug",
+              "VOCABULARY_ID": "RxNorm",
+              "CONCEPT_CLASS_ID": "Ingredient"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 1346823,
+              "CONCEPT_NAME": "carvedilol",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "20352",
+              "DOMAIN_ID": "Drug",
+              "VOCABULARY_ID": "RxNorm",
+              "CONCEPT_CLASS_ID": "Ingredient"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 1386957,
+              "CONCEPT_NAME": "labetalol",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "6185",
+              "DOMAIN_ID": "Drug",
+              "VOCABULARY_ID": "RxNorm",
+              "CONCEPT_CLASS_ID": "Ingredient"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 1307046,
+              "CONCEPT_NAME": "metoprolol",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "6918",
+              "DOMAIN_ID": "Drug",
+              "VOCABULARY_ID": "RxNorm",
+              "CONCEPT_CLASS_ID": "Ingredient"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 1313200,
+              "CONCEPT_NAME": "nadolol",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "7226",
+              "DOMAIN_ID": "Drug",
+              "VOCABULARY_ID": "RxNorm",
+              "CONCEPT_CLASS_ID": "Ingredient"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 1314577,
+              "CONCEPT_NAME": "nebivolol",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "31555",
+              "DOMAIN_ID": "Drug",
+              "VOCABULARY_ID": "RxNorm",
+              "CONCEPT_CLASS_ID": "Ingredient"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 1327978,
+              "CONCEPT_NAME": "penbutolol",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "7973",
+              "DOMAIN_ID": "Drug",
+              "VOCABULARY_ID": "RxNorm",
+              "CONCEPT_CLASS_ID": "Ingredient"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 1345858,
+              "CONCEPT_NAME": "pindolol",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "8332",
+              "DOMAIN_ID": "Drug",
+              "VOCABULARY_ID": "RxNorm",
+              "CONCEPT_CLASS_ID": "Ingredient"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 1353766,
+              "CONCEPT_NAME": "propranolol",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "8787",
+              "DOMAIN_ID": "Drug",
+              "VOCABULARY_ID": "RxNorm",
+              "CONCEPT_CLASS_ID": "Ingredient"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 21601783,
+              "CONCEPT_NAME": "ACE INHIBITORS, PLAIN",
               "STANDARD_CONCEPT": "C",
               "STANDARD_CONCEPT_CAPTION": "Classification",
               "INVALID_REASON": "V",
               "INVALID_REASON_CAPTION": "Valid",
-              "CONCEPT_CODE": "C09",
+              "CONCEPT_CODE": "C09A",
               "DOMAIN_ID": "Drug",
               "VOCABULARY_ID": "ATC",
-              "CONCEPT_CLASS_ID": "ATC 2nd"
+              "CONCEPT_CLASS_ID": "ATC 3rd"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 21601801,
+              "CONCEPT_NAME": "ACE INHIBITORS, COMBINATIONS",
+              "STANDARD_CONCEPT": "C",
+              "STANDARD_CONCEPT_CAPTION": "Classification",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "C09B",
+              "DOMAIN_ID": "Drug",
+              "VOCABULARY_ID": "ATC",
+              "CONCEPT_CLASS_ID": "ATC 3rd"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 21601822,
+              "CONCEPT_NAME": "ANGIOTENSIN II RECEPTOR BLOCKERS (ARBs), PLAIN",
+              "STANDARD_CONCEPT": "C",
+              "STANDARD_CONCEPT_CAPTION": "Classification",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "C09C",
+              "DOMAIN_ID": "Drug",
+              "VOCABULARY_ID": "ATC",
+              "CONCEPT_CLASS_ID": "ATC 3rd"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 21601832,
+              "CONCEPT_NAME": "ANGIOTENSIN II RECEPTOR BLOCKERS (ARBs), COMBINATIONS",
+              "STANDARD_CONCEPT": "C",
+              "STANDARD_CONCEPT_CAPTION": "Classification",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "C09D",
+              "DOMAIN_ID": "Drug",
+              "VOCABULARY_ID": "ATC",
+              "CONCEPT_CLASS_ID": "ATC 3rd"
             },
             "isExcluded": false,
             "includeDescendants": true,
