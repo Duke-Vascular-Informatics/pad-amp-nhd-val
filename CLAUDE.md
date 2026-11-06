@@ -130,7 +130,7 @@ folder before re-running.
   visit START date twice. `tests/regression/test_insulin_item.R` (16 hand-built patients: window edges, inpatient overlap,
   ER-to-inpatient, ED-only, no visit link, diabetes before/after index) is the only thing that exercises this; the synthetic
   dataset has no inpatient insulin and cannot.
-- **mFI-5 hypertension requires medication (2026-11-06, NOT YET RUN AT PRCC).** Subramaniam 2018 (NSQIP HYPERMED) scores
+- **mFI-5 hypertension requires medication (2026-11-06; run at PRCC 2026-11-06).** Subramaniam 2018 (NSQIP HYPERMED) scores
   hypertension only when it is treated. Positive = an outpatient antihypertensive exposure (the OHDSI PL 1046/1047/1049 ingredient sets: thiazide-like diuretics, dihydropyridine CCBs, beta blockers; plus ATC C09A-C09D for
   ACE inhibitors and ARBs; loop/K-sparing diuretics, non-dihydropyridine CCBs and C02 excluded as in the PL) in the 365 days before index AND a hypertension diagnosis (cohort 9100022) at any time before index. Cohort path:
   9100032 AND 9100022 via `and_cohort_id`; domain path: `query_outpatient_drug_with_dx_counts()` (the insulin oracle, generalised;
