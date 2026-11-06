@@ -213,7 +213,9 @@ DRIFT <- list(
   list(cid = "9100007", csv = "covariates/covariate_concepts.csv",       cov = "insulin_dep",      window = "default", sets = 0L),
   list(cid = "9100021", csv = "covariates/covariate_concepts_mfi5.csv",  cov = "dm",               window = "default"),
   list(cid = "9100021", csv = "covariates/covariate_concepts_vqifs.csv", cov = "dm",               window = "default"),
-  list(cid = "9100022", csv = "covariates/covariate_concepts_mfi5.csv",  cov = "htn",              window = "default"),
+  # mFI-5 htn since 2026-11-06: its non-diagnosis rows are the antihypertensive drugs (cohort 9100032); its
+  # diagnosis_required row is checked against cohort 9100022 below.
+  list(cid = "9100032", csv = "covariates/covariate_concepts_mfi5.csv",  cov = "htn",              window = "default", sets = 0L),
   list(cid = "9100022", csv = "covariates/covariate_concepts_vqifs.csv", cov = "htn",              window = "default"),
   list(cid = "9100023", csv = "covariates/covariate_concepts_mfi5.csv",  cov = "chf",              window = "default"),
   list(cid = "9100023", csv = "covariates/covariate_concepts_vqifs.csv", cov = "chf",              window = "default"),
@@ -231,8 +233,8 @@ for (spec in DRIFT) {
     rows <- rows[if (spec$window == "override") has_override else !has_override, , drop = FALSE]
   }
   is_excl_row <- !is.na(rows$concept_role) & tolower(trimws(rows$concept_role)) == "exclude"
-  # 'diagnosis_required' rows are the diabetes requirement of the insulin item, not insulin concepts; they are
-  # checked against cohort 9100021 below.
+  # 'diagnosis_required' rows are the diagnosis half of a drug-AND-diagnosis item (insulin_dep: diabetes; mFI-5 htn:
+  # hypertension), not drug concepts; they are checked against cohorts 9100021 / 9100022 below.
   is_dx_row   <- !is.na(rows$concept_role) & tolower(trimws(rows$concept_role)) == "diagnosis_required"
   rows        <- rows[!is_dx_row, , drop = FALSE]
   is_excl_row <- is_excl_row[!is_dx_row]
@@ -260,6 +262,17 @@ local({
   ok <- identical(ins_dx, dm_cohort)
   cat(sprintf("  insulin_dep diagnosis_required=[%s] vs cohort 9100021=[%s]  %s\n", paste(ins_dx, collapse = ","), paste(dm_cohort, collapse = ","), if (ok) "match" else "*** DRIFT ***"))
   if (!ok) failures <<- c(failures, "insulin_dep diagnosis requirement differs from the diabetes cohort 9100021")
+})
+
+# HYPERTENSION REQUIRING MEDICATION (2026-11-06): the diagnosis half of the mFI-5 htn item must equal cohort 9100022,
+# the same hypertension definition the sVQI-FS htn item uses.
+local({
+  htn_cohort <- extractConcepts(file.path("inst", "cohorts", "9100022.json"))
+  m5 <- read.csv("covariates/covariate_concepts_mfi5.csv", comment.char = "#", stringsAsFactors = FALSE)
+  htn_dx <- sort(unique(as.integer(m5$concept_id[m5$covariate_id == "htn" & !is.na(m5$concept_role) & m5$concept_role == "diagnosis_required"])))
+  ok <- identical(htn_dx, htn_cohort)
+  cat(sprintf("  mfi5 htn diagnosis_required=[%s] vs cohort 9100022=[%s]  %s\n", paste(htn_dx, collapse = ","), paste(htn_cohort, collapse = ","), if (ok) "match" else "*** DRIFT ***"))
+  if (!ok) failures <<- c(failures, "mFI-5 htn diagnosis requirement differs from the hypertension cohort 9100022")
 })
 
 # ---------------------------------------------------------------------------

@@ -1,0 +1,235 @@
+{
+  "cdmVersionRange": ">=5.0.0",
+  "_README": [
+    "Antihypertensive exposure outside an inpatient stay: the medication half of the mFI-5 hypertension item (1 point).",
+    "Subramaniam 2018 (from ACS NSQIP HYPERMED) scores hypertension only when it requires medication. Added 2026-11-06 at the study team's request.",
+    "ATC 2nd-level classes with descendants: C02 ANTIHYPERTENSIVES (21600381), C03 DIURETICS (21601461), C07 BETA BLOCKING AGENTS (21601664),",
+    "C08 CALCIUM CHANNEL BLOCKERS (21601744), C09 AGENTS ACTING ON THE RENIN-ANGIOTENSIN SYSTEM (21601782), exactly as covariates/covariate_concepts_mfi5.csv :: htn.",
+    "Diuretics and beta blockers have non-hypertensive indications; the item therefore also requires a hypertension diagnosis at any time before index",
+    "(cohort 9100022), combined at score level via cohort_map.csv and_cohort_id, the same pattern as the insulin item (9100007 AND 9100021).",
+    "Outpatient rule identical to 9100007: no inpatient visit (9201, 262, with descendants) spans the exposure start date; exposures with no visit link are kept.",
+    "Window (set in cohort_map.csv, not here): 365 days before index, chosen 2026-11-06 over the NSQIP-literal 30 days because EHR medication lists are sparse.",
+    "VERIFY: 21600381 (C02) was not observable in the synthetic characterization output; confirm it against the vocabulary before the PRCC run.",
+    "PrimaryCriteriaLimit / QualifiedLimit / ExpressionLimit are all \"All\" and EndStrategy is StartDate+0, like every covariate cohort here."
+  ],
+  "ConceptSets": [
+    {
+      "id": 0,
+      "name": "[DVI] Antihypertensive agents (ATC C02, C03, C07, C08, C09)",
+      "expression": {
+        "items": [
+          {
+            "concept": {
+              "CONCEPT_ID": 21600381,
+              "CONCEPT_NAME": "ANTIHYPERTENSIVES",
+              "STANDARD_CONCEPT": "C",
+              "STANDARD_CONCEPT_CAPTION": "Classification",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "C02",
+              "DOMAIN_ID": "Drug",
+              "VOCABULARY_ID": "ATC",
+              "CONCEPT_CLASS_ID": "ATC 2nd"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 21601461,
+              "CONCEPT_NAME": "DIURETICS",
+              "STANDARD_CONCEPT": "C",
+              "STANDARD_CONCEPT_CAPTION": "Classification",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "C03",
+              "DOMAIN_ID": "Drug",
+              "VOCABULARY_ID": "ATC",
+              "CONCEPT_CLASS_ID": "ATC 2nd"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 21601664,
+              "CONCEPT_NAME": "BETA BLOCKING AGENTS",
+              "STANDARD_CONCEPT": "C",
+              "STANDARD_CONCEPT_CAPTION": "Classification",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "C07",
+              "DOMAIN_ID": "Drug",
+              "VOCABULARY_ID": "ATC",
+              "CONCEPT_CLASS_ID": "ATC 2nd"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 21601744,
+              "CONCEPT_NAME": "CALCIUM CHANNEL BLOCKERS",
+              "STANDARD_CONCEPT": "C",
+              "STANDARD_CONCEPT_CAPTION": "Classification",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "C08",
+              "DOMAIN_ID": "Drug",
+              "VOCABULARY_ID": "ATC",
+              "CONCEPT_CLASS_ID": "ATC 2nd"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 21601782,
+              "CONCEPT_NAME": "AGENTS ACTING ON THE RENIN-ANGIOTENSIN SYSTEM",
+              "STANDARD_CONCEPT": "C",
+              "STANDARD_CONCEPT_CAPTION": "Classification",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "C09",
+              "DOMAIN_ID": "Drug",
+              "VOCABULARY_ID": "ATC",
+              "CONCEPT_CLASS_ID": "ATC 2nd"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          }
+        ]
+      }
+    },
+    {
+      "id": 1,
+      "name": "[DVI] Inpatient visit (incl. ER-to-inpatient)",
+      "expression": {
+        "items": [
+          {
+            "concept": {
+              "CONCEPT_ID": 9201,
+              "CONCEPT_NAME": "Inpatient Visit",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "IP",
+              "DOMAIN_ID": "Visit",
+              "VOCABULARY_ID": "Visit",
+              "CONCEPT_CLASS_ID": "Visit"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          },
+          {
+            "concept": {
+              "CONCEPT_ID": 262,
+              "CONCEPT_NAME": "Emergency Room and Inpatient Visit",
+              "STANDARD_CONCEPT": "S",
+              "STANDARD_CONCEPT_CAPTION": "Standard",
+              "INVALID_REASON": "V",
+              "INVALID_REASON_CAPTION": "Valid",
+              "CONCEPT_CODE": "ERIP",
+              "DOMAIN_ID": "Visit",
+              "VOCABULARY_ID": "Visit",
+              "CONCEPT_CLASS_ID": "Visit"
+            },
+            "isExcluded": false,
+            "includeDescendants": true,
+            "includeMapped": false
+          }
+        ]
+      }
+    }
+  ],
+  "PrimaryCriteria": {
+    "CriteriaList": [
+      {
+        "DrugExposure": {
+          "CodesetId": 0
+        }
+      }
+    ],
+    "ObservationWindow": {
+      "PriorDays": 0,
+      "PostDays": 0
+    },
+    "PrimaryCriteriaLimit": {
+      "Type": "All"
+    }
+  },
+  "QualifiedLimit": {
+    "Type": "All"
+  },
+  "ExpressionLimit": {
+    "Type": "All"
+  },
+  "InclusionRules": [
+    {
+      "name": "Not during an inpatient stay",
+      "description": "Zero inpatient visits (9201 Inpatient Visit, 262 Emergency Room and Inpatient Visit, with descendants) that span the antihypertensive exposure start date: a visit that started on or before that date (StartWindow, unbounded back to day 0) AND ended on or after it (EndWindow, day 0 onward). Same rule as cohort 9100007 (insulin): medication given or prescribed while the patient was NOT hospitalized, so drugs started for an acute inpatient indication do not count. Exposures with no visit link are kept, ED-only visits are not excluded. Implementation note: the EndWindow must have UseEventEnd = true so Circe compares the visit END date; without it Circe tests the visit start date twice and only visits starting on the exposure date are excluded (caught by tests/regression/test_insulin_item.R).",
+      "expression": {
+        "Type": "ALL",
+        "CriteriaList": [
+          {
+            "Criteria": {
+              "VisitOccurrence": {
+                "CodesetId": 1
+              }
+            },
+            "StartWindow": {
+              "Start": {
+                "Coeff": -1
+              },
+              "End": {
+                "Days": 0,
+                "Coeff": 1
+              },
+              "UseIndexEnd": false,
+              "UseEventEnd": false
+            },
+            "EndWindow": {
+              "Start": {
+                "Days": 0,
+                "Coeff": -1
+              },
+              "End": {
+                "Coeff": 1
+              },
+              "UseIndexEnd": false,
+              "UseEventEnd": true
+            },
+            "RestrictVisit": false,
+            "IgnoreObservationPeriod": true,
+            "Occurrence": {
+              "Type": 0,
+              "Count": 0,
+              "IsDistinct": false
+            }
+          }
+        ],
+        "DemographicCriteriaList": [],
+        "Groups": []
+      }
+    }
+  ],
+  "CensoringCriteria": [],
+  "CollapseSettings": {
+    "CollapseType": "ERA",
+    "EraPad": 0
+  },
+  "CensorWindow": {},
+  "EndStrategy": {
+    "DateOffset": {
+      "DateField": "StartDate",
+      "Offset": 0
+    }
+  }
+}

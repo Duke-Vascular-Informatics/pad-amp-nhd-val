@@ -34,7 +34,7 @@
 #                        cancer excluded) — this study's own, forked 2026-08-12 from the
 #                        shared 1797941 rather than editing it (see below)
 #   outcome    9100001   [DVI] Non-Home Discharge                 (hand-authored SQL)
-#   covariates 9100002-9100004, 9100007-9100010, 9100021-9100027 authored here
+#   covariates 9100002-9100004, 9100007-9100010, 9100021-9100028, 9100032 authored here
 #              (the reused Limit=First VA-FI cohorts 1797949-1797952 were dropped 2026-10-05)
 ################################################################################
 library(dplyr)

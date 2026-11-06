@@ -62,16 +62,24 @@
 #   catalog entry: heart_failure
 #     316139   Heart failure               (SNOMED 84114007 + descendants)
 #
-# HTN:
-#   catalog entry: hypertension
-#     316866   Hypertensive disorder       (SNOMED 38341003 + descendants)
+# HTN (REVISED 2026-11-06: hypertension REQUIRING MEDICATION, Subramaniam 2018 / NSQIP HYPERMED):
+#   positive = an OUTPATIENT antihypertensive exposure in the 365 days before index (the five ATC rows below,
+#              with descendants: 21600381 C02 ANTIHYPERTENSIVES, 21601461 C03 DIURETICS, 21601664 C07 BETA
+#              BLOCKING AGENTS, 21601744 C08 CALCIUM CHANNEL BLOCKERS, 21601782 C09 AGENTS ACTING ON THE
+#              RENIN-ANGIOTENSIN SYSTEM)
+#              AND a hypertension diagnosis at ANY time before index (the diagnosis_required row:
+#              catalog entry hypertension, 316866 Hypertensive disorder, SNOMED 38341003 + descendants).
+#   "Outpatient" and the domain path are the insulin item's (query_outpatient_drug_with_dx_counts()).
+#   Cohort path: cohort 9100032 AND cohort 9100022 via covariates/cohort_map.csv and_cohort_id.
+#   VERIFY 21600381 against the vocabulary (not observable in the synthetic characterization output).
 #
 # COLUMN DEFINITIONS:
 #   covariate_id         matches covariate_id in covariates_mfi5.csv
 #   concept_id           OMOP standard concept_id (verified [vocab query])
 #   include_descendants  TRUE = expand via concept_ancestor rollup
 #   concept_role         blank, or "exclude" = remove this concept (and its
-#                        descendants if include_descendants) from the set it sits in
+#                        descendants if include_descendants) from the set it sits in,
+#                        or "diagnosis_required" = the diagnosis half of a drug-AND-diagnosis item (htn)
 #   value_concept_ids    blank (no value-coded observations in this minimal set)
 #   lookback_start_day / lookback_end_day   OPTIONAL per-row window override.
 #                        Blank = use the covariate's own window in
@@ -116,4 +124,9 @@ copd,255848,TRUE,,,-30,-1
 copd,4273378,FALSE,exclude,,-30,-1
 copd,1340380,FALSE,exclude,,-30,-1
 chf,316139,TRUE,,,,
-htn,316866,TRUE,,,,
+htn,21600381,TRUE,,,,
+htn,21601461,TRUE,,,,
+htn,21601664,TRUE,,,,
+htn,21601744,TRUE,,,,
+htn,21601782,TRUE,,,,
+htn,316866,TRUE,diagnosis_required,,,

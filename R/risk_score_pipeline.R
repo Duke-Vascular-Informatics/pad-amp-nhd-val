@@ -1014,29 +1014,33 @@ query_renal_impairment_covariate_counts <- function(connection, config, covariat
 
 
 # -----------------------------------------------------------------------------
-# query_insulin_covariate_counts()
+# query_outpatient_drug_with_dx_counts()   (alias: query_insulin_covariate_counts)
 #
-# Direct-query (oracle) implementation of the Iannuzzi insulin_dep item: "who with diabetes is currently on
-# insulin" (redefined 2026-11-05). A patient is positive when BOTH hold:
-#   1. an OUTPATIENT insulin exposure with its start date in the covariate window (365 days before index), and
-#   2. a diabetes diagnosis (concept_role = 'diagnosis_required') at any time before index (-36500..-1).
+# Direct-query (oracle) implementation of a "drug AND diagnosis" score item. Two items use it:
+#   * Iannuzzi insulin_dep (2026-11-05): "who with diabetes is currently on insulin"
+#   * mFI-5 htn (2026-11-06): "hypertension requiring medication" (Subramaniam 2018 / NSQIP HYPERMED)
+# A patient is positive when BOTH hold:
+#   1. an OUTPATIENT exposure to one of the item's drug concepts (rows with a blank concept_role) with its start
+#      date in the covariate window (365 days before index for both items), and
+#   2. a diagnosis (concept_role = 'diagnosis_required': diabetes for insulin_dep, hypertension for htn) at any
+#      time before index (-36500..-1).
 #
 # "Outpatient" = the exposure does not fall within an inpatient stay: no inpatient visit (visit_concept_id 9201
 # Inpatient Visit or 262 Emergency Room and Inpatient Visit, with descendants) has visit_start_date <= the exposure
 # start date <= visit_end_date. Exposures with no visit link are kept (they are not inpatient); ED-only visits
 # are not excluded.
 #
-# This is the independent check on the cohort path (cohort 9100007 AND cohort 9100021 via cohort_map.csv
-# and_cohort_id); tests/regression/test_cohort_vs_domain_covariates.R requires the two to agree exactly.
-# Returns SUBJECT_ID / EVENT_COUNT like every other query_* function.
+# This is the independent check on the cohort path (insulin: cohort 9100007 AND 9100021; htn: cohort 9100032 AND
+# 9100022, via cohort_map.csv and_cohort_id); tests/regression/test_cohort_vs_domain_covariates.R requires the two
+# to agree exactly. Returns SUBJECT_ID / EVENT_COUNT like every other query_* function.
 # -----------------------------------------------------------------------------
-query_insulin_covariate_counts <- function(connection, config, covariate, covariate_concepts) {
+query_outpatient_drug_with_dx_counts <- function(connection, config, covariate, covariate_concepts) {
   is_dx   <- !is.na(covariate_concepts$concept_role) & covariate_concepts$concept_role == "diagnosis_required"
-  ins     <- covariate_concepts[!is_dx, , drop = FALSE]
+  ins     <- covariate_concepts[!is_dx, , drop = FALSE]   # drug rows
   dx      <- covariate_concepts[is_dx,  , drop = FALSE]
   if (nrow(ins) == 0L || nrow(dx) == 0L) {
-    stop("Covariate insulin_dep needs insulin concept rows AND concept_role = 'diagnosis_required' rows ",
-         "(the diabetes requirement) in its concepts CSV")
+    stop("Covariate ", covariate$covariate_id, " needs drug concept rows AND concept_role = 'diagnosis_required' rows ",
+         "(the diagnosis requirement) in its concepts CSV")
   }
   # Concept-id subquery honouring each row's include_descendants flag.
   ids_sql <- function(rows) {
@@ -1054,7 +1058,7 @@ query_insulin_covariate_counts <- function(connection, config, covariate, covari
         FROM @results_schema.@cohort_table c
         WHERE c.cohort_definition_id = @target_id
       ),
-      insulin_ids   AS (", ids_sql(ins), "),
+      drug_ids   AS (", ids_sql(ins), "),
       dx_ids        AS (", ids_sql(dx),  "),
       inpatient_ids AS (SELECT descendant_concept_id AS concept_id FROM @cdm_schema.concept_ancestor
                         WHERE ancestor_concept_id IN (9201, 262))
@@ -1062,7 +1066,7 @@ query_insulin_covariate_counts <- function(connection, config, covariate, covari
       FROM target_population t
       INNER JOIN @cdm_schema.drug_exposure de
               ON de.person_id = t.subject_id
-             AND de.drug_concept_id IN (SELECT concept_id FROM insulin_ids)
+             AND de.drug_concept_id IN (SELECT concept_id FROM drug_ids)
              AND de.drug_exposure_start_date BETWEEN DATEADD(DAY, @lookback_start, t.index_date)
                                                  AND DATEADD(DAY, @lookback_end,   t.index_date)
       WHERE NOT EXISTS (
@@ -1084,11 +1088,14 @@ query_insulin_covariate_counts <- function(connection, config, covariate, covari
     target_id      = config$target_cohort_id,
     lookback_start = as.integer(covariate$lookback_start_day),
     lookback_end   = as.integer(covariate$lookback_end_day),
-    dx_start       = -36500L,   # diabetes at ANY time before index (100 years back)
+    dx_start       = -36500L,   # diagnosis at ANY time before index (100 years back)
     dx_end         = -1L
   )
   DatabaseConnector::querySql(connection, SqlRender::translate(sql, targetDialect = "sql server"))
 }
+
+# Backward-compatible name (tests/regression/test_insulin_item.R and older notes use it).
+query_insulin_covariate_counts <- query_outpatient_drug_with_dx_counts
 
 # -----------------------------------------------------------------------------
 # query_prolonged_antibiotic_counts()
@@ -1879,8 +1886,11 @@ query_covariate_counts <- function(connection, config, covariate, covariate_conc
     return(query_female_covariate_counts(connection, config, covariate, covariate_concepts))
   }
 
-  if (covariate$covariate_id == "insulin_dep") {
-    return(query_insulin_covariate_counts(connection, config, covariate, covariate_concepts))
+  # Drug-AND-diagnosis items: Iannuzzi insulin_dep, and mFI-5 htn since 2026-11-06 (recognised by its
+  # 'diagnosis_required' rows, so the sVQI-FS htn item, which has none, keeps the plain diagnosis query).
+  if (covariate$covariate_id == "insulin_dep" ||
+      any(!is.na(covariate_concepts$concept_role) & covariate_concepts$concept_role == "diagnosis_required")) {
+    return(query_outpatient_drug_with_dx_counts(connection, config, covariate, covariate_concepts))
   }
 
   if (covariate$covariate_id %in% c("underweight", "overweight", "obese")) {
