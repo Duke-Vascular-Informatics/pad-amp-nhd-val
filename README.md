@@ -32,7 +32,7 @@ check the pipeline end to end.
    Rscript -e 'renv::restore(prompt = FALSE)'
    ```
 
-   Expected: the command finishes with no error.
+   Expected: the command finishes with no error. The Java driver folder is set in `StrategusCodeToRun.R` to the dev container's `/workspace/...` path, so outside the container that line must point at your own driver folder.
 
 2. **Set the connection settings** in your shell. Do not put the password in a file in this repo.
 
@@ -172,14 +172,6 @@ Recorded at v1.0.0 (2026-11-06), against synthetic dataset v3. Recheck each poin
   predictors and approach are a study-team decision.
 
 See `CLAUDE.md` for the full set of gotchas.
-
-## Decisions needed
-
-These are open questions for the study team, not settled facts:
-
-- **Licence.** This repo is GPL-2.0-only. It was forked from `pad-amp-nhd-prog`, which is GPL-3.0. Shared files were copied from that repo, and GPL-2.0-only code cannot be combined with GPL-3.0 code. Duke's office for technology transfer should decide which licence applies.
-- **Output folders.** The runner writes Strategus output to `results/`, but the scoring step, the report inputs and the docs use `output/`. Both are gitignored. Choose one name and update the code and docs together.
-- **JDBC driver path.** `StrategusCodeToRun.R` sets the driver folder to a dev-container path (`/workspace/...`). Make it an environment variable before running outside that container.
 
 ## Citing
 
