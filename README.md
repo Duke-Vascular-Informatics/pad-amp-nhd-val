@@ -13,17 +13,80 @@ validation only; no new model is fitted.
 
 ## Quick start
 
-```bash
-Rscript -e 'renv::restore(prompt = FALSE)'
-Rscript CreateStrategusAnalysisSpecification.R   # step 1: build the spec
-Rscript StrategusCodeToRun.R                     # step 2: execute + score + report
-```
+This runs the study against a SQL Server database that holds an OMOP CDM. It does not need
+the real data; the synthetic CDM described under [Data source](#data-source) is enough to
+check the pipeline end to end.
 
-Run everything through the dev container:
+### Prerequisites
 
-```bash
-docker exec omop_dev-devcontainer-1 bash -lc 'cd /workspace/pad-amp-nhd-val && Rscript StrategusCodeToRun.R'
-```
+- **R 4.5.2** (the version in `renv.lock`) and a **JDK 17**. Charon's dev container provides both; outside it, install them yourself.
+- **Docker**, if you use charon's dev container. Its setup is in charon's [`docs/SETUP.md`](https://github.com/Duke-Vascular-Informatics/charon/blob/main/docs/SETUP.md).
+- **The OMOP vocabulary** loaded in the `omop_vocab` schema, per charon's `docs/SETUP.md`.
+- **The synthetic CDM** `omop_synth_pad_amp_v3` on the same SQL Server instance. Download and checksum it from the release linked under [Data source](#data-source).
+
+### Steps
+
+1. **Restore the R packages** from the lockfile:
+
+   ```bash
+   Rscript -e 'renv::restore(prompt = FALSE)'
+   ```
+
+   Expected: the command finishes with no error.
+
+2. **Set the connection settings** in your shell. Do not put the password in a file in this repo.
+
+   | Variable | Required | Default if unset | Meaning |
+   |---|---|---|---|
+   | `MSSQL_SA_PASSWORD` | yes | none | SQL Server password |
+   | `OMOP_SERVER` (or `MSSQL_HOST`) | no | `mssql_dev` | SQL Server host |
+   | `MSSQL_PORT` | no | `1433` | SQL Server port |
+   | `MSSQL_USER` | no | `sa` | SQL Server login |
+   | `OMOP_DATABASE` | no | `omop_synth` | Database that holds the CDM |
+   | `OMOP_PHYSICAL_CDM_SCHEMA` | no | `omop_synth_pad_amp_v3` | Schema with the synthetic CDM |
+   | `OMOP_VOCAB_SCHEMA` | no | `omop_vocab` | Schema with the vocabulary |
+
+   The defaults are the dev container's values. Set them to your own. They are environment variables so that one script can run against different sites without editing the code.
+
+3. **Build the study specification:**
+
+   ```bash
+   Rscript CreateStrategusAnalysisSpecification.R
+   ```
+
+   Expected: `inst/padAmpNhdValAnalysisSpecification.json` is written. Run this again after any change under `inst/`. The next step checks that it is current.
+
+4. **Run the study** in a new R session:
+
+   ```bash
+   Rscript StrategusCodeToRun.R
+   ```
+
+   Expected: a line `Specification freshness check passed`, then Strategus generates the 15 cohorts, the diagnostics and the Table 1 characterization, and then the scoring step runs. Strategus output goes to `results/`. The scoring results and report inputs go to `output/`. Both folders are gitignored.
+
+   If you run through charon's dev container, use the container's name from `docker ps`:
+
+   ```bash
+   docker exec <your-dev-container-name> bash -lc 'cd /workspace/pad-amp-nhd-val && Rscript StrategusCodeToRun.R'
+   ```
+
+5. **Check the covariate regression test:**
+
+   ```bash
+   Rscript tests/regression/test_cohort_vs_domain_covariates.R
+   ```
+
+   Expected: covariates whose meaning is the same by both routes match exactly. Per-covariate differences are written to `output/regression/cohort_vs_domain_deltas.csv`.
+
+### Troubleshooting
+
+| Symptom | Likely cause | Fix |
+|---|---|---|
+| `Analysis specification not found` | Step 3 has not been run | Run step 3 |
+| `Rebuild first: Rscript CreateStrategusAnalysisSpecification.R` | A cohort definition file changed after the spec was built. The run stops because Strategus reads the spec, not the files, and would otherwise run the old definitions silently | Run step 3 again |
+| `Overlay schema auto-build failed` | The physical CDM schema is missing, or your login cannot create a view | Confirm the schema name in `OMOP_PHYSICAL_CDM_SCHEMA` and the login's permissions; see [CLAUDE.md, Data source](CLAUDE.md) |
+| Cohort counts do not change after you edit a cohort or schema | Strategus reused cohorts from an earlier run | See [CLAUDE.md, Data source](CLAUDE.md) on clearing incremental state |
+| A schema name is rejected or misread | Schemas must be two-part `database.schema` | Set the variable to the form `database.schema` |
 
 ## What runs where
 
@@ -97,6 +160,8 @@ every covariate, including mFI-5's COPD-or-pneumonia item. Per-covariate deltas 
 
 ## Known limitations
 
+Recorded at v1.0.0 (2026-11-06), against synthetic dataset v3. Recheck each point when the synthetic dataset or the cohort definitions change.
+
 - On the current synthetic dataset the module generates NHD **unconditionally** of
   frailty, so discrimination sits near chance (AUROC ≈ 0.47–0.54) by construction. The
   pipeline is being exercised, not the clinical hypothesis.
@@ -107,6 +172,14 @@ every covariate, including mFI-5's COPD-or-pneumonia item. Per-covariate deltas 
   predictors and approach are a study-team decision.
 
 See `CLAUDE.md` for the full set of gotchas.
+
+## Decisions needed
+
+These are open questions for the study team, not settled facts:
+
+- **Licence.** This repo is GPL-2.0-only. It was forked from `pad-amp-nhd-prog`, which is GPL-3.0. Shared files were copied from that repo, and GPL-2.0-only code cannot be combined with GPL-3.0 code. Duke's office for technology transfer should decide which licence applies.
+- **Output folders.** The runner writes Strategus output to `results/`, but the scoring step, the report inputs and the docs use `output/`. Both are gitignored. Choose one name and update the code and docs together.
+- **JDBC driver path.** `StrategusCodeToRun.R` sets the driver folder to a dev-container path (`/workspace/...`). Make it an environment variable before running outside that container.
 
 ## Citing
 

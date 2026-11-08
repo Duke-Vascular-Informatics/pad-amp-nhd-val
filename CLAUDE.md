@@ -57,10 +57,9 @@ version v3 as of 2026-10-11; it was v2 before). Strategus itself reads a view-ov
 `Strategus::createCdmExecutionSettings` has no vocabulary-schema parameter. The runner
 builds that overlay automatically if it is missing. The custom step and report query
 the **physical** schema directly, via `config$cdm_schema` — **this must match the
-physical schema the overlay was actually built from.** Found out of sync 2026-08-11:
-`study_params.yaml` had drifted to v1 (`omop_synth_pad_amp_dispo`, 1,474 persons) while
-the already-built overlay pointed at v2 (1,544 persons) — a silent cross-schema
-person_id join, not an error. Verify with the overlay's view definition
+physical schema the overlay was actually built from.** The reason is that a mismatch
+produces a silent cross-schema `person_id` join, not an error; it happened once, when
+the config had drifted behind the overlay (see `CHANGELOG.md`, 2026-08-11). Verify with the overlay's view definition
 (`SELECT VIEW_DEFINITION FROM INFORMATION_SCHEMA.VIEWS WHERE TABLE_SCHEMA = '<overlay>'
 AND TABLE_NAME = 'person'`) before ever changing either value. If a re-run shows
 `Skipping cohorts already generated: <ids>` for cohorts other than 9100001 right after
@@ -103,7 +102,7 @@ folder before re-running.
   anemia threshold with `grepl("vqifs", <path>)`, which also matched output folders. Use
   `config$score_id`, which is deliberately `NULL` by default so a forgotten assignment
   fails loudly.
-- **Score-item windows are chosen per item (changed 2026-11-05).** Chronic conditions (diabetes, hypertension,
+- **Score-item windows are chosen per item.** Chronic conditions (diabetes, hypertension,
   COPD, coronary artery disease, peripheral artery disease, insulin-treated diabetes) look back **any time before index**, encoded as
   `-36500` days (100 years, safely inside the SQL DATE range) `..-1`; hemoglobin and BMI (anemia, underweight)
   use **90 days** so they describe the patient at surgery; mFI-5 CHF and the mFI-5 pneumonia arm are 30 days;
@@ -119,9 +118,9 @@ folder before re-running.
   non-lower-extremity exclusions). Keep them identical; the oracle rows in `covariate_concepts_vqifs.csv`
   and the cohort JSON are checked by the regression test's concept-set drift check.
 - **Cohort-freshness check compares PEOPLE (mode_id 1), not events (mode_id 0)** in `cg_cohort_attrition.csv`. They coincide for a
-  Limit=First cohort (the target) but not for a Limit=All cohort with an inclusion rule (9100007: 979,789 events vs 97,677 people), where
-  reading mode 0 stopped the 2026-11-05 PRCC run. The check only covers cohorts that have attrition rows (those with inclusion rules).
-- **Insulin item (2026-11-05): "who with diabetes is currently on insulin".** Positive = an outpatient insulin exposure in the
+  Limit=First cohort (the target) but not for a Limit=All cohort with an inclusion rule (9100007: 979,789 events vs 97,677 people).
+  Reading events instead of people is what stopped one real-data run, so the check must stay on mode 1. The check only covers cohorts that have attrition rows (those with inclusion rules).
+- **Insulin item: "who with diabetes is currently on insulin".** Positive = an outpatient insulin exposure in the
   365 days before index AND a diabetes diagnosis at any time before index. Outpatient = no inpatient visit (9201, 262, with
   descendants) spans the exposure date (start and end inclusive); exposures with no visit link count; ED-only visits are not
   excluded. Cohort path: cohort 9100007 AND cohort 9100021 via `and_cohort_id` in `cohort_map.csv`. Domain path:
@@ -130,30 +129,30 @@ folder before re-running.
   visit START date twice. `tests/regression/test_insulin_item.R` (16 hand-built patients: window edges, inpatient overlap,
   ER-to-inpatient, ED-only, no visit link, diabetes before/after index) is the only thing that exercises this; the synthetic
   dataset has no inpatient insulin and cannot.
-- **mFI-5 hypertension requires medication (2026-11-06; run at PRCC 2026-11-06).** Subramaniam 2018 (NSQIP HYPERMED) scores
+- **mFI-5 hypertension requires medication.** Subramaniam 2018 (NSQIP HYPERMED) scores
   hypertension only when it is treated. Positive = an outpatient antihypertensive exposure (the OHDSI PL 1046/1047/1049 ingredient sets: thiazide-like diuretics, dihydropyridine CCBs, beta blockers; plus ATC C09A-C09D for
   ACE inhibitors and ARBs; loop/K-sparing diuretics, non-dihydropyridine CCBs and C02 excluded as in the PL) in the 365 days before index AND a hypertension diagnosis (cohort 9100022) at any time before index. Cohort path:
   9100032 AND 9100022 via `and_cohort_id`; domain path: `query_outpatient_drug_with_dx_counts()` (the insulin oracle, generalised;
-  it is selected by the `diagnosis_required` row). The sVQI-FS htn item is unchanged. 9100032 = ATLAS 1798678 (created 2026-11-06);
+  it is selected by the `diagnosis_required` row). The sVQI-FS htn item is unchanged. 9100032 = ATLAS 1798678;
   its SQL is rendered from the JSON by `scripts/render_cohort_sql.R`.
-- **One diabetes definition everywhere (2026-11-05):** cohort 9100021 = 201820 + 442793 with descendants (all types incl. type 1
+- **One diabetes definition everywhere:** cohort 9100021 = 201820 + 442793 with descendants (all types incl. type 1
   and 2, and diabetic complications), also the target's diabetes indication, Table 1, and the insulin item's requirement.
 - **Wound set = 29 roots in BOTH the target's wound entry criterion and Table 1 (9100029)**: the original 24 plus five gangrene roots
-  (4263116 generic/dry/wet/trophic/symmetrical, 44782426, 35615085, 4141477, 4142822), added 2026-11-05. Keep the two identical.
+  (4263116 generic/dry/wet/trophic/symmetrical, 44782426, 35615085, 4141477, 4142822). Keep the two identical: the target's wound entry and Table 1 must agree on the same set, or the Table 1 wound row and the target population can diverge silently.
   `scripts/render_cohort_sql.R` now honors the `generate_stats` column (the target needs inclusion statistics for the CONSORT figure).
-- **Table 1 phenotype rows are read from ATLAS cohorts (2026-11-05).** PAD = 9100003, diabetes (all types) = 9100021,
+- **Table 1 phenotype rows are read from ATLAS cohorts.** PAD = 9100003, diabetes (all types) = 9100021,
   lower-extremity wound = 9100029, above-knee = 9100030, below-knee = 9100031 (Other = the rest of the target cohort),
   via `.table1_indication_sql()` / `.table1_amp_level_sql()` in `R/extract_report_inputs.R`. 9100029-31 exist only for
   Table 1 (ATLAS 1798663-65). Indication = an entry on or before the index date; level = an entry on the index visit.
   PASS 3 of `tests/regression/test_cohort_vs_domain_covariates.R` recomputes these rows straight from the cohort JSON
   concept sets and requires an exact match. Age, sex, race and ethnicity stay direct person-table queries.
 - **Never reuse a `Limit: First` cohort for a score item.** The four VA-FI cohorts
-  (1797949–1797952) were dropped on 2026-10-05 for exactly this reason: one row per person
+  (1797949–1797952) were dropped for exactly this reason (see `CHANGELOG.md`, 2026-10-05): one row per person
   at their first-ever record means a lookback window cannot bind, and the published 30-day
   mFI-5 CHF window silently became "ever prior". Every cohort authored here is `Limit: All`
   with `EndStrategy StartDate+0`.
-- **9100005 / 9100006 are NOT defined in this repo any more.** They are shared with
-  `pad-amp-nhd-prog`, so redefining them here would give one id two meanings; the revised
+- **9100005 / 9100006 are NOT defined in this repo.** They are shared with
+  `pad-amp-nhd-prog`, so redefining them here would give one id two meanings; the
   dependent-functional-status, ambulatory aid-use and impaired-ambulation cohorts are `9100026` / `9100027` / `9100028`.
   Cohort JSON for `9100021–9100028` is generated by `scripts/author_covariate_cohorts.R`;
   edit that script, not the JSON.
@@ -165,22 +164,18 @@ folder before re-running.
 - **`EndStrategy StartDate+0` on covariate cohorts is load-bearing.** FeatureExtraction's
   cohort-based covariates use interval-*overlap* semantics; the scoring step uses
   start-in-window. They coincide only for point events.
-- Carried forward from `pad-amp-ed-desc`: `Characterization 3.0.1` emits raw `IFNULL()`
-  and fails on SQL Server, so `includeRiskFactors` / `includeDechallengeRechallenge` /
-  `includeCaseSeries` must stay `FALSE`. `runInclusionStatistics = FALSE` avoids a
-  backslash-schema crash on Duke PRCC. Schemas must be two-part `database.schema`.
+- **Characterization settings are constrained by the SQL Server dialect.** `Characterization 3.0.1` emits raw `IFNULL()`, which SQL Server rejects, so `includeRiskFactors` / `includeDechallengeRechallenge` / `includeCaseSeries` must stay `FALSE`. `runInclusionStatistics = FALSE` avoids a backslash-schema crash seen at PRCC; keep it off. The crash's exact cause is not recorded in this repo, so confirm it from the PRCC run notes before changing the setting. Schemas must be two-part `database.schema`: on this SQL Server instance CohortGenerator misreads a bare schema name as the database name (comment at `StrategusCodeToRun.R:64`). Inherited from `pad-amp-ed-desc`.
 
 ### Cohort id allocation
 
-This repo holds **`9100001`–`9100011`** (minus `9100005`/`9100006`, no longer defined here) and its own **`9100021`–`9100028`** out of the reserved local block, which sits
+This repo holds **`9100001`–`9100011`** (minus `9100005`/`9100006`, which are not defined here) and its own **`9100021`–`9100028`** out of the reserved local block, which sits
 deliberately outside the ATLAS-demo id range so a future ATLAS assignment cannot
 collide. **Shared with `pad-amp-nhd-prog`** — this repo is a frozen fork of it and the
-cohort definitions were byte-identical at fork time (2026-09-07), so the ledger
+cohort definitions were byte-identical at fork time, so the ledger
 records the range once against `pad-amp-nhd-prog` rather than claiming a duplicate
 range here. The block's bounds and the allocation ledger live in
 [`strategus-study-template/docs/STRATEGUS_CONVENTIONS.md`](https://github.com/Duke-Vascular-Informatics/strategus-study-template/blob/main/docs/STRATEGUS_CONVENTIONS.md) §6 — do not restate them
-here. (They used to be restated here and in every `logic_description` below, and
-all of it went stale at once when the block was widened on 2026-08-13.) All are named
+here. Why not restate: the numbers went stale at once when the block was widened (see `CHANGELOG.md`, 2026-08-13), and a single ledger avoids two copies drifting. All are named
 `[DVI] …` from the start so pushing them upstream is not a rename exercise. They are
 **not yet in ATLAS** (`alignment_status: LOCAL ONLY` in `inst/Cohorts.csv`); creating them
 there is a separate, explicit, user-initiated action — the workspace `[DVI]` tooling is
