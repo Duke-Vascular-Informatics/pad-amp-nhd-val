@@ -3,12 +3,10 @@
 Core R helpers for the pad-amp-nhd-val prognostic Strategus study. Not a
 package — sourced directly by `StrategusCodeToRun.R`.
 
-This README previously described `pad-amp-ed-desc`'s descriptive-study report
-(`report_descriptive.R`, CohortIncidence Table 2a, VA-FI per-deficit ORs) —
-copied over unmodified when this repo was scaffolded and never corrected to
-match this study's own design (prognostic_model, integer risk scores, no
-`report_descriptive.R` anywhere in this repo). Rewritten 2026-08-11 to
-describe what is actually here.
+Why `R/` is sourced rather than installed as a package: the study is a
+Strategus analysis package run as a script on a single site's database, not a
+library other projects depend on. Sourcing keeps each step's inputs visible in
+`StrategusCodeToRun.R`. An earlier version of this README was copied from `pad-amp-ed-desc` and described a descriptive study's files that are not in this repo; it was rewritten to match this study's prognostic design (see `CHANGELOG.md`, 2026-08-11).
 
 ## Files
 
