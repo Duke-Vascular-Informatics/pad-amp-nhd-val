@@ -302,6 +302,30 @@ local({
   }
 })
 
+# EVERY score-item window must end on day 0 so the index date is always included (2026-11-09): the cohort path, the
+# domain-query oracle and any per-row concept override are all checked, so no window can silently drop the index day.
+local({
+  cm <- read.csv("covariates/cohort_map.csv", comment.char = "#", stringsAsFactors = FALSE)
+  bad <- character(0)
+  coh <- cm[cm$mechanism == "cohort", , drop = FALSE]
+  bad <- c(bad, sprintf("cohort_map %s/%s ends at %d", coh$score_id[coh$lookback_end_day != 0L], coh$score_item_id[coh$lookback_end_day != 0L], coh$lookback_end_day[coh$lookback_end_day != 0L]))
+  and_end <- suppressWarnings(as.integer(coh$and_lookback_end_day)); has_and <- !is.na(and_end)
+  bad <- c(bad, sprintf("cohort_map %s/%s AND-window ends at %d", coh$score_id[has_and & and_end != 0L], coh$score_item_id[has_and & and_end != 0L], and_end[has_and & and_end != 0L]))
+  for (f in c("covariates/covariates.csv", "covariates/covariates_mfi5.csv", "covariates/covariates_vqifs.csv")) {
+    cv <- read.csv(f, comment.char = "#", stringsAsFactors = FALSE)
+    bad <- c(bad, sprintf("%s %s ends at %d", basename(f), cv$covariate_id[cv$lookback_end_day != 0L], cv$lookback_end_day[cv$lookback_end_day != 0L]))
+  }
+  for (f in Sys.glob("covariates/covariate_concepts*.csv")) {
+    cc <- read.csv(f, comment.char = "#", stringsAsFactors = FALSE)
+    if ("lookback_end_day" %in% names(cc)) {
+      e <- suppressWarnings(as.integer(cc$lookback_end_day)); ov <- !is.na(e) & e != 0L
+      bad <- c(bad, sprintf("%s %s/%s override ends at %d", basename(f), cc$covariate_id[ov], cc$concept_id[ov], e[ov]))
+    }
+  }
+  cat(sprintf("  all score-item windows end on day 0 (index date included): %s\n", if (length(bad) == 0L) "yes" else "*** NO ***"))
+  if (length(bad)) { for (b in bad) cat("   -", b, "\n"); failures <<- c(failures, paste("window does not include the index date:", paste(bad, collapse = "; "))) }
+})
+
 message("\n########## PASS 3: Table 1 phenotypes, cohort-based vs direct CDM ##########")
 local({
   omopDb  <- Sys.getenv("OMOP_DATABASE", unset = "omop_synth")

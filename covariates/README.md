@@ -39,7 +39,7 @@ Set both file paths to `NULL` in workflow/08 to skip this CSV pipeline and pass 
 | `covariate_name` | Human-readable label used in reports and output tables. |
 | `domain` | OMOP CDM domain: `condition` → `condition_occurrence`, `procedure` → `procedure_occurrence`, `drug` → `drug_exposure`, `measurement` → `measurement`, `observation` → `observation` |
 | `lookback_start_day` | Start of lookback window relative to index date (negative = before index). Examples: `-365`, `-90`, `-30`. `-36500` (100 years) means "any time before the index date" (with `lookback_end_day` `0`, up to and including it). |
-| `lookback_end_day` | End of lookback window. `-1` = day before index (strictly prior). `0` = include index date. |
+| `lookback_end_day` | End of lookback window. `0` = include the index date (every window in this study ends on day 0). `-1` = day before index (strictly prior). |
 | `min_count` | Minimum qualifying records to count the covariate as present. Almost always `1`. |
 | `points` | **Integer risk score pipeline only.** Point value assigned when present. Positive = risk factor, negative = protective. Set to `1` for simple binary presence/absence. Ignored by FeatureExtraction-based analyses. |
 | `missing_is_negative` | `TRUE` = absence means covariate is absent (default). `FALSE` = for derived covariates where missing ≠ absent (e.g. BMI from weight/height). |

@@ -52,7 +52,7 @@
 #   query_anemia_covariate_counts(), not via concept set.
 #
 # INSULIN_DEP (REDEFINED 2026-11-05 -- "who with diabetes is currently on insulin"):
-#   positive = an OUTPATIENT insulin exposure in the 365 days before index (ATC 21600713 below)
+#   positive = an OUTPATIENT insulin exposure in the 365 days up to and including the index date (ATC 21600713 below)
 #              AND a diabetes diagnosis on or before the index date (the two 'diagnosis_required' rows:
 #              201820 Diabetes mellitus + 442793 Complication due to diabetes mellitus, with descendants,
 #              the same all-types diabetes definition used everywhere).

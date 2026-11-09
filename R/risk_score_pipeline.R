@@ -1021,7 +1021,7 @@ query_renal_impairment_covariate_counts <- function(connection, config, covariat
 #   * mFI-5 htn (2026-11-06): "hypertension requiring medication" (Subramaniam 2018 / NSQIP HYPERMED)
 # A patient is positive when BOTH hold:
 #   1. an OUTPATIENT exposure to one of the item's drug concepts (rows with a blank concept_role) with its start
-#      date in the covariate window (365 days before index for both items), and
+#      date in the covariate window (365 days up to and including the index date for both items), and
 #   2. a diagnosis (concept_role = 'diagnosis_required': diabetes for insulin_dep, hypertension for htn) at any
 #      time on or before the index date (-36500..0).
 #
