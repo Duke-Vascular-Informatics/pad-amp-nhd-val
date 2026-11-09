@@ -1718,7 +1718,14 @@ extract_report_inputs <- function(config,
 # =============================================================================
 .TABLE1_COHORTS <- c(pad = 9100003L, dm = 9100021L, wound = 9100029L, aka = 9100030L, bka = 9100031L)
 
-.table1_indication_sql <- function(results_schema, cohort_table, target_id, cohorts = .TABLE1_COHORTS) {
+# Table 1 wound row window: the 365 days up to and including the index date (changed 2026-11-09). It is the same window
+# the Iannuzzi tissue-loss score item uses (cohort_map.csv, -365..0), so the two wound phenotypes are read over one window.
+# PAD and diabetes stay "any time up to the index date", matching their score items (-36500..0). The regression test
+# requires this constant to equal the tissue_loss window in cohort_map.csv.
+.TABLE1_WOUND_LOOKBACK_DAYS <- 365L
+
+.table1_indication_sql <- function(results_schema, cohort_table, target_id, cohorts = .TABLE1_COHORTS,
+                                   wound_lookback = .TABLE1_WOUND_LOOKBACK_DAYS) {
   SqlRender::render(
     "WITH target AS (
        SELECT subject_id, cohort_start_date
@@ -1732,6 +1739,8 @@ extract_report_inputs <- function(config,
           ON c.subject_id = t.subject_id
          AND c.cohort_definition_id IN (@pad_id, @dm_id, @wound_id)
          AND c.cohort_start_date <= t.cohort_start_date
+         AND c.cohort_start_date >= DATEADD(DAY, CASE WHEN c.cohort_definition_id = @wound_id THEN -@wound_lookback ELSE -36500 END,
+                                            t.cohort_start_date)
      )
      SELECT 'PAD'                 AS category, COUNT(*) AS n FROM hit WHERE cohort_definition_id = @pad_id
      UNION ALL
@@ -1739,7 +1748,8 @@ extract_report_inputs <- function(config,
      UNION ALL
      SELECT 'LE wound / gangrene', COUNT(*)              FROM hit WHERE cohort_definition_id = @wound_id",
     results_schema = results_schema, cohort_table = cohort_table, target_id = target_id,
-    pad_id = cohorts[["pad"]], dm_id = cohorts[["dm"]], wound_id = cohorts[["wound"]]
+    pad_id = cohorts[["pad"]], dm_id = cohorts[["dm"]], wound_id = cohorts[["wound"]],
+    wound_lookback = as.integer(wound_lookback)
   )
 }
 
