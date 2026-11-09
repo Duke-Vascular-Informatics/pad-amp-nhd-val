@@ -1023,7 +1023,7 @@ query_renal_impairment_covariate_counts <- function(connection, config, covariat
 #   1. an OUTPATIENT exposure to one of the item's drug concepts (rows with a blank concept_role) with its start
 #      date in the covariate window (365 days before index for both items), and
 #   2. a diagnosis (concept_role = 'diagnosis_required': diabetes for insulin_dep, hypertension for htn) at any
-#      time before index (-36500..-1).
+#      time on or before the index date (-36500..0).
 #
 # "Outpatient" = the exposure does not fall within an inpatient stay: no inpatient visit (visit_concept_id 9201
 # Inpatient Visit or 262 Emergency Room and Inpatient Visit, with descendants) has visit_start_date <= the exposure
@@ -1088,8 +1088,8 @@ query_outpatient_drug_with_dx_counts <- function(connection, config, covariate, 
     target_id      = config$target_cohort_id,
     lookback_start = as.integer(covariate$lookback_start_day),
     lookback_end   = as.integer(covariate$lookback_end_day),
-    dx_start       = -36500L,   # diagnosis at ANY time before index (100 years back)
-    dx_end         = -1L
+    dx_start       = -36500L,   # diagnosis ON OR BEFORE the index date (100 years back)
+    dx_end         = 0L
   )
   DatabaseConnector::querySql(connection, SqlRender::translate(sql, targetDialect = "sql server"))
 }
@@ -1674,7 +1674,7 @@ lookup_cohort_map <- function(config, covariate_id) {
       lookback_end_day   = as.integer(hit$lookback_end_day[[i]]),
       # Optional second requirement (added 2026-11-05): the item is positive only if the patient ALSO has an
       # entry in and_cohort_id inside and_lookback_*. Used by the Iannuzzi insulin item (outpatient insulin AND a
-      # diabetes diagnosis at any time before index). Absent columns or blank cells mean no extra requirement.
+      # diabetes diagnosis on or before the index date). Absent columns or blank cells mean no extra requirement.
       and_cohort_id          = if ("and_cohort_id" %in% names(hit)) suppressWarnings(as.integer(hit$and_cohort_id[[i]])) else NA_integer_,
       and_lookback_start_day = if ("and_lookback_start_day" %in% names(hit)) suppressWarnings(as.integer(hit$and_lookback_start_day[[i]])) else NA_integer_,
       and_lookback_end_day   = if ("and_lookback_end_day" %in% names(hit)) suppressWarnings(as.integer(hit$and_lookback_end_day[[i]])) else NA_integer_

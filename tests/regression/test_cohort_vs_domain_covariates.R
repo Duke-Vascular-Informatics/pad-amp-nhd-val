@@ -284,8 +284,25 @@ local({
 # against the CDM (descendants expanded, excluded concepts removed), with no cohort table involved, and the two
 # must match exactly. This is the Table 1 analogue of the score-component comparison above.
 # ---------------------------------------------------------------------------
-message("\n########## PASS 3: Table 1 phenotypes, cohort-based vs direct CDM ##########")
+message("\n########## TABLE 1 vs TABLE 3: same cohort, same window ##########")
 source("R/extract_report_inputs.R")
+# Table 1's indication rows count a patient with ANY entry of the PAD / diabetes cohort ON OR BEFORE the index date
+# (.table1_indication_sql: cohort_start_date <= index). Table 3's score items for the same cohorts must therefore
+# read the window -36500..0, or the two tables report different numbers for the same phenotype (they did, until
+# 2026-11-09: PAD 447 vs 387, diabetes 402 vs 376, the difference being diagnoses first coded on the index date).
+local({
+  cm <- read.csv("covariates/cohort_map.csv", comment.char = "#", stringsAsFactors = FALSE)
+  for (nm in c("pad", "dm")) {
+    id <- .TABLE1_COHORTS[[nm]]
+    rows <- cm[!is.na(cm$cohort_id) & cm$cohort_id == id & cm$mechanism == "cohort", , drop = FALSE]
+    ok <- nrow(rows) > 0L && all(rows$lookback_end_day == 0L) && all(rows$lookback_start_day <= -36500L)
+    cat(sprintf("  Table 1 %-3s (cohort %d) vs %d score-item row(s): windows [%s]  %s\n", nm, id, nrow(rows),
+                paste(sprintf("%d..%d", rows$lookback_start_day, rows$lookback_end_day), collapse = "; "), if (ok) "match" else "*** DIFFER ***"))
+    if (!ok) failures <<- c(failures, sprintf("Table 1 %s (cohort %d) and its Table 3 item use different windows", nm, id))
+  }
+})
+
+message("\n########## PASS 3: Table 1 phenotypes, cohort-based vs direct CDM ##########")
 local({
   omopDb  <- Sys.getenv("OMOP_DATABASE", unset = "omop_synth")
   cdmTwo  <- paste0(omopDb, ".", Sys.getenv("OMOP_CDM_SCHEMA_OVERRIDE", unset = "pad_amp_nhd_val_cdm_test"))

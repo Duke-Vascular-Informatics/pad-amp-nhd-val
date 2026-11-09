@@ -64,7 +64,7 @@
 #
 # HTN (REVISED 2026-11-06: hypertension REQUIRING MEDICATION, Subramaniam 2018 / NSQIP HYPERMED):
 #   positive = an OUTPATIENT antihypertensive exposure in the 365 days before index (the drug rows below, each with
-#              descendants) AND a hypertension diagnosis at ANY time before index (the diagnosis_required row:
+#              descendants) AND a hypertension diagnosis on or before the index date (the diagnosis_required row:
 #              316866 Hypertensive disorder, SNOMED 38341003 + descendants, = the diagnosis set of PL 1046/1047/1049).
 #   DRUG SET MATCHES THE OHDSI PHENOTYPE LIBRARY (2026-11-06; PL status Pending): the ingredient sets of PL 1046
 #              (thiazide and thiazide-like diuretics, 4), PL 1047 (dihydropyridine CCBs, 6) and PL 1049 (beta blockers,

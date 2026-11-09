@@ -127,12 +127,12 @@
 #   points              integer score points (1 per positive VQI-FS item)
 #   missing_is_negative TRUE = absent diagnosis → item not present (0 pts)
 covariate_id,covariate_name,domain,lookback_start_day,lookback_end_day,min_count,points,missing_is_negative
-htn,Hypertension,condition,-36500,-1,1,1,TRUE
+htn,Hypertension,condition,-36500,0,1,1,TRUE
 chf,Congestive heart failure,condition,-365,-1,1,1,TRUE
-cad,Coronary artery disease,auto,-36500,-1,1,1,TRUE
-pvd,Peripheral vascular disease,condition,-36500,-1,1,1,TRUE
-dm,Diabetes mellitus (any type),condition,-36500,-1,1,1,TRUE
-copd,Chronic obstructive pulmonary disease,condition,-36500,-1,1,1,TRUE
+cad,Coronary artery disease,auto,-36500,0,1,1,TRUE
+pvd,Peripheral vascular disease,condition,-36500,0,1,1,TRUE
+dm,Diabetes mellitus (any type),condition,-36500,0,1,1,TRUE
+copd,Chronic obstructive pulmonary disease,condition,-36500,0,1,1,TRUE
 renal_impairment,Renal impairment (creatinine > 1.8 mg/dL or dialysis),condition,-365,-1,1,1,TRUE
 anemia,Anemia (sex-specific Hgb threshold: <13 g/dL M / <12 g/dL F),condition,-90,-1,1,1,FALSE
 underweight,Underweight (BMI < 18.5),measurement,-90,-1,1,1,FALSE

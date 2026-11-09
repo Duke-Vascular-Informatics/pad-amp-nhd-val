@@ -11,12 +11,12 @@
 #   domain path  - query_insulin_covariate_counts() (direct CDM query, the oracle)
 #
 # DEFINITION (2026-11-05): "who with diabetes is currently on insulin" = an OUTPATIENT insulin exposure in the 365
-# days before index (day -365 through -1) AND a diabetes diagnosis at any time before index. Outpatient = no
+# days before index (day -365 through -1) AND a diabetes diagnosis on or before the index date. Outpatient = no
 # inpatient visit (9201, 262) spans the exposure date, start and end dates inclusive.
 #
 # WHY A FIXTURE: the synthetic dataset has no insulin older than 365 days and none during an inpatient stay, so
 # test_cohort_vs_domain_covariates.R agrees on it without exercising the window edge or the inpatient exclusion.
-# This test builds a tiny CDM (schema omop_synth.insulin_fx) with 16 patients covering every edge, so a wrong
+# This test builds a tiny CDM (schema omop_synth.insulin_fx) with 18 patients covering every edge, so a wrong
 # window, a wrong overlap rule, or a wrong diabetes requirement fails here.
 #
 # USAGE   Rscript tests/regression/test_insulin_item.R     (from the study folder; needs the dev SQL Server)
@@ -69,7 +69,9 @@ S <- list(
   list(13, "insulin on day -1 (window edge, inclusive)",                  -1,   list(),                    -2000, TRUE),
   list(14, "insulin on the index date (day 0, outside window)",           0,    list(),                    -2000, FALSE),
   list(15, "insulin on day -365 (window edge, inclusive)",                -365, list(),                    -2000, TRUE),
-  list(16, "insulin on day -366 (outside window)",                        -366, list(),                    -2000, FALSE)
+  list(16, "insulin on day -366 (outside window)",                        -366, list(),                    -2000, FALSE),
+  list(17, "outpatient insulin, diabetes first coded ON the index date",  -100, list(),                    0,     TRUE),
+  list(18, "outpatient insulin, diabetes coded the day AFTER index",      -100, list(),                    1,     FALSE)
 )
 vid <- 0L; drug_id <- 0L; cond_id <- 0L; rows <- list()
 for (s in S) {
@@ -125,4 +127,4 @@ for (s in S) {
 cat(sprintf("\n  expected positives: [%s]\n  cohort path:        [%s]\n  direct query:       [%s]\n",
             paste(expected, collapse = ","), paste(via_cohort, collapse = ","), paste(via_domain, collapse = ",")))
 if (length(failures)) { cat("\nINSULIN ITEM TEST FAILED\n"); for (f in failures) cat("  - ", f, "\n", sep = ""); quit(status = 1) }
-cat("\nINSULIN ITEM TEST PASSED: both paths give the expected answer for all 16 patients.\n")
+cat("\nINSULIN ITEM TEST PASSED: both paths give the expected answer for all 18 patients.\n")
