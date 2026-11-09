@@ -326,6 +326,16 @@ local({
   if (length(bad)) { for (b in bad) cat("   -", b, "\n"); failures <<- c(failures, paste("window does not include the index date:", paste(bad, collapse = "; "))) }
 })
 
+# Table 1's wound row and the Iannuzzi tissue-loss item must read the same window (365 days through the index date).
+local({
+  cm <- read.csv("covariates/cohort_map.csv", comment.char = "#", stringsAsFactors = FALSE)
+  tl <- cm[cm$score_id == "iannuzzi" & cm$score_item_id == "tissue_loss", , drop = FALSE]
+  ok <- nrow(tl) == 1L && tl$lookback_start_day == -.TABLE1_WOUND_LOOKBACK_DAYS && tl$lookback_end_day == 0L
+  cat(sprintf("  Table 1 wound window -%d..0 vs Iannuzzi tissue_loss %d..%d  %s\n", .TABLE1_WOUND_LOOKBACK_DAYS,
+              tl$lookback_start_day, tl$lookback_end_day, if (ok) "match" else "*** DIFFER ***"))
+  if (!ok) failures <<- c(failures, "Table 1 wound window differs from the Iannuzzi tissue-loss window")
+})
+
 message("\n########## PASS 3: Table 1 phenotypes, cohort-based vs direct CDM ##########")
 local({
   omopDb  <- Sys.getenv("OMOP_DATABASE", unset = "omop_synth")
@@ -355,9 +365,11 @@ local({
   tgt <- sprintf("(SELECT subject_id, cohort_start_date, ISNULL(cohort_end_date, cohort_start_date) AS cohort_end_date FROM %s.%s WHERE cohort_definition_id = %d)",
                  workTwo, config$cohort_table, config$target_cohort_id)
 
-  direct_ind <- function(cid) q(sprintf(
+  direct_ind <- function(cid, lookback_days = 36500L) q(sprintf(
     "SELECT COUNT(DISTINCT t.subject_id) AS n FROM %s t INNER JOIN %s.condition_occurrence co ON co.person_id = t.subject_id
-       AND co.condition_start_date <= t.cohort_start_date AND co.condition_concept_id IN (%s)", tgt, cdmTwo, in_list(ids_of(cid))))$n
+       AND co.condition_start_date <= t.cohort_start_date
+       AND co.condition_start_date >= DATEADD(DAY, -%d, t.cohort_start_date) AND co.condition_concept_id IN (%s)",
+    tgt, cdmTwo, as.integer(lookback_days), in_list(ids_of(cid))))$n
   direct_proc <- function(cid) q(sprintf(
     "SELECT DISTINCT t.subject_id FROM %s t INNER JOIN %s.procedure_occurrence po ON po.person_id = t.subject_id
        AND po.procedure_date BETWEEN t.cohort_start_date AND t.cohort_end_date AND po.procedure_concept_id IN (%s)", tgt, cdmTwo, in_list(ids_of(cid))))$subject_id
@@ -369,7 +381,7 @@ local({
   aka <- direct_proc(.TABLE1_COHORTS[["aka"]]); bka <- direct_proc(.TABLE1_COHORTS[["bka"]])
   want <- c("PAD" = direct_ind(.TABLE1_COHORTS[["pad"]]),
             "Diabetes mellitus" = direct_ind(.TABLE1_COHORTS[["dm"]]),
-            "LE wound / gangrene" = direct_ind(.TABLE1_COHORTS[["wound"]]),
+            "LE wound / gangrene" = direct_ind(.TABLE1_COHORTS[["wound"]], .TABLE1_WOUND_LOOKBACK_DAYS),
             "Above-knee amputation (AKA)" = length(aka),
             "Below-knee amputation (BKA)" = length(setdiff(bka, aka)),
             "Other amputation" = n_target - length(union(aka, bka)))
