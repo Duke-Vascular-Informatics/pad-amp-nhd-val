@@ -383,6 +383,23 @@ local({
   tot <- sum(got[c("Above-knee amputation (AKA)", "Below-knee amputation (BKA)", "Other amputation")])
   if (tot != n_target) failures <<- c(failures, sprintf("amputation levels sum to %d, target cohort has %d", tot, n_target))
   cat(sprintf("  amputation levels sum to %d of %d target patients\n", tot, n_target))
+
+  # The subgroup bias assessment's amputation-level labels (fetch_amp_level_labels) must reproduce Table 1's levels
+  # exactly: they replaced a bypass-type lookup that matched almost no one (2026-11-09).
+  source("R/cohort_demographics.R")
+  amp <- suppressWarnings(fetch_amp_level_labels(conn, config))
+  if (is.null(amp)) {
+    failures <<- c(failures, "fetch_amp_level_labels() returned nothing")
+  } else {
+    sub_n <- c("Above-knee" = sum(amp$amp_level == "Above-knee"), "Below-knee" = sum(amp$amp_level == "Below-knee"),
+               "Other" = sum(amp$amp_level == "Other"))
+    t1_n  <- c("Above-knee" = got[["Above-knee amputation (AKA)"]], "Below-knee" = got[["Below-knee amputation (BKA)"]],
+               "Other" = got[["Other amputation"]])
+    ok <- identical(as.numeric(sub_n), as.numeric(t1_n)) && nrow(amp) == n_target
+    cat(sprintf("  subgroup amputation-level labels  AKA %d / BKA %d / Other %d  vs Table 1  AKA %d / BKA %d / Other %d  %s\n",
+                sub_n[1], sub_n[2], sub_n[3], t1_n[1], t1_n[2], t1_n[3], if (ok) "match" else "*** DIFFERS ***"))
+    if (!ok) failures <<- c(failures, "subgroup amputation-level labels differ from Table 1's amputation-level rows")
+  }
 })
 
 # ---------------------------------------------------------------------------

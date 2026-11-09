@@ -9,7 +9,7 @@ Shared baseline (applies first):
 - **Study design: prognostic model, Strategus-based.** External validation of three
   published integer risk scores against **non-home discharge (NHD)** after major lower
   extremity amputation.
-  - Iannuzzi 2020 NHD score — 0–18 points, has a published score→risk lookup
+  - Iannuzzi 2020 NHD score — 0–19 points (the paper observed 0–18; the published weights allow 19), has a published score→risk lookup
   - Subramaniam 2018 mFI-5 — 0–5 points, no published lookup
   - Kraiss 2022 sVQI-FS — 0–10 points as implemented (10 of the paper's 11 items)
 - **This repo is a frozen, validation-only fork of `pad-amp-nhd-prog`** (forked

@@ -117,17 +117,22 @@ fetch_subgroup_labels <- function(connection, config) {
 }
 
 # -----------------------------------------------------------------------------
-# fetch_proc_type_labels()
+# fetch_amp_level_labels()
 #
-# Queries the OMOP CDM to assign a single procedure type label to each subject
-# in the target cohort based on the qualifying procedure at the index visit.
-# Priority order (highest to lowest): Extra-anatomic bypass, Aortobifemoral,
-# Femoral-popliteal, Femorotibial, Femoral endarterectomy, Other.
+# Assigns each subject in the target cohort an AMPUTATION LEVEL for the subgroup bias assessment, using the same
+# definition as Table 1's amputation-level rows (R/extract_report_inputs.R .table1_amp_level_sql): an entry of
+# cohort 9100030 (above-knee) or 9100031 (below-knee) on the index visit, hierarchical (above-knee first, then
+# below-knee, everyone else "Other").
 #
-# Returns a data frame with columns: subject_id, proc_type
-# Returns NULL (with a warning) if the query fails.
+# REPLACES fetch_proc_type_labels() (removed 2026-11-09). That function came from the bypass-surgery template and
+# labelled patients by BYPASS type (extra-anatomic, aortobifemoral, femoral-popliteal, ...), which is meaningless in
+# an amputation cohort: it matched only the few patients with a concurrent bypass, so every level was suppressed
+# for having fewer than 10 events and the amputation-level subgroup the Methods describe never appeared.
+#
+# Returns a data frame with columns subject_id, amp_level ("Above-knee" / "Below-knee" / "Other"), or NULL (with a
+# warning) if the query fails.
 # -----------------------------------------------------------------------------
-fetch_proc_type_labels <- function(connection, config) {
+fetch_amp_level_labels <- function(connection, config, aka_id = 9100030L, bka_id = 9100031L) {
 
   sql <- SqlRender::render(
     "WITH target AS (
@@ -137,36 +142,27 @@ fetch_proc_type_labels <- function(connection, config) {
        FROM @results_schema.@cohort_table
        WHERE cohort_definition_id = @target_id
      ),
-     proc_hits AS (
+     lvl AS (
        SELECT t.subject_id,
-         MAX(CASE WHEN ca.ancestor_concept_id = 4050281 THEN 1 ELSE 0 END) AS is_extraanat,
-         MAX(CASE WHEN ca.ancestor_concept_id = 4231680 THEN 1 ELSE 0 END) AS is_aortobif,
-         MAX(CASE WHEN ca.ancestor_concept_id = 4012936 THEN 1 ELSE 0 END) AS is_fempop,
-         MAX(CASE WHEN ca.ancestor_concept_id = 4166196 THEN 1 ELSE 0 END) AS is_femtib,
-         MAX(CASE WHEN ca.ancestor_concept_id = 4040974 THEN 1 ELSE 0 END) AS is_endar
+              MAX(CASE WHEN c.cohort_definition_id = @aka_id THEN 1 ELSE 0 END) AS aka,
+              MAX(CASE WHEN c.cohort_definition_id = @bka_id THEN 1 ELSE 0 END) AS bka
        FROM target t
-       INNER JOIN @cdm_schema.procedure_occurrence po
-         ON po.person_id = t.subject_id
-        AND po.procedure_date BETWEEN t.cohort_start_date AND t.cohort_end_date
-       INNER JOIN @cdm_schema.concept_ancestor ca
-         ON ca.descendant_concept_id = po.procedure_concept_id
-        AND ca.ancestor_concept_id IN (4050281, 4231680, 4012936, 4166196, 4040974)
+       LEFT JOIN @results_schema.@cohort_table c
+         ON c.subject_id = t.subject_id
+        AND c.cohort_definition_id IN (@aka_id, @bka_id)
+        AND c.cohort_start_date BETWEEN t.cohort_start_date AND t.cohort_end_date
        GROUP BY t.subject_id
      )
      SELECT subject_id,
-       CASE
-         WHEN is_extraanat = 1 THEN 'Extra-anatomic bypass'
-         WHEN is_aortobif  = 1 THEN 'Aortobifemoral bypass'
-         WHEN is_fempop    = 1 THEN 'Femoral-popliteal bypass'
-         WHEN is_femtib    = 1 THEN 'Femorotibial bypass'
-         WHEN is_endar     = 1 THEN 'Femoral endarterectomy'
-         ELSE 'Other'
-       END AS proc_type
-     FROM proc_hits",
+            CASE WHEN aka = 1 THEN 'Above-knee'
+                 WHEN bka = 1 THEN 'Below-knee'
+                 ELSE 'Other' END AS amp_level
+     FROM lvl",
     results_schema = config$results_schema,
     cohort_table   = config$cohort_table,
-    cdm_schema     = config$cdm_schema,
-    target_id      = config$target_cohort_id
+    target_id      = config$target_cohort_id,
+    aka_id         = aka_id,
+    bka_id         = bka_id
   )
 
   result <- tryCatch(
@@ -175,16 +171,16 @@ fetch_proc_type_labels <- function(connection, config) {
       SqlRender::translate(sql, targetDialect = "sql server")
     ),
     error = function(e) {
-      warning("[fetch_proc_type_labels] Query failed: ", conditionMessage(e))
+      warning("[fetch_amp_level_labels] Query failed: ", conditionMessage(e))
       NULL
     }
   )
 
   if (is.null(result) || nrow(result) == 0) {
-    warning("[fetch_proc_type_labels] No rows returned.")
+    warning("[fetch_amp_level_labels] No rows returned.")
     return(NULL)
   }
 
   names(result) <- tolower(names(result))
-  result[, c("subject_id", "proc_type")]
+  result[, c("subject_id", "amp_level")]
 }

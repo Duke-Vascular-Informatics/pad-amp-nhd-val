@@ -2,7 +2,10 @@
 # Source: Iannuzzi JC et al. Risk score for nonhome discharge after lower
 #         extremity bypass. J Vasc Surg 2020;71:889-95. Table II.
 #
-# SCORE RANGE: 0–18 points.
+# SCORE RANGE: 0–19 points. Table II weights: age 2/4/6 (mutually exclusive), sex/race 1/2/3 (white female /
+#   nonwhite male / nonwhite female), ambulation deficit 3, tissue loss 3, anemia 2, insulin dependence 2; the
+#   maximum is 6 + 3 + 3 + 3 + 2 + 2 = 19. The paper reports 0-18 as the range OBSERVED in its cohort (nobody
+#   had all factors); its score-to-risk table therefore stops at 18 (see risk_lookup.csv).
 #   Low risk    0–4  pts: NHD 10.1%
 #   Moderate    5–9  pts: NHD 36.7%
 #   High risk  ≥10  pts: NHD 66.1%

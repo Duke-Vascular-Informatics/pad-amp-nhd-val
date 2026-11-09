@@ -140,7 +140,7 @@ results_schema_prefix <- function(config) {
   df
 }
 
-# Subgroup label lookups (fetch_subgroup_labels / fetch_proc_type_labels) used
+# Subgroup label lookups (fetch_subgroup_labels / fetch_amp_level_labels) used
 # by compute_subgroup_bias(). Sourced rather than assumed to be on the search
 # path, so the pipeline works when called standalone as well as from the runner.
 if (!exists("fetch_subgroup_labels", mode = "function")) {
@@ -2375,7 +2375,7 @@ clamp_probability <- function(p, eps = 1e-6) {
 # discrimination_only:
 #   FALSE (default) — p is a PROBABILITY vector. It is clamped to (eps, 1−eps)
 #     so qlogis() is finite, and all six metrics are bootstrapped.
-#   TRUE — p is a RAW SCORE (e.g. an integer 0–18 risk score), NOT a probability.
+#   TRUE — p is a RAW SCORE (e.g. an integer 0–19 risk score), NOT a probability.
 #     The clamp MUST be skipped: clamping an integer score to (1e-6, 1−1e-6)
 #     collapses every value >= 1 onto the same number, destroying the ranking and
 #     producing degenerate AUROC intervals (this was the cause of the
@@ -2772,7 +2772,7 @@ evaluate_integer_risk_score <- function(person_level, lookup) {
 
   # ---------------------------------------------------------------------------
   # Merge the published score-to-risk lookup table when provided.
-  # Iannuzzi 2020 supplies a 9-level lookup (scores 0-18 -> NHD probability).
+  # Iannuzzi 2020 supplies a lookup for scores 0-18 (the range observed in the paper; the maximum attainable is 19, which has no published rate and is set equal to 18 in risk_lookup.csv).
   # mFI-5 has no published NHD probability mapping; lookup = NULL in that case.
   # The left join preserves all patient rows and adds predicted_risk_lookup = NA
   # for any score value not present in the table.
@@ -2918,6 +2918,8 @@ evaluate_integer_risk_score <- function(person_level, lookup) {
 #   race       — White / Black / Other
 #   ethnicity  — Hispanic / Non-Hispanic
 #   age_group  — <65 / 65-74 / >=75
+#   amp_level  — Above-knee / Below-knee / Other (cohorts 9100030 / 9100031 on the index visit, as in Table 1;
+#                via fetch_amp_level_labels)
 #   indication — Claudication / Critical limb ischemia
 #                (derived from score_indicationClaudication in person_level;
 #                 score > 0 → Claudication, score == 0 → Critical limb ischemia)
@@ -3046,23 +3048,23 @@ compute_subgroup_bias <- function(person_level,
   }
 
   # ---------------------------------------------------------------------------
-  # Step 4c — derive procedure type subgroup from OMOP CDM.
+  # Step 4c — derive the amputation-level subgroup (above-knee / below-knee / other) from the Table 1 cohorts.
   # ---------------------------------------------------------------------------
-  proc_type_labels <- tryCatch(
-    fetch_proc_type_labels(connection, config),
+  amp_level_labels <- tryCatch(
+    fetch_amp_level_labels(connection, config),
     error = function(e) {
-      message("[subgroup_bias] fetch_proc_type_labels failed: ", conditionMessage(e))
+      message("[subgroup_bias] fetch_amp_level_labels failed: ", conditionMessage(e))
       NULL
     }
   )
-  if (!is.null(proc_type_labels)) {
-    df <- merge(df, proc_type_labels, by = "subject_id", all.x = TRUE)
+  if (!is.null(amp_level_labels)) {
+    df <- merge(df, amp_level_labels, by = "subject_id", all.x = TRUE)
   }
 
   # ---------------------------------------------------------------------------
   # Step 5 — bootstrap ECE for each non-empty, qualifying subgroup level.
   # ---------------------------------------------------------------------------
-  subgroup_vars <- c("sex", "race", "ethnicity", "age_group", "indication", "year", "proc_type")
+  subgroup_vars <- c("sex", "race", "ethnicity", "age_group", "indication", "year", "amp_level")
   # Keep only vars that were successfully added to df.
   subgroup_vars <- subgroup_vars[subgroup_vars %in% names(df)]
 

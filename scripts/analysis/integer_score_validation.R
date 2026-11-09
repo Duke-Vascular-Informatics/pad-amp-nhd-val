@@ -4,7 +4,7 @@
 # The custom step: apply three published integer risk scores to the
 # Strategus-generated cohorts and evaluate them against non-home discharge.
 #
-#   Iannuzzi 2020 NHD score   0-18 points, published score-to-risk lookup
+#   Iannuzzi 2020 NHD score   0-19 points, published score-to-risk lookup
 #   Subramaniam 2018 mFI-5    0-5 points,  no published lookup
 #   Kraiss 2022 sVQI-FS       0-10 points, no published lookup
 #

@@ -7,7 +7,7 @@
 # Frozen, validation-only fork of pad-amp-nhd-prog (forked 2026-09-07) for a
 # publication. De-novo score development continues in pad-amp-nhd-prog, not here.
 #
-#   1. Iannuzzi 2020 NHD score        (0-18 points, 9 components)
+#   1. Iannuzzi 2020 NHD score        (0-19 points, 9 components)
 #   2. Subramaniam 2018 mFI-5         (0-5 points, 5 components)
 #   3. Kraiss 2022 sVQI-FS            (0-10 points as implemented; 10 of 11 items)
 #
