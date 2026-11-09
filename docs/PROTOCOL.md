@@ -157,7 +157,7 @@ NHD rate: 344/587 = 58.6%.**
 
 | Score | Range | Published probability mapping? |
 |---|---|---|
-| Iannuzzi 2020 NHD score | 0–18 points | Yes (score-to-risk lookup table) |
+| Iannuzzi 2020 NHD score | 0–19 points | Yes (score-to-risk lookup table) |
 | Subramaniam 2018 mFI-5 | 0–5 points | No |
 | Kraiss 2022 sVQI-FS | 0–10 points as implemented | No |
 

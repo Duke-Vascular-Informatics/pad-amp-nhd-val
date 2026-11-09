@@ -2,7 +2,10 @@
 # Source: Iannuzzi JC et al. Risk score for nonhome discharge after lower
 #         extremity bypass. J Vasc Surg 2020;71:889-95. Table II.
 #
-# SCORE RANGE: 0–18 points.
+# SCORE RANGE: 0–19 points. Table II weights: age 2/4/6 (mutually exclusive), sex/race 1/2/3 (white female /
+#   nonwhite male / nonwhite female), ambulation deficit 3, tissue loss 3, anemia 2, insulin dependence 2; the
+#   maximum is 6 + 3 + 3 + 3 + 2 + 2 = 19. The paper reports 0-18 as the range OBSERVED in its cohort (nobody
+#   had all factors); its score-to-risk table therefore stops at 18 (see risk_lookup.csv).
 #   Low risk    0–4  pts: NHD 10.1%
 #   Moderate    5–9  pts: NHD 36.7%
 #   High risk  ≥10  pts: NHD 66.1%
@@ -44,7 +47,7 @@
 #   'AMBULATORY STATUS' note in covariate_concepts.csv. The set now spans
 #   Observation and Device only.
 #
-# LOOKBACK: every Iannuzzi item is read over 365 days before index (-365..-1)
+# LOOKBACK: every Iannuzzi item is read over 365 days up to and including the index date (-365..0)
 #   EXCEPT tissue_loss, whose published definition includes the index date
 #   (-365..0). Demographics (age bands, sex, race) have no lookback meaning.
 #
@@ -69,7 +72,7 @@ age_70_79,Age 70-79 years at index,observation,0,0,1,4,FALSE
 age_ge80,Age 80 or more years at index,observation,0,0,1,6,FALSE
 female,Female sex,observation,-3650,0,1,1,TRUE
 nonwhite,Non-White race,observation,0,0,1,2,TRUE
-ambu_deficit,Ambulatory deficit (ambulatory aid use),auto,-365,-1,1,3,TRUE
+ambu_deficit,Ambulatory deficit (ambulatory aid use),auto,-365,0,1,3,TRUE
 tissue_loss,Tissue loss (CLI indication — wound ulcer or gangrene),condition,-365,0,1,3,TRUE
-anemia,Anemia (Hgb less than 10 g/dL),measurement,-90,-1,1,2,FALSE
-insulin_dep,Insulin-dependent diabetes mellitus,drug,-365,-1,1,2,TRUE
+anemia,Anemia (Hgb less than 10 g/dL),measurement,-90,0,1,2,FALSE
+insulin_dep,Insulin-dependent diabetes mellitus,drug,-365,0,1,2,TRUE

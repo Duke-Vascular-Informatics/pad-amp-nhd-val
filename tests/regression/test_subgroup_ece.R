@@ -45,7 +45,7 @@ fetch_subgroup_labels <- function(connection, config) {
              race = ifelse(seq_len(n) %% 2 == 0, "A", "B"),
              stringsAsFactors = FALSE)
 }
-fetch_proc_type_labels <- function(connection, config) NULL
+fetch_amp_level_labels <- function(connection, config) NULL
 
 res <- suppressMessages(compute_subgroup_bias(person_level, connection = NULL, config = list(),
                                               B = 50L, min_events = 10L))

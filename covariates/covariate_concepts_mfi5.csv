@@ -63,8 +63,8 @@
 #     316139   Heart failure               (SNOMED 84114007 + descendants)
 #
 # HTN (REVISED 2026-11-06: hypertension REQUIRING MEDICATION, Subramaniam 2018 / NSQIP HYPERMED):
-#   positive = an OUTPATIENT antihypertensive exposure in the 365 days before index (the drug rows below, each with
-#              descendants) AND a hypertension diagnosis at ANY time before index (the diagnosis_required row:
+#   positive = an OUTPATIENT antihypertensive exposure in the 365 days up to and including the index date (the drug rows below, each with
+#              descendants) AND a hypertension diagnosis on or before the index date (the diagnosis_required row:
 #              316866 Hypertensive disorder, SNOMED 38341003 + descendants, = the diagnosis set of PL 1046/1047/1049).
 #   DRUG SET MATCHES THE OHDSI PHENOTYPE LIBRARY (2026-11-06; PL status Pending): the ingredient sets of PL 1046
 #              (thiazide and thiazide-like diuretics, 4), PL 1047 (dihydropyridine CCBs, 6) and PL 1049 (beta blockers,
@@ -121,9 +121,9 @@ dm,201820,TRUE,,,,
 dm,442793,TRUE,,,,
 copd,255573,TRUE,,,,
 copd,258780,TRUE,,,,
-copd,255848,TRUE,,,-30,-1
-copd,4273378,FALSE,exclude,,-30,-1
-copd,1340380,FALSE,exclude,,-30,-1
+copd,255848,TRUE,,,-30,0
+copd,4273378,FALSE,exclude,,-30,0
+copd,1340380,FALSE,exclude,,-30,0
 chf,316139,TRUE,,,,
 # htn drug group: Thiazide and thiazide-like diuretics [PL 1046 / 1035]
 htn,1395058,TRUE,,,,

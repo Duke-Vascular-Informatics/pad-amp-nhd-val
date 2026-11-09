@@ -9,7 +9,7 @@ Shared baseline (applies first):
 - **Study design: prognostic model, Strategus-based.** External validation of three
   published integer risk scores against **non-home discharge (NHD)** after major lower
   extremity amputation.
-  - Iannuzzi 2020 NHD score — 0–18 points, has a published score→risk lookup
+  - Iannuzzi 2020 NHD score — 0–19 points (the paper observed 0–18; the published weights allow 19), has a published score→risk lookup
   - Subramaniam 2018 mFI-5 — 0–5 points, no published lookup
   - Kraiss 2022 sVQI-FS — 0–10 points as implemented (10 of the paper's 11 items)
 - **This repo is a frozen, validation-only fork of `pad-amp-nhd-prog`** (forked
@@ -104,11 +104,11 @@ folder before re-running.
   `config$score_id`, which is deliberately `NULL` by default so a forgotten assignment
   fails loudly.
 - **Score-item windows are chosen per item (changed 2026-11-05).** Chronic conditions (diabetes, hypertension,
-  COPD, coronary artery disease, peripheral artery disease, insulin-treated diabetes) look back **any time before index**, encoded as
-  `-36500` days (100 years, safely inside the SQL DATE range) `..-1`; hemoglobin and BMI (anemia, underweight)
+  COPD, coronary artery disease, peripheral artery disease, insulin-treated diabetes) look back **any time up to and including the index date**, encoded as
+  `-36500` days (100 years, safely inside the SQL DATE range) `..0` (diagnoses recorded at the index admission count; changed 2026-11-09 so Table 1's PAD and diabetes counts equal Table 3's); hemoglobin and BMI (anemia, underweight)
   use **90 days** so they describe the patient at surgery; mFI-5 CHF and the mFI-5 pneumonia arm are 30 days;
   everything else (functional status, ambulation, sVQI-FS CHF, which can resolve or improve, and renal impairment) is 365 days
-  (`-365..-1`); Iannuzzi tissue loss is `-365..0`. This is set in three places that must agree:
+  (`-365..0`). **Every window ends on day 0, so the index date is always included (2026-11-09)**; the windows differ only in how far back they reach. This is set in three places that must agree:
   `covariates/cohort_map.csv` (cohort path), `covariates/covariates*.csv` (domain-query oracle) and, for
   the pneumonia arm, a per-row `lookback_start_day`/`lookback_end_day` override in
   `covariate_concepts_mfi5.csv`. mFI-5 `copd` is the one item with TWO `cohort_map.csv` rows (COPD any time
@@ -122,7 +122,7 @@ folder before re-running.
   Limit=First cohort (the target) but not for a Limit=All cohort with an inclusion rule (9100007: 979,789 events vs 97,677 people), where
   reading mode 0 stopped the 2026-11-05 PRCC run. The check only covers cohorts that have attrition rows (those with inclusion rules).
 - **Insulin item (2026-11-05): "who with diabetes is currently on insulin".** Positive = an outpatient insulin exposure in the
-  365 days before index AND a diabetes diagnosis at any time before index. Outpatient = no inpatient visit (9201, 262, with
+  the 365 days up to and including the index date AND a diabetes diagnosis on or before the index date. Outpatient = no inpatient visit (9201, 262, with
   descendants) spans the exposure date (start and end inclusive); exposures with no visit link count; ED-only visits are not
   excluded. Cohort path: cohort 9100007 AND cohort 9100021 via `and_cohort_id` in `cohort_map.csv`. Domain path:
   `query_insulin_covariate_counts()` with the `diagnosis_required` rows of `covariate_concepts.csv`. **Circe gotcha:** an
@@ -132,7 +132,7 @@ folder before re-running.
   dataset has no inpatient insulin and cannot.
 - **mFI-5 hypertension requires medication (2026-11-06; run at PRCC 2026-11-06).** Subramaniam 2018 (NSQIP HYPERMED) scores
   hypertension only when it is treated. Positive = an outpatient antihypertensive exposure (the OHDSI PL 1046/1047/1049 ingredient sets: thiazide-like diuretics, dihydropyridine CCBs, beta blockers; plus ATC C09A-C09D for
-  ACE inhibitors and ARBs; loop/K-sparing diuretics, non-dihydropyridine CCBs and C02 excluded as in the PL) in the 365 days before index AND a hypertension diagnosis (cohort 9100022) at any time before index. Cohort path:
+  ACE inhibitors and ARBs; loop/K-sparing diuretics, non-dihydropyridine CCBs and C02 excluded as in the PL) in the 365 days up to and including the index date AND a hypertension diagnosis (cohort 9100022) on or before the index date. Cohort path:
   9100032 AND 9100022 via `and_cohort_id`; domain path: `query_outpatient_drug_with_dx_counts()` (the insulin oracle, generalised;
   it is selected by the `diagnosis_required` row). The sVQI-FS htn item is unchanged. 9100032 = ATLAS 1798678 (created 2026-11-06);
   its SQL is rendered from the JSON by `scripts/render_cohort_sql.R`.

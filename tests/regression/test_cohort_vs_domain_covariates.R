@@ -284,8 +284,49 @@ local({
 # against the CDM (descendants expanded, excluded concepts removed), with no cohort table involved, and the two
 # must match exactly. This is the Table 1 analogue of the score-component comparison above.
 # ---------------------------------------------------------------------------
-message("\n########## PASS 3: Table 1 phenotypes, cohort-based vs direct CDM ##########")
+message("\n########## TABLE 1 vs TABLE 3: same cohort, same window ##########")
 source("R/extract_report_inputs.R")
+# Table 1's indication rows count a patient with ANY entry of the PAD / diabetes cohort ON OR BEFORE the index date
+# (.table1_indication_sql: cohort_start_date <= index). Table 3's score items for the same cohorts must therefore
+# read the window -36500..0, or the two tables report different numbers for the same phenotype (they did, until
+# 2026-11-09: PAD 447 vs 387, diabetes 402 vs 376, the difference being diagnoses first coded on the index date).
+local({
+  cm <- read.csv("covariates/cohort_map.csv", comment.char = "#", stringsAsFactors = FALSE)
+  for (nm in c("pad", "dm")) {
+    id <- .TABLE1_COHORTS[[nm]]
+    rows <- cm[!is.na(cm$cohort_id) & cm$cohort_id == id & cm$mechanism == "cohort", , drop = FALSE]
+    ok <- nrow(rows) > 0L && all(rows$lookback_end_day == 0L) && all(rows$lookback_start_day <= -36500L)
+    cat(sprintf("  Table 1 %-3s (cohort %d) vs %d score-item row(s): windows [%s]  %s\n", nm, id, nrow(rows),
+                paste(sprintf("%d..%d", rows$lookback_start_day, rows$lookback_end_day), collapse = "; "), if (ok) "match" else "*** DIFFER ***"))
+    if (!ok) failures <<- c(failures, sprintf("Table 1 %s (cohort %d) and its Table 3 item use different windows", nm, id))
+  }
+})
+
+# EVERY score-item window must end on day 0 so the index date is always included (2026-11-09): the cohort path, the
+# domain-query oracle and any per-row concept override are all checked, so no window can silently drop the index day.
+local({
+  cm <- read.csv("covariates/cohort_map.csv", comment.char = "#", stringsAsFactors = FALSE)
+  bad <- character(0)
+  coh <- cm[cm$mechanism == "cohort", , drop = FALSE]
+  bad <- c(bad, sprintf("cohort_map %s/%s ends at %d", coh$score_id[coh$lookback_end_day != 0L], coh$score_item_id[coh$lookback_end_day != 0L], coh$lookback_end_day[coh$lookback_end_day != 0L]))
+  and_end <- suppressWarnings(as.integer(coh$and_lookback_end_day)); has_and <- !is.na(and_end)
+  bad <- c(bad, sprintf("cohort_map %s/%s AND-window ends at %d", coh$score_id[has_and & and_end != 0L], coh$score_item_id[has_and & and_end != 0L], and_end[has_and & and_end != 0L]))
+  for (f in c("covariates/covariates.csv", "covariates/covariates_mfi5.csv", "covariates/covariates_vqifs.csv")) {
+    cv <- read.csv(f, comment.char = "#", stringsAsFactors = FALSE)
+    bad <- c(bad, sprintf("%s %s ends at %d", basename(f), cv$covariate_id[cv$lookback_end_day != 0L], cv$lookback_end_day[cv$lookback_end_day != 0L]))
+  }
+  for (f in Sys.glob("covariates/covariate_concepts*.csv")) {
+    cc <- read.csv(f, comment.char = "#", stringsAsFactors = FALSE)
+    if ("lookback_end_day" %in% names(cc)) {
+      e <- suppressWarnings(as.integer(cc$lookback_end_day)); ov <- !is.na(e) & e != 0L
+      bad <- c(bad, sprintf("%s %s/%s override ends at %d", basename(f), cc$covariate_id[ov], cc$concept_id[ov], e[ov]))
+    }
+  }
+  cat(sprintf("  all score-item windows end on day 0 (index date included): %s\n", if (length(bad) == 0L) "yes" else "*** NO ***"))
+  if (length(bad)) { for (b in bad) cat("   -", b, "\n"); failures <<- c(failures, paste("window does not include the index date:", paste(bad, collapse = "; "))) }
+})
+
+message("\n########## PASS 3: Table 1 phenotypes, cohort-based vs direct CDM ##########")
 local({
   omopDb  <- Sys.getenv("OMOP_DATABASE", unset = "omop_synth")
   cdmTwo  <- paste0(omopDb, ".", Sys.getenv("OMOP_CDM_SCHEMA_OVERRIDE", unset = "pad_amp_nhd_val_cdm_test"))
@@ -342,6 +383,23 @@ local({
   tot <- sum(got[c("Above-knee amputation (AKA)", "Below-knee amputation (BKA)", "Other amputation")])
   if (tot != n_target) failures <<- c(failures, sprintf("amputation levels sum to %d, target cohort has %d", tot, n_target))
   cat(sprintf("  amputation levels sum to %d of %d target patients\n", tot, n_target))
+
+  # The subgroup bias assessment's amputation-level labels (fetch_amp_level_labels) must reproduce Table 1's levels
+  # exactly: they replaced a bypass-type lookup that matched almost no one (2026-11-09).
+  source("R/cohort_demographics.R")
+  amp <- suppressWarnings(fetch_amp_level_labels(conn, config))
+  if (is.null(amp)) {
+    failures <<- c(failures, "fetch_amp_level_labels() returned nothing")
+  } else {
+    sub_n <- c("Above-knee" = sum(amp$amp_level == "Above-knee"), "Below-knee" = sum(amp$amp_level == "Below-knee"),
+               "Other" = sum(amp$amp_level == "Other"))
+    t1_n  <- c("Above-knee" = got[["Above-knee amputation (AKA)"]], "Below-knee" = got[["Below-knee amputation (BKA)"]],
+               "Other" = got[["Other amputation"]])
+    ok <- identical(as.numeric(sub_n), as.numeric(t1_n)) && nrow(amp) == n_target
+    cat(sprintf("  subgroup amputation-level labels  AKA %d / BKA %d / Other %d  vs Table 1  AKA %d / BKA %d / Other %d  %s\n",
+                sub_n[1], sub_n[2], sub_n[3], t1_n[1], t1_n[2], t1_n[3], if (ok) "match" else "*** DIFFERS ***"))
+    if (!ok) failures <<- c(failures, "subgroup amputation-level labels differ from Table 1's amputation-level rows")
+  }
 })
 
 # ---------------------------------------------------------------------------

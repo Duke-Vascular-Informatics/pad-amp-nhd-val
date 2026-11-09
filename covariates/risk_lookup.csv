@@ -34,6 +34,10 @@
 # fit correctly absorbing the score-17 small-sample noise rather than letting
 # it invert the curve.
 #
+# SCORE 19 (added 2026-11-09): the maximum attainable with the published weights (6+3+3+3+2+2) but absent from the
+# paper, whose cohort observed scores 0-18 only. It has no published rate; it is set equal to score 18 (the top of the
+# monotone curve) so a patient scoring 19 is not silently dropped from the lookup-based metrics.
+#
 # Low risk (0–4): NHD ~10%  |  Moderate (5–9): ~37%  |  High (≥10): ~66%
 # (paper's own SCORE-based strata — see Table 5's Iannuzzi published-strata panel,
 # which uses these score bands directly rather than this probability mapping)
@@ -57,3 +61,4 @@ score,risk
 16,0.8249
 17,0.8249
 18,1.0000
+19,1.0000

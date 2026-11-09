@@ -7,7 +7,7 @@ validation only; no new model is fitted.
 
 | Score | Range | Published lookup |
 |---|---|---|
-| Iannuzzi 2020 NHD score | 0–18 | yes (isotonic fit over the published table) |
+| Iannuzzi 2020 NHD score | 0–19 | yes (isotonic fit over the published table) |
 | Subramaniam 2018 mFI-5 | 0–5 | no |
 | Kraiss 2022 sVQI-FS | 0–10 (10 of 11 items) | no |
 

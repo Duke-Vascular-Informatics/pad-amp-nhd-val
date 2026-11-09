@@ -45,8 +45,11 @@
 #
 # LOOKBACK WINDOWS (revised 2026-10-05)
 # -------------------------------------
-# Every score item is read over 365 days before index (lookback_end_day = -1,
-# i.e. up to the day before) UNLESS the published definition says otherwise:
+# Every score item is read over the 365 days up to AND INCLUDING the index date (lookback_end_day = 0)
+# UNLESS the published definition says otherwise. EVERY window ends on day 0 (changed 2026-11-09), so the
+# index date is always included; the windows differ only in how far back they reach.
+# Chronic-condition diagnoses (dm, htn, copd, cad, pvd, and the diagnosis half of the insulin and
+# htn items) are read -36500..0 (any time), so they equal Table 1's indication counts. The other exceptions:
 #   * mFI-5 chf          30 days  -- Subramaniam 2018 defines CHF as 'within 30
 #                                    days prior to surgery'
 #   * mFI-5 pneumonia    30 days  -- 'current pneumonia' arm of the COPD item
@@ -74,23 +77,23 @@ iannuzzi,age_70_79,,,computed_r,0,0,4,"Derived from person.year_of_birth.",,,
 iannuzzi,age_ge80,,,computed_r,0,0,6,"Derived from person.year_of_birth. Largest single Iannuzzi weight.",,,
 iannuzzi,female,,,computed_r,-3650,0,1,"person.gender_concept_id = 8532; a cohort would add indirection, not fidelity.",,,
 iannuzzi,nonwhite,,,computed_r,0,0,2,"EXCLUDE semantics: race_concept_id non-null, non-zero, NOT IN the White set. Circe DemographicCriteria has a Race attribute but no exclude operator, so this stays in R.",,,
-iannuzzi,ambu_deficit,9100027,[DVI] Ambulatory Aid Use (Iannuzzi ambu_deficit; strict),cohort,-365,-1,3,"STRICT aid-use set: walking aid / wheelchair use and dependence, SNOMED and 88 HCPCS device codes. Split from the sVQI-FS item 2026-10-15.",,,
+iannuzzi,ambu_deficit,9100027,[DVI] Ambulatory Aid Use (Iannuzzi ambu_deficit; strict),cohort,-365,0,3,"STRICT aid-use set: walking aid / wheelchair use and dependence, SNOMED and 88 HCPCS device codes. Split from the sVQI-FS item 2026-10-15.",,,
 iannuzzi,tissue_loss,9100004,[DVI] Ischemic Tissue Loss,cohort,-365,0,3,"lookback_end_day is 0, not -1: the Iannuzzi CSV includes the index date for this item.",,,
-iannuzzi,anemia,9100008,[DVI] Anemia (Hemoglobin Below 10 g per dL),cohort,-90,-1,2,"Threshold lives in the cohort definition. missing_is_negative=FALSE, so an unmeasured patient is UNKNOWN, not negative -- see the caveat below.",,,
-iannuzzi,insulin_dep,9100007,[DVI] Insulin Exposure Outside Inpatient Stay,cohort,-365,-1,2,"REDEFINED 2026-11-05 (who with diabetes is currently on insulin): outpatient insulin (cohort 9100007; no inpatient visit spans the exposure) in the 365 days before index AND a diabetes diagnosis (cohort 9100021) at any time before index, via the and_* columns.",9100021,-36500,-1
-mfi5,fs_dep,9100026,[DVI] Dependent Functional Status (ADL dependence),cohort,-365,-1,1,"ADL-dependence findings + bed-ridden + confined to chair + severe frailty; Condition + Observation domains. Replaces the mobility/frailty set of 9100005 (2026-10-05).",,,
-mfi5,dm,9100021,[DVI] Diabetes mellitus (risk score item),cohort,-36500,-1,1,"Limit=All; concept set equals the CSV exactly. Replaces VA-FI 1797952.",,,
-mfi5,copd,9100002,[DVI] COPD (risk score item),cohort,-36500,-1,1,"COPD arm of the mFI-5 'COPD or current pneumonia' item. NEW rather than reusing VA-FI 1797958, which spans asthma/ILD/bronchiectasis as one VA-FI deficit. OR'd with the pneumonia row below.",,,
-mfi5,copd,9100025,[DVI] Pneumonia (mFI-5 current pneumonia),cohort,-30,-1,1,"Pneumonia arm of the same item: 'current pneumonia' = 30 days. Item is positive if EITHER this row or the COPD row hits.",,,
-mfi5,chf,9100023,[DVI] Heart failure (risk score item),cohort,-30,-1,1,"30 days per the published mFI-5 definition. Limit=All, so the window now binds (it could not against Limit=First VA-FI 1797950).",,,
-mfi5,htn,9100032,[DVI] Antihypertensive Exposure Outside Inpatient Stay,cohort,-365,-1,1,"REDEFINED 2026-11-06 (hypertension requiring medication, per Subramaniam 2018 / NSQIP HYPERMED): outpatient antihypertensive exposure (cohort 9100032; the OHDSI PL 1046/1047/1049 drug sets plus ATC C09A-C09D) in the 365 days before index AND a hypertension diagnosis (cohort 9100022) at any time before index, via the and_* columns. Was 9100022 alone (diagnosis only). The sVQI-FS htn row is unchanged (Kraiss 2022 has no medication requirement).",9100022,-36500,-1
-vqifs,htn,9100022,[DVI] Hypertension (risk score item),cohort,-36500,-1,1,"Same cohort as the mFI-5 htn item.",,,
-vqifs,chf,9100023,[DVI] Heart failure (risk score item),cohort,-365,-1,1,"Same cohort as the mFI-5 chf item, read over 365 days instead of 30.",,,
-vqifs,cad,9100024,[DVI] Coronary artery disease (risk score item),cohort,-36500,-1,1,"Limit=All; concept set equals the CSV exactly: aligned 2026-11-01 with OHDSI PL 197 minus its all-vessel root 318443 (see cohort 9100024 _README). Replaces VA-FI 1797949.",,,
-vqifs,pvd,9100003,[DVI] Peripheral Arterial Occlusive Disease (risk score item),cohort,-36500,-1,1,"NEW rather than reusing VA-FI 1797955, which also spans aortic aneurysm and venous thrombosis -- not peripheral ARTERIAL occlusive disease.",,,
-vqifs,dm,9100021,[DVI] Diabetes mellitus (risk score item),cohort,-36500,-1,1,"Same cohort as the mFI-5 dm item.",,,
-vqifs,copd,9100002,[DVI] COPD (risk score item),cohort,-36500,-1,1,"Same new cohort as the mFI-5 copd item.",,,
-vqifs,renal_impairment,9100010,[DVI] Renal Impairment (Creatinine Above 1.8 mg per dL or Dialysis),cohort,-365,-1,1,"Three OR'd arms: creatinine value, dialysis procedure, dialysis diagnosis.",,,
-vqifs,anemia,9100009,[DVI] Anemia (Sex-Specific Hemoglobin Threshold),cohort,-90,-1,1,"Distinct cohort from the Iannuzzi anemia item. Sex-specific thresholds live in the cohort definition.",,,
-vqifs,underweight,,,computed_r,-90,-1,1,"HARD CIRCE GAP -- stays in R. query_bmi_covariate_counts() resolves BMI in three tiers (direct reading, else computed from weight/height with unit conversion, then ROW_NUMBER to pick the most recent). Circe has ValueAsNumber but no arithmetic, so a cohort could only express tier 1 and would silently miss patients who have weight and height but no direct BMI.",,,
-vqifs,nonambulatory,9100028,[DVI] Impaired Ambulation (sVQI-FS nonambulatory; broad),cohort,-365,-1,1,"BROAD: the aid-use set plus impaired mobility, difficulty walking, abnormal gait, bed-ridden, unable to walk and the PT mobility codes -- any limitation of ambulation regardless of etiology (2026-10-15).",,,
+iannuzzi,anemia,9100008,[DVI] Anemia (Hemoglobin Below 10 g per dL),cohort,-90,0,2,"Threshold lives in the cohort definition. missing_is_negative=FALSE, so an unmeasured patient is UNKNOWN, not negative -- see the caveat below.",,,
+iannuzzi,insulin_dep,9100007,[DVI] Insulin Exposure Outside Inpatient Stay,cohort,-365,0,2,"REDEFINED 2026-11-05 (who with diabetes is currently on insulin): outpatient insulin (cohort 9100007; no inpatient visit spans the exposure) in the 365 days up to and including the index date AND a diabetes diagnosis (cohort 9100021) on or before the index date, via the and_* columns.",9100021,-36500,0
+mfi5,fs_dep,9100026,[DVI] Dependent Functional Status (ADL dependence),cohort,-365,0,1,"ADL-dependence findings + bed-ridden + confined to chair + severe frailty; Condition + Observation domains. Replaces the mobility/frailty set of 9100005 (2026-10-05).",,,
+mfi5,dm,9100021,[DVI] Diabetes mellitus (risk score item),cohort,-36500,0,1,"Limit=All; concept set equals the CSV exactly. Replaces VA-FI 1797952.",,,
+mfi5,copd,9100002,[DVI] COPD (risk score item),cohort,-36500,0,1,"COPD arm of the mFI-5 'COPD or current pneumonia' item. NEW rather than reusing VA-FI 1797958, which spans asthma/ILD/bronchiectasis as one VA-FI deficit. OR'd with the pneumonia row below.",,,
+mfi5,copd,9100025,[DVI] Pneumonia (mFI-5 current pneumonia),cohort,-30,0,1,"Pneumonia arm of the same item: 'current pneumonia' = 30 days. Item is positive if EITHER this row or the COPD row hits.",,,
+mfi5,chf,9100023,[DVI] Heart failure (risk score item),cohort,-30,0,1,"30 days per the published mFI-5 definition. Limit=All, so the window now binds (it could not against Limit=First VA-FI 1797950).",,,
+mfi5,htn,9100032,[DVI] Antihypertensive Exposure Outside Inpatient Stay,cohort,-365,0,1,"REDEFINED 2026-11-06 (hypertension requiring medication, per Subramaniam 2018 / NSQIP HYPERMED): outpatient antihypertensive exposure (cohort 9100032; the OHDSI PL 1046/1047/1049 drug sets plus ATC C09A-C09D) in the 365 days up to and including the index date AND a hypertension diagnosis (cohort 9100022) on or before the index date, via the and_* columns. Was 9100022 alone (diagnosis only). The sVQI-FS htn row is unchanged (Kraiss 2022 has no medication requirement).",9100022,-36500,0
+vqifs,htn,9100022,[DVI] Hypertension (risk score item),cohort,-36500,0,1,"Same cohort as the mFI-5 htn item.",,,
+vqifs,chf,9100023,[DVI] Heart failure (risk score item),cohort,-365,0,1,"Same cohort as the mFI-5 chf item, read over 365 days instead of 30.",,,
+vqifs,cad,9100024,[DVI] Coronary artery disease (risk score item),cohort,-36500,0,1,"Limit=All; concept set equals the CSV exactly: aligned 2026-11-01 with OHDSI PL 197 minus its all-vessel root 318443 (see cohort 9100024 _README). Replaces VA-FI 1797949.",,,
+vqifs,pvd,9100003,[DVI] Peripheral Arterial Occlusive Disease (risk score item),cohort,-36500,0,1,"NEW rather than reusing VA-FI 1797955, which also spans aortic aneurysm and venous thrombosis -- not peripheral ARTERIAL occlusive disease.",,,
+vqifs,dm,9100021,[DVI] Diabetes mellitus (risk score item),cohort,-36500,0,1,"Same cohort as the mFI-5 dm item.",,,
+vqifs,copd,9100002,[DVI] COPD (risk score item),cohort,-36500,0,1,"Same new cohort as the mFI-5 copd item.",,,
+vqifs,renal_impairment,9100010,[DVI] Renal Impairment (Creatinine Above 1.8 mg per dL or Dialysis),cohort,-365,0,1,"Three OR'd arms: creatinine value, dialysis procedure, dialysis diagnosis.",,,
+vqifs,anemia,9100009,[DVI] Anemia (Sex-Specific Hemoglobin Threshold),cohort,-90,0,1,"Distinct cohort from the Iannuzzi anemia item. Sex-specific thresholds live in the cohort definition.",,,
+vqifs,underweight,,,computed_r,-90,0,1,"HARD CIRCE GAP -- stays in R. query_bmi_covariate_counts() resolves BMI in three tiers (direct reading, else computed from weight/height with unit conversion, then ROW_NUMBER to pick the most recent). Circe has ValueAsNumber but no arithmetic, so a cohort could only express tier 1 and would silently miss patients who have weight and height but no direct BMI.",,,
+vqifs,nonambulatory,9100028,[DVI] Impaired Ambulation (sVQI-FS nonambulatory; broad),cohort,-365,0,1,"BROAD: the aid-use set plus impaired mobility, difficulty walking, abnormal gait, bed-ridden, unable to walk and the PT mobility codes -- any limitation of ambulation regardless of etiology (2026-10-15).",,,
