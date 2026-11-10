@@ -26,8 +26,8 @@ authors:
     family-names: "Moya-Mendez"
     affiliation: "Duke University School of Medicine"
 
-version: "1.0.0"
-date-released: "2026-11-06"
+version: "1.0.1"
+date-released: "2026-11-09"
 
 repository-code: "https://github.com/Duke-Vascular-Informatics/pad-amp-nhd-val"
 url: "https://github.com/Duke-Vascular-Informatics/pad-amp-nhd-val"
